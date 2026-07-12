@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=AuditXS
+GenericName=Security Audit
+Comment=Transparent, reversible Linux security auditing
+Exec=auditxs-gui
+Icon=security-high
+Terminal=false
+Categories=System;Security;Settings;
+Keywords=security;audit;hardening;firewall;ssh;
