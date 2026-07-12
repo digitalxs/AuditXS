@@ -20,11 +20,16 @@ no_snapshots() { [ ! -d /var/lib/auditxs/snapshots ] || [ -z "$(ls -A /var/lib/a
 echo "== environment =="
 grep PRETTY_NAME /etc/os-release 2>/dev/null || true
 
-echo "== version / list / explain =="
+echo "== unit tests =="
+bash tests/unit.sh
+
+echo "== version / list / explain / doctor =="
 ./auditxs version
 ./auditxs list > /dev/null
 ./auditxs list --markdown > /dev/null
-./auditxs explain SSH-001 ACC-003 NET-002 MAC-001 > /dev/null
+./auditxs explain SSH-001 ACC-003 NET-002 MAC-001 PRV-001 DB-001 > /dev/null
+./auditxs doctor > /tmp/doctor.log || true   # containers legitimately miss tools
+grep -q "AuditXS doctor" /tmp/doctor.log || fail "doctor produced no output"
 
 echo "== read-only audit =="
 ./auditxs audit --profile server > /tmp/audit.log

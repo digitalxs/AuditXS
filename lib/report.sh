@@ -16,11 +16,13 @@ json_escape() {
     printf '%s' "$s"
 }
 
+# Replacements are quoted: since bash 5.2 (patsub_replacement) an unquoted
+# '&' in ${var//pat/rep} expands to the matched text, which corrupts entities.
 html_escape() {
     local s=$1
-    s=${s//&/&amp;}
-    s=${s//</&lt;}
-    s=${s//>/&gt;}
+    s=${s//&/"&amp;"}
+    s=${s//</"&lt;"}
+    s=${s//>/"&gt;"}
     printf '%s' "$s"
 }
 
@@ -56,8 +58,10 @@ results_json() {
         if has_fix "$id"; then fixable=true; else fixable=false; fi
         [ "$first" = 1 ] || printf ',\n'
         first=0
-        printf '    { "id": "%s", "category": "%s", "severity": "%s", "status": "%s", "fixable": %s, "title": "%s", "detail": "%s" }' \
-            "$id" "$(json_escape "${CHECK_CATEGORY[$id]}")" "${CHECK_SEVERITY[$id]}" \
+        printf '    { "id": "%s", "category": "%s", "domain": "%s", "nist": "%s", "severity": "%s", "status": "%s", "fixable": %s, "title": "%s", "detail": "%s" }' \
+            "$id" "$(json_escape "${CHECK_CATEGORY[$id]}")" \
+            "$(json_escape "$(domain_of "${CHECK_CATEGORY[$id]}")")" \
+            "$(json_escape "$(nist_of "$id")")" "${CHECK_SEVERITY[$id]}" \
             "${RESULT_STATUS[$id]}" "$fixable" \
             "$(json_escape "${CHECK_TITLE[$id]}")" "$(json_escape "${RESULT_DETAIL[$id]}")"
     done
@@ -109,12 +113,14 @@ HTMLHEAD
         if [ "${CHECK_CATEGORY[$id]}" != "$cat" ]; then
             [ -n "$cat" ] && printf '</table>\n'
             cat=${CHECK_CATEGORY[$id]}
-            printf '<h2>%s</h2>\n<table>\n<tr><th>Status</th><th>ID</th><th>Severity</th><th>Fix</th><th>Finding</th></tr>\n' "$(html_escape "$cat")"
+            printf '<h2>%s <small style="color:#777;font-weight:400">— %s domain</small></h2>\n<table>\n<tr><th>Status</th><th>ID</th><th>Severity</th><th>Fix</th><th>NIST CSF</th><th>Finding</th></tr>\n' \
+                "$(html_escape "$cat")" "$(html_escape "$(domain_of "$cat")")"
         fi
         st=${RESULT_STATUS[$id]}
         if has_fix "$id"; then fixable=auto; else fixable=manual; fi
-        printf '<tr><td><span class="badge %s">%s</span></td><td>%s</td><td>%s</td><td>%s</td><td>%s' \
-            "$st" "$st" "$id" "${CHECK_SEVERITY[$id]}" "$fixable" "$(html_escape "${CHECK_TITLE[$id]}")"
+        printf '<tr><td><span class="badge %s">%s</span></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s' \
+            "$st" "$st" "$id" "${CHECK_SEVERITY[$id]}" "$fixable" \
+            "$(html_escape "$(nist_of "$id")")" "$(html_escape "${CHECK_TITLE[$id]}")"
         if [ -n "${RESULT_DETAIL[$id]}" ]; then
             printf '<div class="detail">%s</div>' "$(html_escape "${RESULT_DETAIL[$id]}")"
         fi
@@ -255,7 +261,8 @@ cmd_diff() {
 }
 
 # diff_current_against <baseline.json> — compare the in-memory results of the
-# audit that just ran against a saved baseline (used by: audit --baseline).
+# audit that just ran against a saved baseline (used by 'audit --baseline'
+# and 'schedule run'). Returns 1 when regressions were found.
 diff_current_against() {
     local base=$1
     [ -r "$base" ] || { warn "Baseline report not readable: $base — skipping comparison"; return 0; }
@@ -270,5 +277,4 @@ diff_current_against() {
         "$base ($(parse_report_field "$base" date))" \
         "current audit" \
         "$(parse_report_field "$base" score)" "$SCORE"
-    return 0
 }

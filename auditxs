@@ -18,7 +18,7 @@
 AUDITXS_SELF=$(readlink -f "${BASH_SOURCE[0]}")
 AUDITXS_ROOT=$(dirname "$AUDITXS_SELF")
 
-for _lib in core distro backup registry report fixlib; do
+for _lib in core distro backup registry report fixlib maintenance; do
     # shellcheck disable=SC1090
     . "$AUDITXS_ROOT/lib/$_lib.sh" || { echo "auditxs: missing library lib/$_lib.sh" >&2; exit 1; }
 done
@@ -46,18 +46,25 @@ ${BOLD}COMMANDS${RC}
   report      Print a report of a fresh audit to stdout (--format html|json|tsv)
   diff        Compare two saved JSON reports:  auditxs diff <baseline.json> [current.json]
               (current defaults to the latest saved report; exits 1 on regressions)
+  baseline    Manage the approved baseline:  auditxs baseline set [report] | show | clear
+  schedule    Daily audit + drift alert:  auditxs schedule enable | disable | status | run
+  doctor      Diagnose the AuditXS installation, tooling and snapshot integrity
   version     Show version
   help        Show this help
 
 ${BOLD}OPTIONS${RC}
   --profile server|workstation   Override the configured profile
   --category <name>              Only checks in one category (e.g. SSH, Firewall)
+  --domain <name>                Only one assessment domain: Server Hardening,
+                                 OS Hardening, Network Security,
+                                 Application Hardening, Database Hardening
   --check <ID>                   Only this check (repeatable)
   --format text|tsv|json|html    Output format (audit/report)
   --baseline <report.json>       audit: compare results against a saved report
   --dry-run                      harden: show every intended change, change nothing
   --yes, -y                      Assume "yes" to confirmations (automation)
   --quiet, -q                    Suppress progress output
+  --debug                        Verbose diagnostics (timings, return codes)
   --tsv                          Shortcut for --format tsv
 
 ${BOLD}EXAMPLES${RC}
@@ -92,6 +99,7 @@ main() {
 
     FORMAT=text
     FILTER_CATEGORY=""
+    FILTER_DOMAIN=""
     FILTER_CHECKS=""
     PROFILE_OVERRIDE=""
     MARKDOWN=0
@@ -102,6 +110,7 @@ main() {
         case $1 in
             --profile)   PROFILE_OVERRIDE=${2:?--profile needs a value}; shift ;;
             --category)  FILTER_CATEGORY=${2:?--category needs a value}; shift ;;
+            --domain)    FILTER_DOMAIN=${2:?--domain needs a value}; shift ;;
             --check)     FILTER_CHECKS+=" ${2^^}"; shift ;;
             --format)    FORMAT=${2:?--format needs a value}; shift ;;
             --baseline)  BASELINE_FILE=${2:?--baseline needs a report file}; shift ;;
@@ -110,6 +119,7 @@ main() {
             --dry-run)   DRYRUN=1 ;;
             --yes|-y)    ASSUME_YES=1 ;;
             --quiet|-q)  QUIET=1 ;;
+            --debug)     DEBUG=1 ;;
             --help|-h)   usage; return 0 ;;
             -*)          die "Unknown option: $1 (see 'auditxs help')" ;;
             *)           ARGS+=("$1") ;;
@@ -191,6 +201,16 @@ main() {
         diff)
             [ ${#ARGS[@]} -ge 1 ] || die "Usage: auditxs diff <baseline.json> [current.json]"
             cmd_diff "${ARGS[@]}"
+            return $? ;;
+        doctor)
+            cmd_doctor
+            return $? ;;
+        baseline)
+            cmd_baseline "${ARGS[@]}"
+            return $? ;;
+        schedule)
+            resolve_profile
+            cmd_schedule "${ARGS[@]}"
             return $? ;;
         *)
             die "Unknown command: $cmd (see 'auditxs help')" ;;

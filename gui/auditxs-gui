@@ -184,15 +184,27 @@ while true; do
         "Harden"    "Review and apply fixes for failed checks (reversible)" \
         "Report"    "Generate and open an HTML audit report" \
         "Rollback"  "Undo the changes of a previous hardening run" \
+        "Baseline"  "Save the latest audit as the approved baseline (drift alerts)" \
+        "Doctor"    "Diagnose the AuditXS installation and system tooling" \
         "Catalogue" "Browse all checks and what they do" \
         "About"     "About AuditXS" \
-        --width 640 --height 420 2>/dev/null) || exit 0
+        --width 640 --height 480 2>/dev/null) || exit 0
 
     case $choice in
         Audit)     run_audit_gui ;;
         Harden)    run_harden_gui ;;
         Report)    run_report_gui ;;
         Rollback)  run_rollback_gui ;;
+        Baseline)
+            if zenity --question --title "AuditXS" \
+                --text "Save the <b>latest audit report</b> as the approved baseline?\nScheduled audits will then alert when the configuration regresses from it." 2>/dev/null; then
+                out=$(elevate "$AUDITXS_BIN" baseline set 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+                zenity --info --title "AuditXS — baseline" --text "${out:-Baseline updated.}" 2>/dev/null
+            fi ;;
+        Doctor)
+            elevate "$AUDITXS_BIN" doctor 2>&1 | sed 's/\x1b\[[0-9;]*m//g' > "$WORK_DIR/doctor.txt"
+            zenity --text-info --title "AuditXS — doctor" \
+                --filename "$WORK_DIR/doctor.txt" --width 760 --height 560 2>/dev/null ;;
         Catalogue)
             "$AUDITXS_BIN" list --markdown 2>/dev/null > "$WORK_DIR/catalogue.md"
             zenity --text-info --title "AuditXS — check catalogue" \

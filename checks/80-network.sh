@@ -74,3 +74,36 @@ audit_NET_003() {
     DETAIL="No wireless interfaces"
     return 0
 }
+
+register_check "NET-004" "Network" "high" "server" \
+    "Listening ports match the approved allowlist"
+set_meta NET-004 desc "Compares every listening TCP/UDP port against the administrator-approved allowlist in /etc/auditxs/allowed-ports.conf. This turns 'what is listening?' (NET-001) into drift detection: a service that appears without being approved — a forgotten debug port, a dropped implant, a misconfigured install — is flagged immediately. Report-only: YOU decide what belongs on the list; AuditXS never opens or closes ports. Pair with 'auditxs schedule' for continuous drift monitoring."
+set_meta NET-004 nist "DE.CM-01, PR.IR-01"
+
+_current_listeners() { # "proto port" per line
+    ss -tulnH 2>/dev/null | awk '{n=split($5,a,":"); print $1, a[n]}' | sort -u
+}
+
+audit_NET_004() {
+    have ss || { DETAIL="'ss' (iproute2) not available"; return 3; }
+    local f=/etc/auditxs/allowed-ports.conf
+    local listeners proto port bad=""
+    listeners=$(_current_listeners)
+    if [ ! -f "$f" ]; then
+        DETAIL="No allowlist yet. Review the current listeners (NET-001), then approve them with:
+  ss -tulnH | awk '{n=split(\$5,a,\":\"); print \$1, a[n]}' | sort -u | sudo tee $f
+From then on, any NEW listening port fails this check (drift detection)."
+        return 2
+    fi
+    while read -r proto port; do
+        [ -n "$proto" ] || continue
+        grep -qsE "^[[:space:]]*${proto}[[:space:]]+${port}([[:space:]]|\$)" "$f" || bad+="$proto $port"$'\n'
+    done <<< "$listeners"
+    if [ -n "$bad" ]; then
+        DETAIL="Listening but NOT in the allowlist ($f) — investigate, then either stop the service or approve it:
+$bad"
+        return 1
+    fi
+    DETAIL="All $(echo "$listeners" | grep -c .) listening socket(s) are approved in $f"
+    return 0
+}

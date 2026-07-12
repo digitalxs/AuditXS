@@ -66,6 +66,11 @@ auditxs explain FW-002 SSH-005         what a check inspects/changes/reverts
 sudo auditxs report --format html      fresh report to stdout (also: json, tsv)
 sudo auditxs audit --baseline old.json compare a fresh audit against a saved report
 auditxs diff old.json new.json         compare two saved reports (exits 1 on regressions)
+sudo auditxs audit --domain "Database" audit one assessment domain
+sudo auditxs baseline set              approve the latest report for drift alerts
+sudo auditxs schedule enable           daily audit + drift alert (systemd timer)
+auditxs doctor                         diagnose installation, tooling, snapshots
+sudo auditxs audit --debug             verbose diagnostics (timings, decisions)
 auditxs-gui                            graphical interface (zenity + pkexec)
 ```
 
@@ -90,9 +95,31 @@ overridable per-run with `--profile`):
 | Disable Avahi / CUPS / Bluetooth | ✔ | – (desktop needs them) |
 | Restrictive umask (027), Ctrl-Alt-Del guard, martian logging, wireless detection | ✔ | – |
 
-## What is covered (50 checks, 10 categories)
+## Assessment domains & frameworks
+
+Checks roll up into the five domains professional assessments are
+organised around — audit any one of them with `--domain`:
+
+**Server Hardening** (SSH, accounts, sudo accountability, MFA posture,
+admin-account inventory) · **OS Hardening** (CIS/STIG-aligned: updates,
+kernel, filesystem, MAC, logging, banners, /tmp) · **Network Security**
+(firewall, protocol surface, listening-port allowlist drift detection) ·
+**Application Hardening** (service surface, nginx/Apache secure config
+with validate-or-restore) · **Database Hardening** (MySQL/PostgreSQL
+exposure, 'trust' auth detection, TLS/encryption guidance — report-only
+by design).
+
+Every check carries an indicative **NIST CSF 2.0** mapping, shown in
+`auditxs explain`, the reports and [docs/CHECKS.md](docs/CHECKS.md).
+Details: [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
+
+## What is covered (60 checks, 14 categories)
 
 **Updates** (pending updates, automatic security updates, pending reboot) ·
+**OS** (login banners, /tmp mount options) · **Privileged** (sudo
+pty+logging, SSH MFA posture, admin inventory) · **Applications**
+(nginx/Apache version disclosure) · **Database** (MySQL/MariaDB and
+PostgreSQL exposure and authentication) ·
 **SSH** (root login, auth limits, empty passwords, X11, key-only auth with
 lockout guard, idle timeout, grace time, fail2ban/sshguard brute-force
 protection) · **Firewall** (installed, active, default-deny — with an SSH
@@ -132,17 +159,37 @@ actions are deliberately left to the administrator.
 - **Packages**: never removed automatically; packages *installed* by a fix
   are recorded and offered for removal during rollback.
 
+## Maintenance & operations
+
+- `auditxs doctor` — self-diagnostics: tooling, configuration, snapshot
+  integrity, scheduled-audit state.
+- `sudo auditxs baseline set` + `sudo auditxs schedule enable` — daily
+  read-only audit whose systemd unit **fails on drift** from the approved
+  baseline, so existing monitoring alerts on configuration regressions.
+- `sudo update-auditxs` — in-place updates; the uninstaller protects your
+  snapshots and removes the scheduler units.
+
+## Documentation
+
+| | |
+|---|---|
+| [docs/USAGE.md](docs/USAGE.md) | full user manual (CLI, GUI, workflows, files, exit codes) |
+| [docs/CHECKS.md](docs/CHECKS.md) | every check: what/why, what the fix changes, how it reverts (generated from the code) |
+| [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | domains, NIST CSF 2.0, CIS/STIG alignment, assessor evidence |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | engine, snapshot format, check API, testing |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | must-have feature rationale and deliberate non-goals |
+
 ## Repository layout
 
 ```
 auditxs            CLI entry point
-lib/               engine: core, distro, snapshot/rollback, registry, reports, fix helpers
-checks/            the 9 check modules (self-registering, self-documenting)
+lib/               engine: core, distro, snapshot/rollback, registry, reports, fix helpers, maintenance
+checks/            the 14 check modules (self-registering, self-documenting)
 gui/               zenity GUI + desktop launcher
 setup.sh           installer (Server/Workstation selection)
 uninstall.sh       uninstaller (protects your snapshots)
 scripts/updater.sh update-auditxs command
-tests/smoke.sh     end-to-end test (audit → harden → diff → rollback) for disposable containers
+tests/             unit tests (safe anywhere) + end-to-end smoke test for disposable containers
 .github/workflows  CI: shellcheck + bash -n, smoke test in Debian/Ubuntu/Fedora/Arch/openSUSE containers
 docs/              architecture + generated check catalogue
 ```

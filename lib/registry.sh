@@ -12,15 +12,60 @@
 #
 # A check provides audit_<ID> (required) and fix_<ID> (optional; checks
 # without a fix never change the system). Audit return codes:
-#   0 = PASS   1 = FAIL (fixable finding)   2 = WARN (manual review)   3 = SKIP
+#   0 = PASS   1 = FAIL (finding; a fix is offered when the check has one)
+#   2 = WARN (manual review)   3 = SKIP
 #
 # Part of AuditXS — transparent, reversible Linux security auditing.
 #
 
 declare -a CHECK_IDS=()
 declare -A CHECK_TITLE=() CHECK_CATEGORY=() CHECK_SEVERITY=() CHECK_PROFILES=()
-declare -A CHECK_META_DESC=() CHECK_META_FIX=() CHECK_META_REVERT=()
+declare -A CHECK_META_DESC=() CHECK_META_FIX=() CHECK_META_REVERT=() CHECK_META_NIST=()
 declare -A RESULT_STATUS=() RESULT_DETAIL=()
+
+# ------------------------------------------------- domains & NIST CSF 2.0
+# Each category belongs to one assessment domain, so audits and reports can
+# be sliced the way security assessments are organised (--domain).
+declare -A DOMAIN_OF_CATEGORY=(
+    [Updates]="OS Hardening"
+    [OS]="OS Hardening"
+    [Kernel]="OS Hardening"
+    [Filesystem]="OS Hardening"
+    [MAC]="OS Hardening"
+    [Logging]="OS Hardening"
+    [SSH]="Server Hardening"
+    [Accounts]="Server Hardening"
+    [Privileged]="Server Hardening"
+    [Firewall]="Network Security"
+    [Network]="Network Security"
+    [Services]="Application Hardening"
+    [Applications]="Application Hardening"
+    [Database]="Database Hardening"
+)
+domain_of() { echo "${DOMAIN_OF_CATEGORY[$1]:-Other}"; }
+
+# Indicative NIST CSF 2.0 subcategory mapping per category; individual
+# checks may override with: set_meta <ID> nist "PR.AA-03"
+declare -A NIST_OF_CATEGORY=(
+    [Updates]="ID.RA-01, PR.PS-02"
+    [OS]="PR.PS-01"
+    [Kernel]="PR.PS-01, PR.IR-01"
+    [Filesystem]="PR.DS-01, PR.AA-05"
+    [MAC]="PR.PS-01, PR.AA-05"
+    [Logging]="PR.PS-04, DE.CM-01"
+    [SSH]="PR.AA-01, PR.AA-03"
+    [Accounts]="PR.AA-01, PR.AA-05"
+    [Privileged]="PR.AA-05"
+    [Firewall]="PR.IR-01"
+    [Network]="PR.IR-01, DE.CM-01"
+    [Services]="PR.PS-01"
+    [Applications]="PR.PS-01"
+    [Database]="PR.DS-01, PR.AA-05"
+)
+nist_of() {
+    local id=$1
+    echo "${CHECK_META_NIST[$id]:-${NIST_OF_CATEGORY[${CHECK_CATEGORY[$id]}]:-}}"
+}
 
 N_PASS=0 N_FAIL=0 N_WARN=0 N_SKIP=0
 SCORE="-"
@@ -41,6 +86,7 @@ set_meta() { # <id> desc|fix|revert <text>
         desc)   CHECK_META_DESC[$id]=$val ;;
         fix)    CHECK_META_FIX[$id]=$val ;;
         revert) CHECK_META_REVERT[$id]=$val ;;
+        nist)   CHECK_META_NIST[$id]=$val ;;
     esac
 }
 
@@ -61,6 +107,11 @@ selected() { # <id> — honours --check and --category filters
     fi
     if [ -n "${FILTER_CATEGORY:-}" ]; then
         [ "${CHECK_CATEGORY[$id],,}" = "${FILTER_CATEGORY,,}" ] || return 1
+    fi
+    if [ -n "${FILTER_DOMAIN:-}" ]; then
+        local d
+        d=$(domain_of "${CHECK_CATEGORY[$id]}")
+        [[ "${d,,}" == "${FILTER_DOMAIN,,}"* ]] || return 1
     fi
     return 0
 }
@@ -116,12 +167,16 @@ run_audit() {
         fi
         DETAIL=""
         fn=$(fn_name "$id" audit)
+        local t0 t1
+        t0=$(date +%s%3N 2>/dev/null || date +%s)
         if declare -F "$fn" >/dev/null; then
             "$fn"; rc=$?
         else
             rc=3; DETAIL="No audit implementation"
         fi
+        t1=$(date +%s%3N 2>/dev/null || date +%s)
         st=$(status_str "$rc")
+        debug "$id → $st (rc=$rc, $((t1 - t0))ms) ${DETAIL:0:120}"
         RESULT_STATUS[$id]=$st
         RESULT_DETAIL[$id]=$DETAIL
         case $st in
@@ -170,7 +225,8 @@ show_check_details() { # <id>
     local id=$1
     hr
     printf '%b\n' "${BOLD}$id — ${CHECK_TITLE[$id]}${RC}"
-    printf '%b\n' "  Category: ${CHECK_CATEGORY[$id]} · Severity: ${CHECK_SEVERITY[$id]} · Profiles: ${CHECK_PROFILES[$id]}"
+    printf '%b\n' "  Category: ${CHECK_CATEGORY[$id]} · Domain: $(domain_of "${CHECK_CATEGORY[$id]}") · Severity: ${CHECK_SEVERITY[$id]} · Profiles: ${CHECK_PROFILES[$id]}"
+    printf '%b\n' "  NIST CSF 2.0: $(nist_of "$id")"
     if [ -n "${CHECK_META_DESC[$id]:-}" ]; then
         printf '%b\n' "  ${CYAN}What is checked and why:${RC}"
         fold_indent "${CHECK_META_DESC[$id]}"
@@ -294,13 +350,14 @@ markdown_docs() {
     for id in "${CHECK_IDS[@]}"; do
         if [ "${CHECK_CATEGORY[$id]}" != "$cat" ]; then
             cat=${CHECK_CATEGORY[$id]}
-            echo "## $cat"
+            echo "## $cat — $(domain_of "$cat") domain"
             echo
         fi
         echo "### $id — ${CHECK_TITLE[$id]}"
         echo
         echo "- **Severity:** ${CHECK_SEVERITY[$id]}"
         echo "- **Profiles:** ${CHECK_PROFILES[$id]}"
+        echo "- **NIST CSF 2.0:** $(nist_of "$id")"
         if has_fix "$id"; then fixable="automatic (reversible)"; else fixable="manual (report-only)"; fi
         echo "- **Fix:** $fixable"
         echo

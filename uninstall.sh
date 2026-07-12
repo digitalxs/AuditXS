@@ -43,6 +43,14 @@ if [ -d "$STATE_DIR/snapshots" ]; then
     fi
 fi
 
+# Remove the scheduled-audit units if present
+if [ -f /etc/systemd/system/auditxs-audit.timer ]; then
+    systemctl disable --now auditxs-audit.timer >/dev/null 2>&1
+    rm -f /etc/systemd/system/auditxs-audit.timer /etc/systemd/system/auditxs-audit.service
+    systemctl daemon-reload 2>/dev/null
+    ok "removed scheduled audit (auditxs-audit.timer)"
+fi
+
 for cmd in auditxs auditxs-gui update-auditxs; do
     if [ -e "/usr/local/bin/$cmd" ] || [ -L "/usr/local/bin/$cmd" ]; then
         rm -f "/usr/local/bin/$cmd" && ok "removed /usr/local/bin/$cmd"

@@ -7,7 +7,7 @@
 # https://github.com/digitalxs/AuditXS
 #
 
-AUDITXS_VERSION="0.2.0"
+AUDITXS_VERSION="0.3.0"
 
 # ------------------------------------------------------------------ colours
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
@@ -22,6 +22,7 @@ fi
 QUIET=${QUIET:-0}
 ASSUME_YES=${ASSUME_YES:-0}
 DRYRUN=${DRYRUN:-0}
+DEBUG=${AUDITXS_DEBUG:-0}
 
 # ------------------------------------------------------------------ logging
 init_logging() {
@@ -47,6 +48,14 @@ ok()   { [ "$QUIET" = 1 ] || printf '%b\n' "${GREEN}✓${RC} $*";  log "[ok] $*"
 warn() { printf '%b\n' "${YELLOW}!${RC} $*" >&2; log "[warn] $*"; }
 err()  { printf '%b\n' "${RED}✗${RC} $*" >&2;   log "[error] $*"; }
 die()  { err "$*"; exit 1; }
+
+# Debug diagnostics (--debug or AUDITXS_DEBUG=1): timings, return codes and
+# internal decisions, printed to stderr and the log file.
+debug() {
+    [ "$DEBUG" = 1 ] || return 0
+    printf '%b\n' "${MAGENTA}[debug]${RC} $*" >&2
+    log "[debug] $*"
+}
 hr()   { [ "$QUIET" = 1 ] || printf '%b\n' "${DIM}──────────────────────────────────────────────────────────────────${RC}"; }
 
 # ------------------------------------------------------------------ prompts

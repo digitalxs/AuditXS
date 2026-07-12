@@ -96,3 +96,37 @@ always shows the full picture.
 `lib/distro.sh` maps `ID`/`ID_LIKE` to a family (`debian`, `arch`,
 `redhat`, `suse`) which selects the package manager and firewall
 convention. Derivatives usually work out of the box via `ID_LIKE`.
+
+## Domains and NIST CSF mapping (v0.3)
+
+`DOMAIN_OF_CATEGORY` in `lib/registry.sh` rolls categories up into the
+five assessment domains (`--domain` filter, report grouping).
+`NIST_OF_CATEGORY` provides indicative NIST CSF 2.0 mappings per category;
+individual checks override with `set_meta <ID> nist "PR.AA-03"`. Both
+surfaces appear in `explain`, `list --markdown`, JSON and HTML reports.
+
+## Maintenance commands (v0.3)
+
+`lib/maintenance.sh` implements:
+
+- `doctor` — installation/tooling/config diagnostics plus snapshot
+  integrity verification (manifest structure, saved file copies).
+- `baseline set|show|clear` — manages `/etc/auditxs/baseline.json`, the
+  approved report used for drift comparison.
+- `schedule enable|disable|status|run` — a systemd service+timer pair
+  running `auditxs schedule run` daily: quiet audit, then
+  `diff_current_against` the baseline; a regression fails the unit so
+  monitoring can alert. The units are plain labelled files removed by
+  `schedule disable` (and by the uninstaller).
+
+## Debugging and testing
+
+- `--debug` (or `AUDITXS_DEBUG=1`) prints per-check timings, return codes
+  and engine decisions to stderr and the daily log.
+- `tests/unit.sh` — pure-function unit tests (escaping, permission math,
+  registry filtering, report parsing, diff classification). Safe anywhere.
+- `tests/smoke.sh` — end-to-end in a disposable container: audit
+  (asserting read-only), dry-run (asserting zero changes), real harden,
+  baseline diff both directions, rollback with byte-exact restoration.
+- CI runs shellcheck + `bash -n`, the unit tests, and the smoke test in
+  Debian/Ubuntu/Fedora/Arch/openSUSE containers.

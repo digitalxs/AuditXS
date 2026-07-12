@@ -1,0 +1,70 @@
+# AuditXS roadmap — must-have features and professional practice
+
+This is the considered feature advice behind AuditXS's direction: what a
+professional baseline-hardening tool must have (and why), what it should
+gain next, and what it should deliberately *never* do. Ordered by value.
+
+## Already implemented (the non-negotiables)
+
+These are the table stakes for trustworthy hardening tooling — the reason
+they shipped first:
+
+1. **Read-only audit by default** — assessment must never mutate state.
+2. **Full reversibility** — snapshots + manifest + rollback. A hardening
+   tool without undo is an outage generator.
+3. **Per-change transparency and consent** — explain → confirm → verify,
+   dry-run previews, labelled drop-in files, append-only change ledger.
+4. **Validate-or-restore for critical daemons** — sshd/sudoers/nginx/
+   apache changes are syntax-checked and auto-reverted on failure;
+   SSH/firewall lockout guards.
+5. **Profiles** (server/workstation) — context decides what is a finding.
+6. **Drift detection** — approved baseline + `diff` with CI-friendly exit
+   codes, port allowlist (NET-004), scheduled audits alerting via systemd.
+7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
+   end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
+
+## Next (high value, in order)
+
+1. **Notification channels for drift** — `schedule run` currently fails
+   the systemd unit on regression; add native mail/webhook (Slack/Matrix)
+   notifiers so small setups get alerts without a monitoring stack.
+2. **CIS profile levels** — tag checks Level 1 / Level 2 and add
+   `--level`, so stricter items (L2) can be adopted deliberately.
+3. **Multi-host operation** — `auditxs fleet` running audits over SSH
+   against an inventory file, aggregating JSON reports into one HTML
+   overview. The JSON format is already stable for this.
+4. **File-integrity monitoring** — AIDE install/initialise check plus
+   scheduled verification (detects tampering, not just misconfiguration).
+5. **PDF/signed reports** — assessors want tamper-evident evidence;
+   render the HTML report to PDF and sign report archives (minisign).
+6. **MFA enrolment helper** — guided, opt-in `auditxs mfa enrol` wizard
+   (google-authenticator/pam_u2f) that configures PAM+sshd only after a
+   verified second-factor login in a parallel session.
+7. **Package-manager hook** — post-transaction hook re-running the port
+   allowlist and services checks, catching drift the moment software is
+   installed rather than at the next scheduled audit.
+8. **Man pages + shell completion** — `auditxs(8)` and bash/zsh/fish
+   completions for operator ergonomics.
+9. **Localization** of check explanations (the metadata layer already
+   separates text from logic).
+
+## Deliberate non-goals
+
+- **No irreversible automation.** Package upgrades, partitioning, MAC
+  enablement, database schema/config changes stay report-only forever.
+- **No agent, no daemon, no cloud.** AuditXS stays a transparent local
+  tool; scheduling uses the system's own timer infrastructure.
+- **No exploit/scan functionality.** AuditXS hardens configurations; it
+  is not a vulnerability scanner. Pair it with dedicated scanners
+  (OpenVAS/Greenbone, Trivy) and complementary auditors (Lynis).
+- **No opaque scoring.** The score stays a simple severity-weighted
+  PASS/FAIL ratio that anyone can recompute from the report.
+
+## Complementary tooling (defence in depth)
+
+AuditXS covers configuration hardening. A complete posture adds:
+vulnerability scanning (Greenbone/Trivy), EDR/antimalware where mandated,
+central log shipping (journald → Loki/ELK/rsyslog relay), backup with
+tested restores, and for fleets a configuration-management source of truth
+(Ansible) — AuditXS then acts as the independent verifier of what is
+actually running.
