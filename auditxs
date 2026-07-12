@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+#
+# AuditXS — transparent, reversible Linux security auditing & hardening.
+# https://github.com/digitalxs/AuditXS
+#
+# Design principles:
+#   1. TRANSPARENT — every check explains what it inspects, why it matters,
+#      exactly what its fix changes, and how that change is reverted.
+#      'auditxs audit' is strictly read-only.
+#   2. REVERSIBLE — before anything is modified it is recorded in a snapshot
+#      (file copies + action manifest). 'auditxs rollback' restores it.
+#   3. CONSENTED — fixes are applied one by one, each after an explicit
+#      confirmation (or --yes for automation), with --dry-run to preview.
+#
+# Copyright (c) 2026 DigitalXS <luis@digitalxs.ca>
+#
+
+AUDITXS_SELF=$(readlink -f "${BASH_SOURCE[0]}")
+AUDITXS_ROOT=$(dirname "$AUDITXS_SELF")
+
+for _lib in core distro backup registry report fixlib; do
+    # shellcheck disable=SC1090
+    . "$AUDITXS_ROOT/lib/$_lib.sh" || { echo "auditxs: missing library lib/$_lib.sh" >&2; exit 1; }
+done
+for _chk in "$AUDITXS_ROOT"/checks/*.sh; do
+    # shellcheck disable=SC1090
+    . "$_chk" || { echo "auditxs: failed to load $_chk" >&2; exit 1; }
+done
+
+AUDITXS_CONF=/etc/auditxs/auditxs.conf
+
+usage() {
+    cat <<EOF
+${BOLD}AuditXS v$AUDITXS_VERSION${RC} — transparent, reversible Linux security auditing
+
+${BOLD}USAGE${RC}
+  auditxs <command> [options]
+
+${BOLD}COMMANDS${RC}
+  audit       Run all applicable checks (read-only — never changes anything)
+  harden      Review failed checks and apply fixes one by one, with consent
+  rollback    Revert a hardening snapshot:  auditxs rollback <id> | latest
+  snapshots   List change snapshots
+  list        Show the check catalogue (add --markdown for full docs)
+  explain     Show full documentation for checks:  auditxs explain SSH-001 ...
+  report      Print a report of a fresh audit to stdout (--format html|json|tsv)
+  version     Show version
+  help        Show this help
+
+${BOLD}OPTIONS${RC}
+  --profile server|workstation   Override the configured profile
+  --category <name>              Only checks in one category (e.g. SSH, Firewall)
+  --check <ID>                   Only this check (repeatable)
+  --format text|tsv|json|html    Output format (audit/report)
+  --dry-run                      harden: show every intended change, change nothing
+  --yes, -y                      Assume "yes" to confirmations (automation)
+  --quiet, -q                    Suppress progress output
+  --tsv                          Shortcut for --format tsv
+
+${BOLD}EXAMPLES${RC}
+  sudo auditxs audit                        Full read-only audit + HTML/JSON report
+  sudo auditxs harden --dry-run             Preview every change without applying
+  sudo auditxs harden --category SSH        Harden SSH only, one fix at a time
+  sudo auditxs rollback latest              Undo the most recent hardening run
+  auditxs explain FW-002                    What it checks, changes, and how to revert
+
+Supported: Debian, Ubuntu, Pop!_OS, Arch, Fedora, openSUSE (and derivatives).
+Profiles:  server, workstation — chosen during installation (see /etc/auditxs/auditxs.conf).
+EOF
+}
+
+resolve_profile() {
+    if [ -n "${PROFILE_OVERRIDE:-}" ]; then
+        PROFILE=$PROFILE_OVERRIDE
+    elif [ -z "${PROFILE:-}" ]; then
+        PROFILE=workstation
+        warn "No profile configured (run the installer or pass --profile) — defaulting to 'workstation'."
+    fi
+    case $PROFILE in
+        server|workstation) : ;;
+        *) die "Invalid profile '$PROFILE' — must be 'server' or 'workstation'" ;;
+    esac
+}
+
+main() {
+    local cmd=${1:-help}
+    [ $# -gt 0 ] && shift
+
+    FORMAT=text
+    FILTER_CATEGORY=""
+    FILTER_CHECKS=""
+    PROFILE_OVERRIDE=""
+    MARKDOWN=0
+    local -a ARGS=()
+
+    while [ $# -gt 0 ]; do
+        case $1 in
+            --profile)   PROFILE_OVERRIDE=${2:?--profile needs a value}; shift ;;
+            --category)  FILTER_CATEGORY=${2:?--category needs a value}; shift ;;
+            --check)     FILTER_CHECKS+=" ${2^^}"; shift ;;
+            --format)    FORMAT=${2:?--format needs a value}; shift ;;
+            --tsv)       FORMAT=tsv ;;
+            --markdown)  MARKDOWN=1 ;;
+            --dry-run)   DRYRUN=1 ;;
+            --yes|-y)    ASSUME_YES=1 ;;
+            --quiet|-q)  QUIET=1 ;;
+            --help|-h)   usage; return 0 ;;
+            -*)          die "Unknown option: $1 (see 'auditxs help')" ;;
+            *)           ARGS+=("$1") ;;
+        esac
+        shift
+    done
+
+    init_logging
+    detect_distro
+
+    # shellcheck disable=SC1090
+    [ -r "$AUDITXS_CONF" ] && . "$AUDITXS_CONF"
+
+    case $cmd in
+        version|--version|-V)
+            echo "AuditXS v$AUDITXS_VERSION"
+            return 0 ;;
+        help|--help|-h)
+            usage
+            return 0 ;;
+        list)
+            resolve_profile
+            if [ "$MARKDOWN" = 1 ]; then cmd_list --markdown; else cmd_list; fi
+            return 0 ;;
+        explain)
+            resolve_profile
+            cmd_explain "${ARGS[@]}"
+            return 0 ;;
+        audit)
+            require_root audit
+            resolve_profile
+            log "audit started (profile=$PROFILE distro=$DISTRO_ID format=$FORMAT)"
+            case $FORMAT in
+                text)
+                    print_audit_header
+                    run_audit
+                    print_summary
+                    save_reports ;;
+                tsv)  QUIET=1; run_audit; results_tsv ;;
+                json) QUIET=1; run_audit; results_json ;;
+                html) QUIET=1; run_audit; results_html ;;
+                *) die "Unknown format: $FORMAT" ;;
+            esac
+            return 0 ;;
+        report)
+            require_root report
+            resolve_profile
+            QUIET=1
+            run_audit
+            case $FORMAT in
+                html|text) results_html ;;
+                json)      results_json ;;
+                tsv)       results_tsv ;;
+                *) die "Unknown format: $FORMAT" ;;
+            esac
+            return 0 ;;
+        harden)
+            require_root harden
+            resolve_profile
+            log "harden started (profile=$PROFILE dry-run=$DRYRUN yes=$ASSUME_YES)"
+            cmd_harden
+            return 0 ;;
+        snapshots)
+            require_root snapshots
+            if [ "$FORMAT" = tsv ]; then cmd_snapshots --tsv; else cmd_snapshots; fi
+            return 0 ;;
+        rollback)
+            require_root rollback
+            local id=${ARGS[0]:-}
+            [ -n "$id" ] || die "Usage: sudo auditxs rollback <snapshot-id>|latest  (see 'sudo auditxs snapshots')"
+            if [ "$id" = "latest" ]; then
+                id=$(latest_snapshot) || true
+                [ -n "$id" ] || die "No snapshot available to roll back."
+                info "Latest snapshot: $id"
+            fi
+            rollback_snapshot "$id"
+            return $? ;;
+        *)
+            die "Unknown command: $cmd (see 'auditxs help')" ;;
+    esac
+}
+
+main "$@"

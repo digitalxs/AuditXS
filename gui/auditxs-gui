@@ -1,0 +1,203 @@
+#!/usr/bin/env bash
+#
+# AuditXS — gui/auditxs-gui
+# Graphical front-end (zenity + pkexec). Runs as your normal user; only the
+# individual audit/harden/rollback operations are elevated through pkexec,
+# so you see an authentication prompt exactly when privileges are used.
+#
+# The GUI is a thin wrapper over the CLI: everything it does can be done
+# (and audited) with the same 'auditxs' commands it runs for you.
+#
+
+AUDITXS_BIN=${AUDITXS_BIN:-auditxs}
+
+die_gui() {
+    if command -v zenity >/dev/null 2>&1; then
+        zenity --error --title "AuditXS" --text "$1" 2>/dev/null
+    else
+        echo "auditxs-gui: $1" >&2
+    fi
+    exit 1
+}
+
+command -v zenity >/dev/null 2>&1 \
+    || die_gui "zenity is required for the AuditXS GUI.\nInstall it (e.g. 'sudo apt install zenity') or use the CLI: sudo auditxs"
+command -v "$AUDITXS_BIN" >/dev/null 2>&1 \
+    || die_gui "The 'auditxs' command was not found. Run the AuditXS installer first."
+
+# Privilege elevation: pkexec (GUI prompt) with sudo fallback for terminals.
+elevate() {
+    if [ "$(id -u)" -eq 0 ]; then
+        "$@"
+    elif command -v pkexec >/dev/null 2>&1; then
+        pkexec "$@"
+    elif command -v sudo >/dev/null 2>&1 && [ -t 0 ]; then
+        sudo "$@"
+    else
+        return 127
+    fi
+}
+
+WORK_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/auditxs"
+mkdir -p "$WORK_DIR"
+
+run_audit_gui() {
+    local out="$WORK_DIR/audit.tsv" rc_file="$WORK_DIR/audit.rc"
+    rm -f "$out" "$rc_file"
+    (
+        elevate "$AUDITXS_BIN" audit --format tsv --quiet > "$out" 2>/dev/null
+        echo $? > "$rc_file"
+    ) | zenity --progress --title "AuditXS" --text "Auditing system (read-only — nothing is changed)…" \
+        --pulsate --no-cancel --auto-close 2>/dev/null
+
+    if [ "$(cat "$rc_file" 2>/dev/null)" != "0" ] || [ ! -s "$out" ]; then
+        die_gui "The audit could not be run.\nAuthentication may have been cancelled."
+    fi
+
+    local rows=()
+    local status id sev cat fixable title detail
+    while IFS=$'\t' read -r status id sev cat fixable title detail; do
+        rows+=("$status" "$id" "$sev" "$cat" "$title" "$detail")
+    done < "$out"
+
+    zenity --list --title "AuditXS — audit results" \
+        --text "Read-only audit results. Use <b>Harden</b> to fix failed checks — each fix is explained and reversible." \
+        --column "Status" --column "ID" --column "Severity" --column "Category" --column "Check" --column "Detail" \
+        --width 1000 --height 620 "${rows[@]}" 2>/dev/null
+}
+
+run_harden_gui() {
+    local out="$WORK_DIR/audit.tsv"
+    if [ ! -s "$out" ]; then
+        zenity --info --title "AuditXS" --text "Run an audit first so AuditXS knows what needs fixing." 2>/dev/null
+        return
+    fi
+
+    local rows=()
+    local status id sev cat fixable title detail
+    while IFS=$'\t' read -r status id sev cat fixable title detail; do
+        [ "$status" = "FAIL" ] && [ "$fixable" = "yes" ] || continue
+        rows+=(FALSE "$id" "$sev" "$title")
+    done < "$out"
+
+    if [ ${#rows[@]} -eq 0 ]; then
+        zenity --info --title "AuditXS" \
+            --text "No automatically fixable findings in the last audit.\nWARN items need manual review — see the report." 2>/dev/null
+        return
+    fi
+
+    local chosen
+    chosen=$(zenity --list --checklist --title "AuditXS — select fixes" \
+        --text "Select the fixes to apply. Next you will see <b>exactly what each fix changes</b> before anything happens.\nEvery change is recorded in a snapshot and reversible via Rollback." \
+        --column "Apply" --column "ID" --column "Severity" --column "Fix" \
+        --width 900 --height 520 --separator " " "${rows[@]}" 2>/dev/null) || return
+    [ -n "$chosen" ] || return
+
+    # Full transparency: show what each selected fix changes, before consent.
+    # shellcheck disable=SC2086
+    "$AUDITXS_BIN" explain $chosen 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' > "$WORK_DIR/explain.txt"
+    zenity --text-info --title "AuditXS — what will change" \
+        --filename "$WORK_DIR/explain.txt" \
+        --checkbox "I reviewed these changes and want to apply them." \
+        --width 860 --height 600 2>/dev/null || return
+
+    local cmd=("$AUDITXS_BIN" harden --yes --quiet)
+    local c
+    for c in $chosen; do cmd+=(--check "$c"); done
+
+    local log="$WORK_DIR/harden.log"
+    (
+        elevate "${cmd[@]}" > "$log" 2>&1
+        echo $? > "$WORK_DIR/harden.rc"
+    ) | zenity --progress --title "AuditXS" --text "Applying selected fixes…" \
+        --pulsate --no-cancel --auto-close 2>/dev/null
+
+    sed 's/\x1b\[[0-9;]*m//g' "$log" > "$log.clean" 2>/dev/null && mv "$log.clean" "$log"
+    zenity --text-info --title "AuditXS — hardening result (every change is listed)" \
+        --filename "$log" --width 860 --height 600 2>/dev/null
+    zenity --question --title "AuditXS" \
+        --text "Re-run the audit now to verify the new state?" 2>/dev/null && run_audit_gui
+}
+
+run_report_gui() {
+    local f="$WORK_DIR/report.html"
+    (
+        elevate "$AUDITXS_BIN" report --format html --quiet > "$f" 2>/dev/null
+        echo $? > "$WORK_DIR/report.rc"
+    ) | zenity --progress --title "AuditXS" --text "Generating HTML report (read-only audit)…" \
+        --pulsate --no-cancel --auto-close 2>/dev/null
+    if [ "$(cat "$WORK_DIR/report.rc" 2>/dev/null)" != "0" ] || [ ! -s "$f" ]; then
+        die_gui "Report generation failed."
+    fi
+    xdg-open "$f" >/dev/null 2>&1 &
+    zenity --info --title "AuditXS" --text "Report opened in your browser:\n$f" 2>/dev/null
+}
+
+run_rollback_gui() {
+    local out="$WORK_DIR/snapshots.tsv"
+    elevate "$AUDITXS_BIN" snapshots --tsv > "$out" 2>/dev/null
+    if [ ! -s "$out" ]; then
+        zenity --info --title "AuditXS" \
+            --text "No snapshots found.\nSnapshots are created automatically when 'Harden' changes something." 2>/dev/null
+        return
+    fi
+    local rows=()
+    local id date profile n status
+    while IFS=$'\t' read -r id date profile n status; do
+        rows+=(FALSE "$id" "$date" "$profile" "$n" "$status")
+    done < "$out"
+    local chosen
+    chosen=$(zenity --list --radiolist --title "AuditXS — rollback" \
+        --text "Choose a snapshot to revert. Every recorded change is undone in reverse order." \
+        --column "" --column "Snapshot" --column "Date" --column "Profile" --column "Actions" --column "State" \
+        --width 820 --height 440 "${rows[@]}" 2>/dev/null) || return
+    [ -n "$chosen" ] || return
+
+    zenity --question --title "AuditXS" \
+        --text "Revert every change recorded in snapshot <b>$chosen</b>?" 2>/dev/null || return
+
+    local log="$WORK_DIR/rollback.log"
+    (
+        elevate "$AUDITXS_BIN" rollback "$chosen" --yes > "$log" 2>&1
+        echo $? > "$WORK_DIR/rollback.rc"
+    ) | zenity --progress --title "AuditXS" --text "Rolling back snapshot $chosen…" \
+        --pulsate --no-cancel --auto-close 2>/dev/null
+    sed 's/\x1b\[[0-9;]*m//g' "$log" > "$log.clean" 2>/dev/null && mv "$log.clean" "$log"
+    zenity --text-info --title "AuditXS — rollback result" --filename "$log" --width 820 --height 560 2>/dev/null
+}
+
+show_about() {
+    local ver
+    ver=$("$AUDITXS_BIN" version 2>/dev/null)
+    zenity --info --title "About AuditXS" --width 420 --text \
+"<b>${ver:-AuditXS}</b>\n
+Transparent, reversible Linux security auditing.\n
+• <b>Audit</b> is strictly read-only\n• Every fix explains exactly what it changes\n• Every change is recorded and reversible (Rollback)\n
+CLI: <tt>sudo auditxs help</tt>\nDocs: https://github.com/digitalxs/AuditXS" 2>/dev/null
+}
+
+while true; do
+    choice=$(zenity --list --title "AuditXS — Security Audit" \
+        --text "Transparent, reversible security auditing.\n<b>Audit</b> never changes anything; <b>Harden</b> asks before every fix; <b>Rollback</b> undoes it." \
+        --column "Action" --column "Description" \
+        "Audit"     "Run a read-only security audit of this system" \
+        "Harden"    "Review and apply fixes for failed checks (reversible)" \
+        "Report"    "Generate and open an HTML audit report" \
+        "Rollback"  "Undo the changes of a previous hardening run" \
+        "Catalogue" "Browse all checks and what they do" \
+        "About"     "About AuditXS" \
+        --width 640 --height 420 2>/dev/null) || exit 0
+
+    case $choice in
+        Audit)     run_audit_gui ;;
+        Harden)    run_harden_gui ;;
+        Report)    run_report_gui ;;
+        Rollback)  run_rollback_gui ;;
+        Catalogue)
+            "$AUDITXS_BIN" list --markdown 2>/dev/null > "$WORK_DIR/catalogue.md"
+            zenity --text-info --title "AuditXS — check catalogue" \
+                --filename "$WORK_DIR/catalogue.md" --width 860 --height 620 2>/dev/null ;;
+        About)     show_about ;;
+        *)         exit 0 ;;
+    esac
+done
