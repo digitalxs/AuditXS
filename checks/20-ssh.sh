@@ -171,3 +171,51 @@ audit_SSH_007() {
     return 1
 }
 fix_SSH_007() { sshd_set LoginGraceTime 45 && sshd_apply; }
+
+register_check "SSH-008" "SSH" "high" "server" \
+    "SSH brute-force protection is active (fail2ban/sshguard)"
+set_meta SSH-008 desc "Checks that an intrusion-prevention service (fail2ban with an sshd jail, or sshguard) is running to ban IPs that repeatedly fail SSH authentication. Rate-limiting brute-force attempts drastically reduces credential-guessing risk and log noise on exposed servers."
+set_meta SSH-008 fix "Installs fail2ban (plus the python systemd bindings it needs to read the journal), writes /etc/fail2ban/jail.d/99-auditxs.conf enabling the sshd jail with 'backend = systemd', and enables + restarts the fail2ban service. Existing fail2ban configuration is not modified — the drop-in only enables the sshd jail. Defaults apply (5 failures → 10 minute ban)."
+set_meta SSH-008 revert "'sudo auditxs rollback' removes the jail drop-in, restores the previous service state and offers to remove packages AuditXS installed."
+
+audit_SSH_008() {
+    ssh_installed || { DETAIL="OpenSSH server is not installed"; return 3; }
+    has_systemd   || { DETAIL="systemd not detected"; return 3; }
+    if svc_active fail2ban.service; then
+        if have fail2ban-client && fail2ban-client status 2>/dev/null | grep -qw sshd; then
+            DETAIL="fail2ban is running with an sshd jail"
+            return 0
+        fi
+        DETAIL="fail2ban is running but no sshd jail is enabled"
+        return 1
+    fi
+    if svc_active sshguard.service; then
+        DETAIL="sshguard is running"
+        return 0
+    fi
+    if pkg_installed fail2ban; then
+        DETAIL="fail2ban is installed but not running"
+        return 1
+    fi
+    DETAIL="No SSH brute-force protection detected (fail2ban or sshguard)"
+    return 1
+}
+
+fix_SSH_008() {
+    pkg_install fail2ban || return 1
+    # Journal backend bindings — best effort, name differs per family.
+    case $DISTRO_FAMILY in
+        arch) pkg_install python-systemd  || warn "python-systemd not installed — fail2ban's systemd backend may not work" ;;
+        *)    pkg_install python3-systemd || warn "python3-systemd not installed — fail2ban's systemd backend may not work" ;;
+    esac
+    local f=/etc/fail2ban/jail.d/99-auditxs.conf
+    track_file "$f"
+    write_file "$f" 0644 "# AuditXS SSH-008 — ban IPs that repeatedly fail SSH authentication.
+# Written by AuditXS $AUDITXS_VERSION on $(date -Is).
+# Revert with: sudo auditxs rollback <snapshot>  (or delete this file and restart fail2ban)
+[sshd]
+enabled = true
+backend = systemd" || return 1
+    enable_unit fail2ban.service || return 1
+    [ "$DRYRUN" = 1 ] || xrun_q systemctl restart fail2ban.service
+}

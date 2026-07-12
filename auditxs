@@ -44,6 +44,8 @@ ${BOLD}COMMANDS${RC}
   list        Show the check catalogue (add --markdown for full docs)
   explain     Show full documentation for checks:  auditxs explain SSH-001 ...
   report      Print a report of a fresh audit to stdout (--format html|json|tsv)
+  diff        Compare two saved JSON reports:  auditxs diff <baseline.json> [current.json]
+              (current defaults to the latest saved report; exits 1 on regressions)
   version     Show version
   help        Show this help
 
@@ -52,6 +54,7 @@ ${BOLD}OPTIONS${RC}
   --category <name>              Only checks in one category (e.g. SSH, Firewall)
   --check <ID>                   Only this check (repeatable)
   --format text|tsv|json|html    Output format (audit/report)
+  --baseline <report.json>       audit: compare results against a saved report
   --dry-run                      harden: show every intended change, change nothing
   --yes, -y                      Assume "yes" to confirmations (automation)
   --quiet, -q                    Suppress progress output
@@ -63,6 +66,7 @@ ${BOLD}EXAMPLES${RC}
   sudo auditxs harden --category SSH        Harden SSH only, one fix at a time
   sudo auditxs rollback latest              Undo the most recent hardening run
   auditxs explain FW-002                    What it checks, changes, and how to revert
+  sudo auditxs audit --baseline old.json    Show regressions/improvements vs. an old report
 
 Supported: Debian, Ubuntu, Pop!_OS, Arch, Fedora, openSUSE (and derivatives).
 Profiles:  server, workstation — chosen during installation (see /etc/auditxs/auditxs.conf).
@@ -91,6 +95,7 @@ main() {
     FILTER_CHECKS=""
     PROFILE_OVERRIDE=""
     MARKDOWN=0
+    BASELINE_FILE=""
     local -a ARGS=()
 
     while [ $# -gt 0 ]; do
@@ -99,6 +104,7 @@ main() {
             --category)  FILTER_CATEGORY=${2:?--category needs a value}; shift ;;
             --check)     FILTER_CHECKS+=" ${2^^}"; shift ;;
             --format)    FORMAT=${2:?--format needs a value}; shift ;;
+            --baseline)  BASELINE_FILE=${2:?--baseline needs a report file}; shift ;;
             --tsv)       FORMAT=tsv ;;
             --markdown)  MARKDOWN=1 ;;
             --dry-run)   DRYRUN=1 ;;
@@ -141,7 +147,8 @@ main() {
                     print_audit_header
                     run_audit
                     print_summary
-                    save_reports ;;
+                    save_reports
+                    [ -n "$BASELINE_FILE" ] && diff_current_against "$BASELINE_FILE" ;;
                 tsv)  QUIET=1; run_audit; results_tsv ;;
                 json) QUIET=1; run_audit; results_json ;;
                 html) QUIET=1; run_audit; results_html ;;
@@ -180,6 +187,10 @@ main() {
                 info "Latest snapshot: $id"
             fi
             rollback_snapshot "$id"
+            return $? ;;
+        diff)
+            [ ${#ARGS[@]} -ge 1 ] || die "Usage: auditxs diff <baseline.json> [current.json]"
+            cmd_diff "${ARGS[@]}"
             return $? ;;
         *)
             die "Unknown command: $cmd (see 'auditxs help')" ;;

@@ -240,6 +240,11 @@ rollback_snapshot() { # <snapshot-id>
                     firewall-cmd --reload >/dev/null 2>&1
                     ok "firewalld zone $target target → $prev"
                 fi ;;
+            pam_config)
+                if have pam-config; then
+                    pam-config -d "--$target" >/dev/null 2>&1 \
+                        && ok "pam-config module removed: $target"
+                fi ;;
             note) : ;;
             *) warn "unknown manifest action '$type' for $target — skipped" ;;
         esac

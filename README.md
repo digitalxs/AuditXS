@@ -1,5 +1,7 @@
 # AuditXS
 
+[![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
+
 **Transparent, reversible Linux security auditing & hardening** — by [DigitalXS](https://digitalxs.ca)
 
 AuditXS audits Linux systems against fundamental, professional security
@@ -62,12 +64,18 @@ sudo auditxs snapshots                 list change snapshots
 auditxs list                           the full check catalogue
 auditxs explain FW-002 SSH-005         what a check inspects/changes/reverts
 sudo auditxs report --format html      fresh report to stdout (also: json, tsv)
+sudo auditxs audit --baseline old.json compare a fresh audit against a saved report
+auditxs diff old.json new.json         compare two saved reports (exits 1 on regressions)
 auditxs-gui                            graphical interface (zenity + pkexec)
 ```
 
 A severity-weighted **hardening score (0–100)** summarizes each audit, and
 every audit saves timestamped HTML + JSON reports under
 `/var/lib/auditxs/reports/`.
+
+**Baseline tracking:** keep a report from a known-good state and compare any
+later audit against it — `auditxs diff` exits non-zero when a check
+regressed, so it slots straight into monitoring or CI.
 
 ## Server vs. Workstation profiles
 
@@ -76,28 +84,30 @@ overridable per-run with `--profile`):
 
 | | Server | Workstation |
 |---|---|---|
-| Updates, firewall, accounts, filesystem, kernel basics | ✔ | ✔ |
-| SSH key-only login, idle-session timeouts | ✔ | – |
+| Updates, firewall, accounts, filesystem, kernel basics, MAC status | ✔ | ✔ |
+| SSH key-only login, idle-session timeouts, fail2ban brute-force protection | ✔ | – |
 | auditd + baseline audit rules | ✔ | – |
 | Disable Avahi / CUPS / Bluetooth | ✔ | – (desktop needs them) |
 | Restrictive umask (027), Ctrl-Alt-Del guard, martian logging, wireless detection | ✔ | – |
 
-## What is covered (47 checks, 9 categories)
+## What is covered (50 checks, 10 categories)
 
 **Updates** (pending updates, automatic security updates, pending reboot) ·
 **SSH** (root login, auth limits, empty passwords, X11, key-only auth with
-lockout guard, idle timeout, grace time) · **Firewall** (installed, active,
-default-deny — with an SSH **lockout guard** before enabling) ·
-**Accounts** (UID-0 uniqueness, empty passwords, password aging, NOPASSWD
-sudo, system-account shells, umask) · **Filesystem** (sticky bits,
-world-writable files, unowned files, sensitive-file permissions, home
-permissions, SUID inventory) · **Kernel** (ASLR, kptr/dmesg restrictions,
-SYN cookies, ICMP redirects, source routing, rp_filter, martian logging,
-IP forwarding with container/VM detection, suid_dumpable, Ctrl-Alt-Del) ·
-**Services** (legacy plaintext services, Avahi, CUPS, Bluetooth, systemd
-sandboxing overview) · **Network** (listening inventory, uncommon protocols
-dccp/sctp/rds/tipc, wireless on servers) · **Logging** (persistent journal,
-auditd, baseline rules, log permissions).
+lockout guard, idle timeout, grace time, fail2ban/sshguard brute-force
+protection) · **Firewall** (installed, active, default-deny — with an SSH
+**lockout guard** before enabling) · **Accounts** (UID-0 uniqueness, empty
+passwords, password aging, NOPASSWD sudo, system-account shells, umask,
+pam_pwquality password rules) · **Filesystem** (sticky bits, world-writable
+files, unowned files, sensitive-file permissions, home permissions, SUID
+inventory) · **Kernel** (ASLR, kptr/dmesg restrictions, SYN cookies, ICMP
+redirects, source routing, rp_filter, martian logging, IP forwarding with
+container/VM detection, suid_dumpable, Ctrl-Alt-Del) · **MAC**
+(SELinux/AppArmor status with per-distro guidance) · **Services** (legacy
+plaintext services, Avahi, CUPS, Bluetooth, systemd sandboxing overview) ·
+**Network** (listening inventory, uncommon protocols dccp/sctp/rds/tipc,
+wireless on servers) · **Logging** (persistent journal, auditd, baseline
+rules, log permissions).
 
 The full catalogue with per-check documentation is generated from the code
 itself: [docs/CHECKS.md](docs/CHECKS.md) (or run `auditxs list --markdown`).
@@ -132,6 +142,8 @@ gui/               zenity GUI + desktop launcher
 setup.sh           installer (Server/Workstation selection)
 uninstall.sh       uninstaller (protects your snapshots)
 scripts/updater.sh update-auditxs command
+tests/smoke.sh     end-to-end test (audit → harden → diff → rollback) for disposable containers
+.github/workflows  CI: shellcheck + bash -n, smoke test in Debian/Ubuntu/Fedora/Arch/openSUSE containers
 docs/              architecture + generated check catalogue
 ```
 

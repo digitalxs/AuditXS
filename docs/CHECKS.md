@@ -1,6 +1,6 @@
 # AuditXS check catalogue
 
-Generated from the check registry by `auditxs list --markdown` (v0.1.0).
+Generated from the check registry by `auditxs list --markdown` (v0.2.0).
 
 Legend: checks with an **automatic fix** are only ever applied by
 `auditxs harden` after showing you exactly what will change, and every
@@ -123,6 +123,18 @@ Checks that 'LoginGraceTime' is 60 seconds or less. The grace period holds a con
 
 **How it is reverted:** 'sudo auditxs rollback' restores the previous SSH configuration files from the snapshot.
 
+### SSH-008 — SSH brute-force protection is active (fail2ban/sshguard)
+
+- **Severity:** high
+- **Profiles:** server
+- **Fix:** automatic (reversible)
+
+Checks that an intrusion-prevention service (fail2ban with an sshd jail, or sshguard) is running to ban IPs that repeatedly fail SSH authentication. Rate-limiting brute-force attempts drastically reduces credential-guessing risk and log noise on exposed servers.
+
+**What the fix changes:** Installs fail2ban (plus the python systemd bindings it needs to read the journal), writes /etc/fail2ban/jail.d/99-auditxs.conf enabling the sshd jail with 'backend = systemd', and enables + restarts the fail2ban service. Existing fail2ban configuration is not modified — the drop-in only enables the sshd jail. Defaults apply (5 failures → 10 minute ban).
+
+**How it is reverted:** 'sudo auditxs rollback' removes the jail drop-in, restores the previous service state and offers to remove packages AuditXS installed.
+
 ## Firewall
 
 ### FW-001 — A host firewall is installed
@@ -226,6 +238,18 @@ Checks that the default UMASK in /etc/login.defs is 027 or stricter, so files cr
 **What the fix changes:** Edits /etc/login.defs (backed up first) setting 'UMASK 027'. Only affects newly created login sessions; existing files are not changed.
 
 **How it is reverted:** 'sudo auditxs rollback' restores the saved /etc/login.defs.
+
+### ACC-007 — Password quality requirements are enforced
+
+- **Severity:** medium
+- **Profiles:** server,workstation
+- **Fix:** automatic (reversible)
+
+Checks that pam_pwquality is part of the PAM password stack and that the effective minimum password length (minlen, including /etc/security/pwquality.conf.d drop-ins) is at least 12. Without quality rules users can set trivially guessable passwords. The policy applies when passwords are set or changed — existing passwords are not affected.
+
+**What the fix changes:** Debian family: installs 'libpam-pwquality' (Debian wires it into the PAM stack automatically via pam-auth-update). openSUSE: enables the module with 'pam-config -a --pwquality' (the distribution's supported tool). Then writes /etc/security/pwquality.conf.d/99-auditxs.conf with 'minlen = 12' and 'minclass = 3'. PAM files are never edited directly. On Fedora/Arch with the module missing, AuditXS only reports (PAM stacks there should be changed via authselect / by hand).
+
+**How it is reverted:** 'sudo auditxs rollback' removes the pwquality drop-in, reverts the pam-config change on openSUSE, and offers to remove the package if AuditXS installed it.
 
 ## Filesystem
 
@@ -414,6 +438,16 @@ Checks that the ctrl-alt-del systemd target is masked. On servers, anyone with (
 **What the fix changes:** Masks the target by linking /etc/systemd/system/ctrl-alt-del.target to /dev/null and runs 'systemctl daemon-reload'. No other keyboard behaviour changes.
 
 **How it is reverted:** 'sudo auditxs rollback' removes the mask link (restoring the saved file if one existed) and reloads systemd.
+
+## MAC
+
+### MAC-001 — A mandatory access control system is active (SELinux/AppArmor)
+
+- **Severity:** high
+- **Profiles:** server,workstation
+- **Fix:** manual (report-only)
+
+Checks whether SELinux is enforcing or AppArmor is active with loaded profiles. MAC systems confine what a compromised service can do, containing exploits that would otherwise have the full run of the system. Every supported distribution ships one: SELinux on Fedora; AppArmor on Ubuntu, Pop!_OS, Debian and openSUSE (Arch supports AppArmor but does not enable it by default). Report-only: enabling a MAC system needs kernel-parameter/bootloader changes and a reboot, which cannot be made safely reversible — the finding explains the right path for your distribution instead.
 
 ## Services
 

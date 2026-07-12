@@ -1,0 +1,14 @@
+# ShellCheck configuration for AuditXS.
+#
+# Disabled findings are intentional patterns of this codebase:
+#   SC1090/SC1091 — libraries, check modules and /etc/os-release are sourced
+#                   dynamically by design.
+#   SC2034        — colour variables and globals are defined in lib/core.sh
+#                   for use across separately-sourced files.
+#   SC2086        — unquoted expansions are deliberate where word-splitting
+#                   is required (e.g. 'ufw delete $rule', unit lists).
+#   SC2015        — compact 'cond && a || b' status expressions where b has
+#                   no side effects.
+#   SC2155        — 'local x="...$(cmd)..."' used for readability; the exit
+#                   status of these substitutions is intentionally unused.
+disable=SC1090,SC1091,SC2034,SC2086,SC2015,SC2155

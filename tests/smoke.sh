@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+#
+# AuditXS smoke test — designed to run inside a DISPOSABLE container
+# (see .github/workflows/ci.yml). It makes real changes and rolls them back,
+# asserting exact restoration. Do NOT run it on a system you care about.
+#
+# Exercises: version/list/explain, read-only audit (asserting no snapshot is
+# created), JSON output, dry-run (asserting nothing changed), a real harden
+# of two checks, baseline diff in both directions, and a full rollback.
+#
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+fail() { echo "SMOKE FAIL: $*" >&2; exit 1; }
+no_snapshots() { [ ! -d /var/lib/auditxs/snapshots ] || [ -z "$(ls -A /var/lib/auditxs/snapshots 2>/dev/null)" ]; }
+
+[ "$(id -u)" -eq 0 ] || fail "smoke test must run as root (use a disposable container)"
+
+echo "== environment =="
+grep PRETTY_NAME /etc/os-release 2>/dev/null || true
+
+echo "== version / list / explain =="
+./auditxs version
+./auditxs list > /dev/null
+./auditxs list --markdown > /dev/null
+./auditxs explain SSH-001 ACC-003 NET-002 MAC-001 > /dev/null
+
+echo "== read-only audit =="
+./auditxs audit --profile server > /tmp/audit.log
+grep -q "Hardening score" /tmp/audit.log || fail "no score in audit output"
+no_snapshots || fail "audit created a snapshot (audit must be read-only)"
+
+echo "== JSON report =="
+# (grep from a file, not a pipe: grep -q exits early and would SIGPIPE auditxs)
+./auditxs audit --profile server --format json --quiet > /tmp/report.json
+grep -q '"results"' /tmp/report.json || fail "JSON report broken"
+
+echo "== dry-run changes nothing =="
+cp -a /etc/login.defs /tmp/login.defs.before
+./auditxs harden --profile server --dry-run --yes > /tmp/dryrun.log
+grep -q "dry-run" /tmp/dryrun.log || fail "dry-run produced no dry-run output"
+no_snapshots || fail "dry-run created a snapshot"
+cmp -s /etc/login.defs /tmp/login.defs.before || fail "dry-run modified /etc/login.defs"
+
+echo "== harden (ACC-003 + NET-002) =="
+./auditxs harden --profile server --yes --check ACC-003 --check NET-002 > /tmp/harden.log
+grep -Eq '^PASS_MAX_DAYS[[:space:]]+365' /etc/login.defs || fail "ACC-003 fix not applied"
+[ -f /etc/modprobe.d/99-auditxs-netproto.conf ] || fail "NET-002 fix not applied"
+[ -f /var/lib/auditxs/changes.log ] || fail "change ledger missing"
+./auditxs snapshots > /tmp/snapshots.log
+grep -q "actions=" /tmp/snapshots.log || fail "snapshot not listed"
+
+echo "== baseline diff =="
+# latest.json was saved by the pre-harden audit; the post-harden audit must
+# show improvements and no regressions (exit 0)…
+./auditxs audit --profile server --format json --quiet > /tmp/new.json
+./auditxs diff /var/lib/auditxs/reports/latest.json /tmp/new.json > /tmp/diff.log \
+    || fail "forward diff reported regressions"
+grep -q "ACC-003" /tmp/diff.log || fail "diff did not report the ACC-003 improvement"
+# …and the reverse comparison must report regressions (exit 1).
+if ./auditxs diff /tmp/new.json /var/lib/auditxs/reports/latest.json > /dev/null; then
+    fail "reverse diff should exit non-zero (regressions)"
+fi
+# audit --baseline prints the same comparison inline
+./auditxs audit --profile server --baseline /tmp/new.json > /tmp/baseline.log
+grep -q "Baseline comparison" /tmp/baseline.log || fail "audit --baseline printed no comparison"
+
+echo "== rollback restores everything =="
+./auditxs rollback latest --yes > /tmp/rollback.log
+cmp -s /etc/login.defs /tmp/login.defs.before || fail "rollback did not restore /etc/login.defs exactly"
+[ ! -f /etc/modprobe.d/99-auditxs-netproto.conf ] || fail "rollback did not remove the modprobe drop-in"
+
+echo "SMOKE OK"

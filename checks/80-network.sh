@@ -32,7 +32,7 @@ NET_002_PROTOS="dccp sctp rds tipc"
 audit_NET_002() {
     local m missing="" loaded=""
     for m in $NET_002_PROTOS; do
-        grep -rqsE "^[[:space:]]*(install[[:space:]]+$m[[:space:]]+/bin/(false|true)|blacklist[[:space:]]+$m)([[:space:]]|$)" /etc/modprobe.d/ \
+        grep -rqsE "^[[:space:]]*(install[[:space:]]+${m}[[:space:]]+/bin/(false|true)|blacklist[[:space:]]+${m})([[:space:]]|$)" /etc/modprobe.d/ \
             || missing+="$m "
         lsmod 2>/dev/null | grep -q "^$m " && loaded+="$m "
     done

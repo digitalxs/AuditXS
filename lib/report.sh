@@ -151,3 +151,124 @@ save_reports() {
     say "  $base.html"
     say "  $base.json"
 }
+
+# ------------------------------------------------------------------ baseline
+# AuditXS JSON reports put one result per line, so they can be parsed
+# reliably here without a JSON library.
+
+parse_report_results() { # <file> — emits "ID STATUS" per line
+    sed -n 's/.*"id": "\([^"]*\)".*"status": "\([^"]*\)".*/\1 \2/p' "$1"
+}
+
+parse_report_field() { # <file> <field> — first occurrence wins (meta/summary)
+    sed -n "s/.*\"$2\": \"\([^\"]*\)\".*/\1/p" "$1" | head -n1
+}
+
+_status_rank() { # PASS < WARN < FAIL (SKIP handled separately)
+    case $1 in PASS) echo 0 ;; WARN) echo 1 ;; FAIL) echo 2 ;; *) echo 0 ;; esac
+}
+
+# render_diff <old-map-name> <new-map-name> <old-label> <new-label> <old-score> <new-score>
+# Prints the comparison; returns 1 when regressions were found (CI-friendly).
+render_diff() {
+    local -n _o=$1 _n=$2
+    local ol=$3 nl=$4 os=$5 ns=$6
+    local id o n unchanged=0
+    local -a regressed=() improved=() other=()
+    local -A seen=()
+    local -a all=()
+
+    # Stable ordering: registry order first, then anything else in the reports.
+    for id in "${CHECK_IDS[@]}"; do
+        if [ -n "${_o[$id]:-}" ] || [ -n "${_n[$id]:-}" ]; then
+            all+=("$id"); seen[$id]=1
+        fi
+    done
+    for id in "${!_o[@]}" "${!_n[@]}"; do
+        [ -n "${seen[$id]:-}" ] || { all+=("$id"); seen[$id]=1; }
+    done
+
+    for id in "${all[@]}"; do
+        o=${_o[$id]:-}; n=${_n[$id]:-}
+        if [ -z "$o" ]; then other+=("$id: not in baseline → $n   ${CHECK_TITLE[$id]:-}"); continue; fi
+        if [ -z "$n" ]; then other+=("$id: $o → not audited   ${CHECK_TITLE[$id]:-}"); continue; fi
+        if [ "$o" = "$n" ]; then unchanged=$((unchanged + 1)); continue; fi
+        if [ "$o" = "SKIP" ] || [ "$n" = "SKIP" ]; then
+            other+=("$id: $o → $n   ${CHECK_TITLE[$id]:-}")
+            continue
+        fi
+        if [ "$(_status_rank "$n")" -gt "$(_status_rank "$o")" ]; then
+            regressed+=("$id: $o → $n   ${CHECK_TITLE[$id]:-}")
+        else
+            improved+=("$id: $o → $n   ${CHECK_TITLE[$id]:-}")
+        fi
+    done
+
+    printf '%b\n' "${DIM}──────────────────────────────────────────────────────────────────${RC}"
+    printf '%b\n' "${BOLD}Baseline comparison${RC}"
+    printf '%b\n' "  Baseline: $ol${os:+  (score $os)}"
+    printf '%b\n' "  Current:  $nl${ns:+  (score $ns)}"
+    printf '%b\n' ""
+    if [ ${#regressed[@]} -gt 0 ]; then
+        printf '%b\n' "${RED}${BOLD}Regressions (${#regressed[@]}):${RC}"
+        printf '  %s\n' "${regressed[@]}"
+    else
+        printf '%b\n' "${GREEN}No regressions.${RC}"
+    fi
+    if [ ${#improved[@]} -gt 0 ]; then
+        printf '%b\n' "${GREEN}${BOLD}Improvements (${#improved[@]}):${RC}"
+        printf '  %s\n' "${improved[@]}"
+    fi
+    if [ ${#other[@]} -gt 0 ]; then
+        printf '%b\n' "${YELLOW}Other changes (${#other[@]}) — applicability/scope:${RC}"
+        printf '  %s\n' "${other[@]}"
+    fi
+    printf '%b\n' "${DIM}Unchanged: $unchanged check(s)${RC}"
+    printf '%b\n' "${DIM}──────────────────────────────────────────────────────────────────${RC}"
+
+    [ ${#regressed[@]} -eq 0 ]
+}
+
+# cmd_diff <baseline.json> [current.json] — compare two saved reports.
+# Exit status 1 when the current report regressed against the baseline.
+cmd_diff() {
+    local old=$1 new=${2:-}
+    if [ -z "$new" ]; then
+        if [ "$(id -u)" -eq 0 ]; then
+            new=/var/lib/auditxs/reports/latest.json
+        else
+            new="${XDG_STATE_HOME:-$HOME/.local/state}/auditxs/reports/latest.json"
+        fi
+    fi
+    [ -r "$old" ] || die "Cannot read baseline report: $old"
+    [ -r "$new" ] || die "Cannot read report: $new — run 'sudo auditxs audit' first, or pass a second file"
+    local -A omap=() nmap=()
+    local id st
+    while read -r id st; do [ -n "$id" ] && omap[$id]=$st; done < <(parse_report_results "$old")
+    while read -r id st; do [ -n "$id" ] && nmap[$id]=$st; done < <(parse_report_results "$new")
+    [ ${#omap[@]} -gt 0 ] || die "No results found in $old — is it an AuditXS JSON report?"
+    [ ${#nmap[@]} -gt 0 ] || die "No results found in $new — is it an AuditXS JSON report?"
+    render_diff omap nmap \
+        "$old ($(parse_report_field "$old" date))" \
+        "$new ($(parse_report_field "$new" date))" \
+        "$(parse_report_field "$old" score)" "$(parse_report_field "$new" score)"
+}
+
+# diff_current_against <baseline.json> — compare the in-memory results of the
+# audit that just ran against a saved baseline (used by: audit --baseline).
+diff_current_against() {
+    local base=$1
+    [ -r "$base" ] || { warn "Baseline report not readable: $base — skipping comparison"; return 0; }
+    local -A omap=() nmap=()
+    local id st
+    while read -r id st; do [ -n "$id" ] && omap[$id]=$st; done < <(parse_report_results "$base")
+    [ ${#omap[@]} -gt 0 ] || { warn "No results found in $base — skipping comparison"; return 0; }
+    for id in "${CHECK_IDS[@]}"; do
+        [ -n "${RESULT_STATUS[$id]:-}" ] && nmap[$id]=${RESULT_STATUS[$id]}
+    done
+    render_diff omap nmap \
+        "$base ($(parse_report_field "$base" date))" \
+        "current audit" \
+        "$(parse_report_field "$base" score)" "$SCORE"
+    return 0
+}

@@ -7,7 +7,7 @@
 # https://github.com/digitalxs/AuditXS
 #
 
-AUDITXS_VERSION="0.1.0"
+AUDITXS_VERSION="0.2.0"
 
 # ------------------------------------------------------------------ colours
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then

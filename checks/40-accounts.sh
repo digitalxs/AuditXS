@@ -153,3 +153,67 @@ audit_ACC_006() {
 }
 
 fix_ACC_006() { set_logindefs UMASK 027; }
+
+register_check "ACC-007" "Accounts" "medium" "server,workstation" \
+    "Password quality requirements are enforced"
+set_meta ACC-007 desc "Checks that pam_pwquality is part of the PAM password stack and that the effective minimum password length (minlen, including /etc/security/pwquality.conf.d drop-ins) is at least 12. Without quality rules users can set trivially guessable passwords. The policy applies when passwords are set or changed — existing passwords are not affected."
+set_meta ACC-007 fix "Debian family: installs 'libpam-pwquality' (Debian wires it into the PAM stack automatically via pam-auth-update). openSUSE: enables the module with 'pam-config -a --pwquality' (the distribution's supported tool). Then writes /etc/security/pwquality.conf.d/99-auditxs.conf with 'minlen = 12' and 'minclass = 3'. PAM files are never edited directly. On Fedora/Arch with the module missing, AuditXS only reports (PAM stacks there should be changed via authselect / by hand)."
+set_meta ACC-007 revert "'sudo auditxs rollback' removes the pwquality drop-in, reverts the pam-config change on openSUSE, and offers to remove the package if AuditXS installed it."
+
+_pwquality_in_pam() { grep -rqsE '^[^#]*pam_pwquality\.so' /etc/pam.d/; }
+
+_pwquality_minlen() {
+    local f x v=""
+    for f in /etc/security/pwquality.conf /etc/security/pwquality.conf.d/*.conf; do
+        [ -f "$f" ] || continue
+        x=$(sed -n 's/^[[:space:]]*minlen[[:space:]]*=[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$f" | tail -n1)
+        [ -n "$x" ] && v=$x
+    done
+    echo "${v:-8}"   # libpwquality compiled-in default
+}
+
+audit_ACC_007() {
+    [ -d /etc/pam.d ] || { DETAIL="/etc/pam.d not found"; return 3; }
+    if ! _pwquality_in_pam; then
+        case $DISTRO_FAMILY in
+            debian) DETAIL="libpam-pwquality is not installed (pam_pwquality missing from the PAM stack)"; return 1 ;;
+            suse)   DETAIL="pam_pwquality is not enabled in the PAM stack"; return 1 ;;
+            redhat) DETAIL="pam_pwquality is not in the PAM stack. Fedora enables it by default — restore it with authselect rather than editing PAM files by hand."; return 2 ;;
+            *)      DETAIL="pam_pwquality is not in the PAM stack. Add 'password requisite pam_pwquality.so' to your PAM password stack (e.g. /etc/pam.d/system-auth on Arch) — AuditXS does not edit PAM files."; return 2 ;;
+        esac
+    fi
+    local minlen
+    minlen=$(_pwquality_minlen)
+    if [ "$minlen" -ge 12 ] 2>/dev/null; then
+        DETAIL="pam_pwquality is active with minlen=$minlen"
+        return 0
+    fi
+    DETAIL="pam_pwquality is active but minlen=$minlen (recommended: 12 or more)"
+    return 1
+}
+
+fix_ACC_007() {
+    if ! _pwquality_in_pam; then
+        case $DISTRO_FAMILY in
+            debian)
+                pkg_install libpam-pwquality || return 1 ;;
+            suse)
+                have pam-config || { DETAIL="pam-config not found"; return 1; }
+                record_action pam_config pwquality absent added
+                xrun_q pam-config -a --pwquality || return 1 ;;
+            *)
+                DETAIL="No safe automatic way to edit the PAM stack on this distribution"
+                return 1 ;;
+        esac
+    fi
+    if [ "$(_pwquality_minlen)" -lt 12 ] 2>/dev/null; then
+        local f=/etc/security/pwquality.conf.d/99-auditxs.conf
+        track_file "$f"
+        write_file "$f" 0644 "# AuditXS ACC-007 — minimum password quality for new passwords.
+# Written by AuditXS $AUDITXS_VERSION on $(date -Is).
+# Revert with: sudo auditxs rollback <snapshot>  (or delete this file)
+minlen = 12
+minclass = 3" || return 1
+    fi
+    return 0
+}

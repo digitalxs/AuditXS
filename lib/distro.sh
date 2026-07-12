@@ -98,9 +98,9 @@ pending_updates() {
                 n=$(pacman -Qu 2>/dev/null | wc -l)
             fi ;;
         dnf)
-            n=$(dnf -q check-update 2>/dev/null | grep -Ec '^[[:alnum:]][^[:space:]]+[[:space:]]') ;;
+            n=$(timeout 120 dnf -q check-update 2>/dev/null | grep -Ec '^[[:alnum:]][^[:space:]]+[[:space:]]') ;;
         zypper)
-            n=$(zypper --non-interactive -q list-updates 2>/dev/null | grep -c '^v ') ;;
+            n=$(timeout 120 zypper --non-interactive -q list-updates 2>/dev/null | grep -c '^v ') ;;
     esac
     case $n in ''|*[!0-9]*) echo "?" ;; *) echo "$n" ;; esac
 }

@@ -78,7 +78,8 @@ sev_weight() {
 
 print_result() { # <id>
     [ "$QUIET" = 1 ] && return 0
-    local id=$1 st=${RESULT_STATUS[$id]} col=""
+    local id=$1 col=""
+    local st=${RESULT_STATUS[$id]}
     case $st in
         PASS) col=$GREEN ;;
         FAIL) col=$RED ;;
