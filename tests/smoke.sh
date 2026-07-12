@@ -14,6 +14,9 @@ cd "$(dirname "$0")/.."
 
 fail() { echo "SMOKE FAIL: $*" >&2; exit 1; }
 no_snapshots() { [ ! -d /var/lib/auditxs/snapshots ] || [ -z "$(ls -A /var/lib/auditxs/snapshots 2>/dev/null)" ]; }
+# cmp/diff (diffutils) are missing from the fedora/archlinux container
+# images — compare with sha256sum (coreutils) instead.
+same_file() { [ "$(sha256sum < "$1")" = "$(sha256sum < "$2")" ]; }
 
 [ "$(id -u)" -eq 0 ] || fail "smoke test must run as root (use a disposable container)"
 
@@ -46,7 +49,7 @@ cp -a /etc/login.defs /tmp/login.defs.before
 ./auditxs harden --profile server --dry-run --yes > /tmp/dryrun.log
 grep -q "dry-run" /tmp/dryrun.log || fail "dry-run produced no dry-run output"
 no_snapshots || fail "dry-run created a snapshot"
-cmp -s /etc/login.defs /tmp/login.defs.before || fail "dry-run modified /etc/login.defs"
+same_file /etc/login.defs /tmp/login.defs.before || fail "dry-run modified /etc/login.defs"
 
 echo "== harden (ACC-003 + NET-002) =="
 ./auditxs harden --profile server --yes --check ACC-003 --check NET-002 > /tmp/harden.log
@@ -73,7 +76,7 @@ grep -q "Baseline comparison" /tmp/baseline.log || fail "audit --baseline printe
 
 echo "== rollback restores everything =="
 ./auditxs rollback latest --yes > /tmp/rollback.log
-cmp -s /etc/login.defs /tmp/login.defs.before || fail "rollback did not restore /etc/login.defs exactly"
+same_file /etc/login.defs /tmp/login.defs.before || fail "rollback did not restore /etc/login.defs exactly"
 [ ! -f /etc/modprobe.d/99-auditxs-netproto.conf ] || fail "rollback did not remove the modprobe drop-in"
 
 echo "SMOKE OK"
