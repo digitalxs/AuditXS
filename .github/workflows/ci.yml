@@ -36,6 +36,8 @@ jobs:
         run: bash tests/check_test.sh
       - name: Run web UI test (auth, CSRF, localhost binding)
         run: bash tests/web_test.sh
+      - name: Qt GUI data-layer selftest (no display needed)
+        run: AUDITXS_BIN="$PWD/auditxs" python3 gui/auditxs-qt.py --selftest
 
   package:
     name: Build & install .deb

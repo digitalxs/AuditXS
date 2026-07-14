@@ -87,6 +87,7 @@ sudo auditxs tools install lynis       install a security tool (reversible)
 sudo auditxs tools scan                run installed scanners (Lynis, rkhunter…)
 auditxs tools vpn                      review WireGuard / OpenVPN configuration
 sudo auditxs web                       launch the Material Design web UI (localhost-only)
+sudo auditxs qt                        launch the native Qt desktop app (optional auditxs-gui-qt)
 sudo auditxs baseline set              approve the latest report for drift alerts
 sudo auditxs schedule enable           daily audit + drift alert (systemd timer)
 auditxs doctor                         diagnose installation, tooling, snapshots

@@ -85,12 +85,28 @@ reverse proxy with TLS — but the intended model is localhost + SSH tunnel.
 
 ## When to use which interface
 
-| | CLI | Web UI | zenity GUI |
-|---|---|---|---|
-| Headless server | ✔ | ✔ (SSH tunnel) | ✗ |
-| Workstation | ✔ | ✔ | ✔ |
-| Material look, live toggles | – | ✔ | – |
-| Zero extra dependencies | ✔ | needs python3 | needs zenity |
-| Automation / scripting | ✔ | – | – |
+| | CLI | Web UI | Qt app | zenity GUI |
+|---|---|---|---|---|
+| Headless server | ✔ | ✔ (SSH tunnel) | ✗ | ✗ |
+| Workstation | ✔ | ✔ | ✔ | ✔ |
+| Material look, live toggles | – | ✔ | ✔ | – |
+| Cross-desktop consistent | n/a | ✔ | ✔ | follows GTK theme |
+| Extra dependencies | none | python3 | PySide6/Qt (large) | zenity |
+| Automation / scripting | ✔ | – | – | – |
 
-All three are front-ends over the same engine; use whichever fits.
+All are front-ends over the same engine; use whichever fits.
+
+### The native Qt app (optional)
+
+For a workstation-first **native desktop** app there's an optional Qt/QML
+front-end (PySide6 + Qt Quick Controls, Material style) with real toggle
+switches, a dashboard, snapshots and rollback:
+
+```bash
+# install the optional add-on package (pulls in the Qt runtime)
+sudo apt install ./dist/auditxs-gui-qt_*_all.deb   # build with packaging/build-deb-gui-qt.sh
+sudo auditxs qt        # or launch "AuditXS (Qt)" from your desktop menu
+```
+
+It's kept a **separate package** so the base `auditxs` and servers never pull
+in the large Qt runtime. On headless servers, use the web UI instead.

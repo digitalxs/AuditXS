@@ -52,6 +52,7 @@ ${BOLD}COMMANDS${RC}
   cve         Warn about installed packages with a known vulnerability / CVE
   tools       Security tooling:  auditxs tools status | install <name> | scan | vpn
   web         Launch the local web UI (Material Design 3, localhost-only)
+  qt          Launch the native Qt/QML desktop app (needs the auditxs-gui-qt package)
   version     Show version
   help        Show this help
 
@@ -230,6 +231,14 @@ main() {
             log "web UI starting (profile=$PROFILE)"
             AUDITXS_BIN="$AUDITXS_SELF" AUDITXS_PROFILE="$PROFILE" \
                 exec python3 "$AUDITXS_ROOT/gui/auditxs-web.py" "${ARGS[@]}" ;;
+        qt)
+            require_root qt
+            resolve_profile
+            have python3 || die "The Qt GUI requires python3 + PySide6 (install the 'auditxs-gui-qt' package). Or use 'auditxs web'."
+            [ -f "$AUDITXS_ROOT/gui/auditxs-qt.py" ] || die "Qt GUI not found at $AUDITXS_ROOT/gui/auditxs-qt.py"
+            log "qt GUI starting (profile=$PROFILE)"
+            AUDITXS_BIN="$AUDITXS_SELF" AUDITXS_PROFILE="$PROFILE" \
+                exec python3 "$AUDITXS_ROOT/gui/auditxs-qt.py" "${ARGS[@]}" ;;
         baseline)
             cmd_baseline "${ARGS[@]}"
             return $? ;;

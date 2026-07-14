@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=AuditXS (Qt)
+GenericName=Security Audit
+Comment=Transparent, reversible Linux security auditing — native Qt interface
+Exec=pkexec auditxs qt
+Icon=security-high
+Terminal=false
+Categories=System;Security;Settings;
+Keywords=security;audit;hardening;firewall;ssh;compliance;cve;
