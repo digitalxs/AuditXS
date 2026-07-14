@@ -187,6 +187,18 @@ snapshot integrity (manifest structure and saved file copies), state size,
 the change ledger, and the scheduled-audit timer. Exit code 1 means at
 least one real problem was found.
 
+## The web UI
+
+```bash
+sudo auditxs web                 # Material Design web UI on http://127.0.0.1:8787
+sudo auditxs web --port 9000 --no-open
+```
+
+A localhost-only, token-authenticated Material Design 3 interface (Python
+standard library — no framework). It works on desktops and, over an SSH
+tunnel, on headless servers. Full details and the security model:
+[WEBUI.md](WEBUI.md).
+
 ## The GUI
 
 `auditxs-gui` (zenity) is a thin wrapper over the CLI — everything it does

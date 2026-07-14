@@ -73,6 +73,10 @@ Warn about installed packages with a known vulnerability / CVE.
 .B tools \fRstatus|install|scan|vpn\fP
 Install and run security tools (Lynis, rkhunter, CrowdSec, Suricata, \[char46]\[char46]\[char46]);
 review VPN configuration.
+.TP
+.B web \fR[--port N] [--no-open]\fP
+Launch the local Material Design web UI. Binds 127.0.0.1 only and requires an
+ephemeral token; reach a remote server through an SSH tunnel.
 .SH OPTIONS
 .TP
 .B \-\-profile server|workstation

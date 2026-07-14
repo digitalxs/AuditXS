@@ -51,6 +51,7 @@ ${BOLD}COMMANDS${RC}
   doctor      Diagnose the AuditXS installation, tooling and snapshot integrity
   cve         Warn about installed packages with a known vulnerability / CVE
   tools       Security tooling:  auditxs tools status | install <name> | scan | vpn
+  web         Launch the local web UI (Material Design 3, localhost-only)
   version     Show version
   help        Show this help
 
@@ -221,6 +222,14 @@ main() {
         tools)
             cmd_tools "${ARGS[@]}"
             return $? ;;
+        web)
+            require_root web
+            resolve_profile
+            have python3 || die "The web UI requires python3 (standard library only). Install it, or use 'auditxs-gui' / the CLI."
+            [ -f "$AUDITXS_ROOT/gui/auditxs-web.py" ] || die "Web UI not found at $AUDITXS_ROOT/gui/auditxs-web.py"
+            log "web UI starting (profile=$PROFILE)"
+            AUDITXS_BIN="$AUDITXS_SELF" AUDITXS_PROFILE="$PROFILE" \
+                exec python3 "$AUDITXS_ROOT/gui/auditxs-web.py" "${ARGS[@]}" ;;
         baseline)
             cmd_baseline "${ARGS[@]}"
             return $? ;;

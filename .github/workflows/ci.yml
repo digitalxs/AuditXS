@@ -34,6 +34,8 @@ jobs:
         run: bash tests/unit.sh
       - name: Run fixture-based check tests
         run: bash tests/check_test.sh
+      - name: Run web UI test (auth, CSRF, localhost binding)
+        run: bash tests/web_test.sh
 
   package:
     name: Build & install .deb

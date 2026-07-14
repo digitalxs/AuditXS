@@ -86,6 +86,7 @@ sudo auditxs tools status              which security tools are installed
 sudo auditxs tools install lynis       install a security tool (reversible)
 sudo auditxs tools scan                run installed scanners (Lynis, rkhunter…)
 auditxs tools vpn                      review WireGuard / OpenVPN configuration
+sudo auditxs web                       launch the Material Design web UI (localhost-only)
 sudo auditxs baseline set              approve the latest report for drift alerts
 sudo auditxs schedule enable           daily audit + drift alert (systemd timer)
 auditxs doctor                         diagnose installation, tooling, snapshots
@@ -229,6 +230,8 @@ ecosystem rather than reinventing it:
 | | |
 |---|---|
 | [docs/USAGE.md](docs/USAGE.md) | full user manual (CLI, GUI, workflows, files, exit codes) |
+| [docs/SECURITY-GUIDE.md](docs/SECURITY-GUIDE.md) | **cybersecurity best-practices guide** — the reasoning behind every control, as a hardening playbook |
+| [docs/WEBUI.md](docs/WEBUI.md) | the localhost Material Design web UI (`auditxs web`) and its security model |
 | [docs/CHECKS.md](docs/CHECKS.md) | every check: what/why, what the fix changes, how it reverts (generated from the code) |
 | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | domains, NIST CSF 2.0, CIS/STIG alignment, assessor evidence |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | engine, snapshot format, check API, testing |

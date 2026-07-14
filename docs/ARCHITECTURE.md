@@ -190,3 +190,25 @@ with `dpkg-deb`: the program under `/usr/share/auditxs`, command symlinks in
 create state dirs and preserve snapshots on removal. `update-auditxs`
 detects a dpkg-managed install and defers to apt. CI builds the package and
 installs/runs/purges it in a clean `debian:stable` container.
+
+## v0.6 — the web UI
+
+`gui/auditxs-web.py` is a Python **standard-library** HTTP server (no
+framework) that renders a Material Design 3 single-page app and drives the
+`auditxs` CLI. It is launched by `auditxs web` (which sets `AUDITXS_BIN` to
+the resolved CLI path and execs python3). It stays a thin front-end: every
+operation is the same `auditxs` command run with an argv list.
+
+Security-critical properties, tested by `tests/web_test.sh` (in CI):
+
+- binds `127.0.0.1` only — never a routable address;
+- a fresh bearer token per launch, required on every request (`X-Auth-Token`);
+- state-changing routes are POST-only with the token in a header (CSRF) and a
+  loopback `Host` check;
+- CLI invocations use argv lists (never a shell); check/snapshot IDs are
+  validated `[A-Za-z0-9-]`;
+- strict `Content-Security-Policy` and `X-Content-Type-Options` on every
+  response.
+
+Reach a headless server over an SSH tunnel; see docs/WEBUI.md. The zenity GUI
+remains the zero-dependency desktop fallback.

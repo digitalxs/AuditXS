@@ -75,7 +75,7 @@ Section: admin
 Priority: optional
 Architecture: $ARCH
 Depends: bash (>= 4.0), coreutils, sed, gawk | mawk, grep, findutils
-Recommends: zenity, policykit-1
+Recommends: zenity, policykit-1, python3
 Suggests: debsecan, lynis, aide, unattended-upgrades
 Installed-Size: $INSTALLED_KB
 Maintainer: $MAINT
