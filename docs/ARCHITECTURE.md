@@ -130,3 +130,36 @@ surfaces appear in `explain`, `list --markdown`, JSON and HTML reports.
   baseline diff both directions, rollback with byte-exact restoration.
 - CI runs shellcheck + `bash -n`, the unit tests, and the smoke test in
   Debian/Ubuntu/Fedora/Arch/openSUSE containers.
+
+## v0.4 additions
+
+New engine libraries:
+
+- `lib/cve.sh` — known-vulnerability awareness from the distribution's own
+  security data (Debian debsecan / apt-security suite, dnf updateinfo,
+  zypper patches). Populates `CVE_COUNT`/`CVE_SOURCE`/`CVE_LIST`, surfaced by
+  check `VULN-001`, the console/HTML banners and `auditxs cve`.
+- `lib/tools.sh` — the `auditxs tools` subcommand: `status`, `install`,
+  `scan`, `vpn`. Installs go through the snapshot machinery; scanners
+  (Lynis, rkhunter, tiger, chkrootkit, checksecurity, lsat) are run and
+  their reports collected under `/var/lib/auditxs/reports/tools/`. CrowdSec
+  and OSSEC/Wazuh, which need third-party installers, are handled with
+  guidance rather than piping remote scripts to a shell.
+
+Console & report styling:
+
+- `lib/core.sh` gains `nala_box`/`nala_row`/`nala_end`/`nala_rule` — clean
+  rounded box-drawing output inspired by the `nala` apt front-end, used by
+  the audit header, per-category section rules and the summary. Falls back
+  to plain output when not on a colour terminal.
+- `lib/report.sh` `results_html` is a self-contained **Material Design 3**
+  report: theme-aware (light/dark), score ring, status chips, per-domain
+  cards, NIST column, and a CVE warning banner when applicable.
+
+New check categories (all mapped into the five domains): Debian, PHP, Mail
+(Postfix/Dovecot), DNS (BIND/Unbound), SecurityTools, Vulnerabilities — plus
+firewall (ufw logging/gufw), web (Apache headers/dir-listing) and MySQL
+(local_infile/accounts) additions. 87 checks total.
+
+Debian 13 "trixie": `lib/distro.sh` records `DISTRO_VERSION`/`DISTRO_CODENAME`;
+`DEB-002` treats Debian 12/13 as supported and flags EOL releases.

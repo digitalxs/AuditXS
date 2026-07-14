@@ -7,7 +7,7 @@
 # https://github.com/digitalxs/AuditXS
 #
 
-AUDITXS_VERSION="0.3.0"
+AUDITXS_VERSION="0.4.0"
 
 # ------------------------------------------------------------------ colours
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
@@ -17,6 +17,53 @@ if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
 else
     RC='' BOLD='' DIM='' RED='' GREEN='' YELLOW='' BLUE='' MAGENTA='' CYAN='' WHITE=''
 fi
+
+# ------------------------------------------------------------- nala-style UI
+# Clean rounded box-drawing output inspired by the 'nala' apt front-end.
+# Falls back to plain ASCII when not writing to a colour terminal so logs and
+# piped output stay readable. Width is fixed to match hr().
+NALA_W=${NALA_W:-68}
+
+_repeat() { local n=$1 c=$2 s=; while [ "$n" -gt 0 ]; do s+=$c; n=$((n-1)); done; printf '%s' "$s"; }
+
+# Visible length of a string with ANSI escapes and multibyte glyphs stripped.
+_vlen() {
+    local s=$1
+    s=$(printf '%s' "$s" | sed $'s/\033\\[[0-9;]*m//g')
+    printf '%s' "${#s}"
+}
+
+# nala_box <title> — top border with an embedded title (rounded corners).
+nala_box() {
+    [ "$QUIET" = 1 ] && return 0
+    local title=$1 tl=8 fill
+    tl=$(_vlen "$title")
+    fill=$(( NALA_W - tl - 5 ))
+    [ "$fill" -lt 0 ] && fill=0
+    printf '%b\n' "${CYAN}╭─${RC} ${BOLD}${title}${RC} ${CYAN}$(_repeat "$fill" '─')╮${RC}"
+}
+
+# nala_row <text> — a content line inside a box (left border only, clean look).
+nala_row() {
+    [ "$QUIET" = 1 ] && return 0
+    printf '%b\n' "${CYAN}│${RC} $*"
+}
+
+# nala_end — bottom border (matches the width of nala_box's top border).
+nala_end() {
+    [ "$QUIET" = 1 ] && return 0
+    printf '%b\n' "${CYAN}╰$(_repeat "$((NALA_W-2))" '─')╯${RC}"
+}
+
+# nala_rule <label> — a labelled section separator, nala style.
+nala_rule() {
+    [ "$QUIET" = 1 ] && return 0
+    local label=$1 ll fill
+    ll=$(_vlen "$label")
+    fill=$(( NALA_W - ll - 3 ))
+    [ "$fill" -lt 0 ] && fill=0
+    printf '%b\n' "${DIM}── ${RC}${BOLD}${label}${RC} ${DIM}$(_repeat "$fill" '─')${RC}"
+}
 
 # Global behaviour flags (may be overridden by the CLI)
 QUIET=${QUIET:-0}

@@ -29,17 +29,23 @@ declare -A RESULT_STATUS=() RESULT_DETAIL=()
 declare -A DOMAIN_OF_CATEGORY=(
     [Updates]="OS Hardening"
     [OS]="OS Hardening"
+    [Debian]="OS Hardening"
     [Kernel]="OS Hardening"
     [Filesystem]="OS Hardening"
     [MAC]="OS Hardening"
     [Logging]="OS Hardening"
+    [SecurityTools]="OS Hardening"
+    [Vulnerabilities]="OS Hardening"
     [SSH]="Server Hardening"
     [Accounts]="Server Hardening"
     [Privileged]="Server Hardening"
     [Firewall]="Network Security"
     [Network]="Network Security"
+    [DNS]="Network Security"
     [Services]="Application Hardening"
     [Applications]="Application Hardening"
+    [PHP]="Application Hardening"
+    [Mail]="Application Hardening"
     [Database]="Database Hardening"
 )
 domain_of() { echo "${DOMAIN_OF_CATEGORY[$1]:-Other}"; }
@@ -49,17 +55,23 @@ domain_of() { echo "${DOMAIN_OF_CATEGORY[$1]:-Other}"; }
 declare -A NIST_OF_CATEGORY=(
     [Updates]="ID.RA-01, PR.PS-02"
     [OS]="PR.PS-01"
+    [Debian]="PR.PS-01, PR.PS-02"
     [Kernel]="PR.PS-01, PR.IR-01"
     [Filesystem]="PR.DS-01, PR.AA-05"
     [MAC]="PR.PS-01, PR.AA-05"
     [Logging]="PR.PS-04, DE.CM-01"
+    [SecurityTools]="DE.CM-08, ID.RA-01"
+    [Vulnerabilities]="ID.RA-01, DE.CM-08"
     [SSH]="PR.AA-01, PR.AA-03"
     [Accounts]="PR.AA-01, PR.AA-05"
     [Privileged]="PR.AA-05"
     [Firewall]="PR.IR-01"
     [Network]="PR.IR-01, DE.CM-01"
+    [DNS]="PR.IR-01, PR.PS-01"
     [Services]="PR.PS-01"
     [Applications]="PR.PS-01"
+    [PHP]="PR.PS-01"
+    [Mail]="PR.DS-02, PR.AA-05"
     [Database]="PR.DS-01, PR.AA-05"
 )
 nist_of() {
@@ -145,19 +157,25 @@ print_result() { # <id>
 
 print_audit_header() {
     [ "$QUIET" = 1 ] && return 0
-    hr
-    printf '%b\n' "${BOLD}AuditXS v$AUDITXS_VERSION${RC} — security configuration audit"
-    printf '%b\n' "Host: $(hostname 2>/dev/null)  ·  ${DISTRO_NAME}  ·  Profile: ${BOLD}${PROFILE}${RC}  ·  $(date '+%F %T')"
-    printf '%b\n' "${DIM}Audit mode is read-only: nothing on this system is changed.${RC}"
-    hr
+    nala_box "AuditXS v$AUDITXS_VERSION  ·  security configuration audit"
+    nala_row "Host:    $(hostname 2>/dev/null)"
+    nala_row "System:  ${DISTRO_NAME}"
+    nala_row "Profile: ${BOLD}${PROFILE}${RC}  ·  $(date '+%F %T')"
+    nala_row "${DIM}Audit mode is read-only — nothing on this system is changed.${RC}"
+    nala_end
 }
 
 run_audit() {
-    local id fn rc st
+    local id fn rc st _prev_cat=""
     N_PASS=0 N_FAIL=0 N_WARN=0 N_SKIP=0
     AUDIT_DATE=$(date -Is)
     for id in "${CHECK_IDS[@]}"; do
         selected "$id" || continue
+        # nala-style section rule when the category changes
+        if [ "${CHECK_CATEGORY[$id]}" != "$_prev_cat" ]; then
+            _prev_cat=${CHECK_CATEGORY[$id]}
+            nala_rule "${_prev_cat} — $(domain_of "$_prev_cat")"
+        fi
         if ! check_applies "$id"; then
             RESULT_STATUS[$id]=SKIP
             RESULT_DETAIL[$id]="Not applicable to the '$PROFILE' profile"
@@ -207,13 +225,13 @@ compute_score() {
 
 print_summary() {
     [ "$QUIET" = 1 ] && return 0
-    hr
-    printf '%b\n' "Results: ${GREEN}$N_PASS passed${RC} · ${RED}$N_FAIL failed${RC} · ${YELLOW}$N_WARN warnings${RC} · ${DIM}$N_SKIP skipped${RC}"
-    printf '%b\n' "Hardening score: ${BOLD}$SCORE/100${RC} ${DIM}(severity-weighted, PASS vs FAIL)${RC}"
+    nala_box "Summary"
+    nala_row "Results: ${GREEN}$N_PASS passed${RC} · ${RED}$N_FAIL failed${RC} · ${YELLOW}$N_WARN warnings${RC} · ${DIM}$N_SKIP skipped${RC}"
+    nala_row "Hardening score: ${BOLD}$SCORE/100${RC} ${DIM}(severity-weighted, PASS vs FAIL)${RC}"
     if [ "$N_FAIL" -gt 0 ]; then
-        printf '%b\n' "Next step: ${BOLD}sudo auditxs harden${RC} reviews each failed check with you before changing anything."
+        nala_row "Next step: ${BOLD}sudo auditxs harden${RC} reviews each failed check with you before changing anything."
     fi
-    hr
+    nala_end
 }
 
 # ------------------------------------------------------------ transparency

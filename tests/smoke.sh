@@ -30,9 +30,20 @@ echo "== version / list / explain / doctor =="
 ./auditxs version
 ./auditxs list > /dev/null
 ./auditxs list --markdown > /dev/null
-./auditxs explain SSH-001 ACC-003 NET-002 MAC-001 PRV-001 DB-001 > /dev/null
+./auditxs explain SSH-001 ACC-003 NET-002 MAC-001 PRV-001 DB-001 PHP-001 PFX-001 BND-001 VULN-001 > /dev/null
 ./auditxs doctor > /tmp/doctor.log || true   # containers legitimately miss tools
 grep -q "AuditXS doctor" /tmp/doctor.log || fail "doctor produced no output"
+
+echo "== new v0.4 surfaces (cve / tools / html report) =="
+./auditxs cve > /tmp/cve.log 2>&1 || true    # non-zero if vulns present; either is fine here
+grep -qiE "vulnerab|No known-vulnerable|Could not determine" /tmp/cve.log || fail "cve command produced no assessment"
+./auditxs tools status > /tmp/tools.log 2>&1 || true
+grep -q "Security tooling inventory" /tmp/tools.log || fail "tools status produced no output"
+./auditxs tools vpn > /tmp/vpn.log 2>&1 || true
+grep -qi "VPN configuration" /tmp/vpn.log || fail "tools vpn produced no output"
+./auditxs report --format html --profile server --quiet > /tmp/report.html 2>/dev/null
+grep -q 'class="card' /tmp/report.html || fail "HTML report is not the Material card layout"
+grep -q '</html>' /tmp/report.html || fail "HTML report is truncated"
 
 echo "== read-only audit =="
 ./auditxs audit --profile server > /tmp/audit.log

@@ -10,6 +10,8 @@
 DISTRO_ID=unknown
 DISTRO_NAME="Unknown Linux"
 DISTRO_FAMILY=unknown
+DISTRO_VERSION=""
+DISTRO_CODENAME=""
 PKG=unknown
 
 detect_distro() {
@@ -19,6 +21,8 @@ detect_distro() {
         . /etc/os-release
         DISTRO_ID=${ID:-unknown}
         DISTRO_NAME=${PRETTY_NAME:-$DISTRO_ID}
+        DISTRO_VERSION=${VERSION_ID:-}
+        DISTRO_CODENAME=${VERSION_CODENAME:-}
         like=${ID_LIKE:-}
     fi
 

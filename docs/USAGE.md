@@ -148,6 +148,33 @@ monitoring picks up (`systemctl status auditxs-audit.service`, journal,
 OnFailure hooks). Without systemd, add a cron entry:
 `0 3 * * * /usr/local/bin/auditxs schedule run`.
 
+## Vulnerability (CVE) warnings
+
+```bash
+sudo auditxs cve                  # warn about installed packages with a known CVE
+```
+
+Uses the distribution's own security data (Debian: `debsecan` or the
+security apt suite; Fedora: `dnf updateinfo`; openSUSE: `zypper patches`).
+Exits non-zero when vulnerable packages are found. The same signal appears
+automatically at the end of every `audit` (console banner + check
+`VULN-001` + HTML report banner + log) and in the GUI after an audit. For a
+precise per-CVE list on Debian, `sudo auditxs tools install debsecan`.
+
+## Security tooling
+
+```bash
+sudo auditxs tools status         # which defensive tools are installed
+sudo auditxs tools install lynis  # guided, reversible install (also: rkhunter,
+                                  # aide, debsecan, suricata, crowdsec, fail2ban…)
+sudo auditxs tools scan           # run installed scanners, collect their reports
+auditxs tools vpn                 # review WireGuard / OpenVPN configuration
+```
+
+Scanner reports are saved under `/var/lib/auditxs/reports/tools/<timestamp>/`.
+CrowdSec and OSSEC/Wazuh require third-party installers — AuditXS prints the
+official steps rather than piping a remote script into your shell.
+
 ## Maintenance (doctor)
 
 ```bash
@@ -166,13 +193,22 @@ least one real problem was found.
 is a visible `auditxs` command, elevated per-operation via pkexec so you
 see an authentication prompt exactly when privileges are used.
 
-- **Audit** — read-only audit with a sortable results table.
+- **Audit** — read-only audit with a sortable results table; a CVE warning
+  pops up afterwards if vulnerable packages are found.
+- **Features** — the on/off toggle view: every security control with its
+  live ON/OFF state. Tick an off control and apply to turn it on (with the
+  mandatory review screen); turn controls off again via Rollback.
 - **Harden** — pick fixes from a checklist, review *exactly what will
   change* (mandatory review screen), apply, see the full change log.
-- **Report** — generate and open the HTML report.
+- **Tools** — install security tools, run scanners, review VPN config.
+- **Report** — generate and open the Material-style HTML report.
 - **Rollback** — pick a snapshot, see it reverted.
 - **Baseline** — approve the latest audit for drift alerts.
 - **Doctor / Catalogue / About**.
+
+The console output uses a clean **nala-style** boxed layout; the HTML report
+uses **Material Design 3** (theme-aware light/dark, score ring, status
+chips). The zenity GUI itself follows your desktop's GTK theme.
 
 ## Debugging
 

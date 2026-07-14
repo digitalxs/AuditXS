@@ -95,3 +95,47 @@ audit_DB_002() {
     DETAIL="Local-only listener and no 'trust' authentication entries. Recommended additionally: ssl=on, scram-sha-256 password encryption, encrypted storage for the data directory."
     return 0
 }
+
+register_check "DB-003" "Database" "medium" "server" \
+    "MySQL/MariaDB local_infile is disabled"
+set_meta DB-003 desc "When MySQL/MariaDB is installed, checks that 'local_infile' is OFF. LOAD DATA LOCAL INFILE lets a client (or an attacker who gains SQL access, e.g. via SQL injection) read arbitrary files from the database server's filesystem. Almost no application needs it. Report-only: AuditXS never edits database configuration — the finding gives the exact setting."
+set_meta DB-003 nist "PR.DS-01, PR.AA-05"
+
+audit_DB_003() {
+    _mysql_installed || { DETAIL="MySQL/MariaDB is not installed"; return 3; }
+    local v=""
+    if have mysql; then
+        v=$(mysql -N -B -e "SELECT @@local_infile;" 2>/dev/null | head -n1)
+    fi
+    if [ -z "$v" ]; then
+        DETAIL="Could not query local_infile (no local socket access). Verify with: SELECT @@local_infile; and set 'local_infile=0' in a [mysqld] drop-in under /etc/mysql/mysql.conf.d/ or /etc/my.cnf.d/."
+        return 2
+    fi
+    if [ "$v" = 0 ]; then DETAIL="local_infile = 0 (disabled)"; return 0; fi
+    DETAIL="local_infile = $v (enabled) — allows reading server files via LOAD DATA LOCAL INFILE.
+Fix: add 'local_infile=0' under [mysqld] in a drop-in (e.g. /etc/mysql/mysql.conf.d/99-hardening.cnf) and restart the server."
+    return 1
+}
+
+register_check "DB-004" "Database" "high" "server" \
+    "MySQL/MariaDB has no anonymous or passwordless accounts"
+set_meta DB-004 desc "When MySQL/MariaDB is installed, checks for anonymous accounts (empty User) and accounts with an empty authentication string — both allow login without credentials. These are exactly what 'mysql_secure_installation' removes. Report-only: account changes require DBA judgement; the finding lists what to run."
+set_meta DB-004 nist "PR.AA-01, PR.AA-05"
+
+audit_DB_004() {
+    _mysql_installed || { DETAIL="MySQL/MariaDB is not installed"; return 3; }
+    have mysql || { DETAIL="mysql client not available to query accounts"; return 2; }
+    local anon empty
+    anon=$(mysql -N -B -e "SELECT COUNT(*) FROM mysql.user WHERE User='';" 2>/dev/null | head -n1)
+    empty=$(mysql -N -B -e "SELECT COUNT(*) FROM mysql.user WHERE authentication_string='' AND plugin NOT IN ('auth_socket','unix_socket');" 2>/dev/null | head -n1)
+    if [ -z "$anon$empty" ]; then
+        DETAIL="Could not query accounts (no local access). Run 'sudo mysql_secure_installation' to review anonymous/passwordless accounts."
+        return 2
+    fi
+    if [ "${anon:-0}" = 0 ] && [ "${empty:-0}" = 0 ]; then
+        DETAIL="No anonymous or passwordless accounts"
+        return 0
+    fi
+    DETAIL="Found ${anon:-0} anonymous and ${empty:-0} passwordless account(s). Remove them with 'sudo mysql_secure_installation' or DROP USER."
+    return 1
+}

@@ -224,6 +224,10 @@ rollback_snapshot() { # <snapshot-id>
             ufw_rule)
                 # shellcheck disable=SC2086
                 have ufw && ufw --force delete $target >/dev/null 2>&1 && ok "ufw rule removed: $target" ;;
+            ufw_logging)
+                if have ufw && [ "$prev" != "?" ]; then
+                    ufw logging "$prev" >/dev/null 2>&1 && ok "ufw logging → $prev"
+                fi ;;
             ufw_default)
                 # shellcheck disable=SC2086
                 have ufw && [ "$prev" != "?" ] && ufw default $prev incoming >/dev/null 2>&1 \

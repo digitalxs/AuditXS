@@ -1,6 +1,6 @@
 # AuditXS check catalogue
 
-Generated from the check registry by `auditxs list --markdown` (v0.3.0).
+Generated from the check registry by `auditxs list --markdown` (v0.4.0).
 
 Legend: checks with an **automatic fix** are only ever applied by
 `auditxs harden` after showing you exactly what will change, and every
@@ -39,6 +39,43 @@ Verifies that the distribution's automatic (security) update mechanism is instal
 - **Fix:** manual (report-only)
 
 Detects when installed updates (typically a new kernel or core libraries) require a reboot to actually take effect. Until the reboot, the system keeps running the old, vulnerable code. Report-only: AuditXS never reboots a system.
+
+## Debian — OS Hardening domain
+
+### DEB-001 — APT does not accept unauthenticated packages
+
+- **Severity:** high
+- **Profiles:** server,workstation
+- **NIST CSF 2.0:** PR.DS-06, PR.PS-01
+- **Fix:** automatic (reversible)
+
+Checks that APT is not configured to install packages that fail signature verification (APT::Get::AllowUnauthenticated and Acquire::AllowInsecureRepositories must not be enabled). Package signatures are what stop a tampered mirror or man-in-the-middle from installing malicious code — turning verification off removes the whole chain of trust behind apt.
+
+**What the fix changes:** Writes /etc/apt/apt.conf.d/99-auditxs-secure with 'APT::Get::AllowUnauthenticated "false";' and 'Acquire::AllowInsecureRepositories "false";', re-asserting the secure defaults. Existing apt configuration is not edited.
+
+**How it is reverted:** 'sudo auditxs rollback' deletes the drop-in (or restores its previous content).
+
+### DEB-002 — The Debian/Ubuntu release still receives security support
+
+- **Severity:** high
+- **Profiles:** server,workstation
+- **NIST CSF 2.0:** ID.RA-01, PR.PS-02
+- **Fix:** manual (report-only)
+
+Compares the running release against the known end-of-life horizon. Debian 13 'trixie' (2025) and Debian 12 'bookworm' are current; releases past end-of-life (Debian ≤ 10, Ubuntu non-LTS past date) stop receiving security patches, so every later vulnerability stays unfixed. Report-only: a distribution upgrade is a major operation AuditXS will not perform for you.
+
+### DEB-003 — needrestart reports services needing a restart after upgrades
+
+- **Severity:** low
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.PS-02, ID.RA-01
+- **Fix:** automatic (reversible)
+
+Checks that 'needrestart' is installed. After a library security update, long-running services keep the OLD vulnerable library mapped in memory until restarted; needrestart detects exactly which services need restarting so the patch actually takes effect. Complements the reboot check (UPD-003).
+
+**What the fix changes:** Installs the 'needrestart' package. It then runs automatically after apt operations to list (and, interactively, restart) affected services.
+
+**How it is reverted:** 'sudo auditxs rollback' offers to remove the package it installed.
 
 ## OS — OS Hardening domain
 
@@ -210,6 +247,28 @@ Checks that unsolicited inbound traffic is denied by default so only explicitly 
 **What the fix changes:** ufw: runs 'ufw default deny incoming' (existing allow rules keep working). firewalld: sets the default zone's target back to 'default' (reject unmatched traffic) and reloads. Outbound traffic is not touched.
 
 **How it is reverted:** The previous default policy / zone target is recorded; 'sudo auditxs rollback' restores it.
+
+### FW-004 — ufw logging is enabled
+
+- **Severity:** low
+- **Profiles:** server,workstation
+- **NIST CSF 2.0:** DE.CM-01, PR.PS-04
+- **Fix:** automatic (reversible)
+
+Checks that ufw logging is on (at least 'low'), so blocked/allowed connection decisions are recorded. Firewall logs are essential evidence when investigating scans, intrusions or misconfigured services. Only applies where ufw is the active firewall.
+
+**What the fix changes:** Runs 'ufw logging low', recording the previous logging state so rollback restores it. No rules are changed.
+
+**How it is reverted:** 'sudo auditxs rollback' restores the previous ufw logging level.
+
+### FW-005 — A firewall management GUI is available on desktops (gufw)
+
+- **Severity:** low
+- **Profiles:** workstation
+- **NIST CSF 2.0:** PR.IR-01
+- **Fix:** manual (report-only)
+
+On workstations with a graphical desktop, checks for 'gufw' — the graphical front-end for ufw — so non-CLI users can review and manage firewall rules. Purely a usability/visibility control; the firewall itself is covered by FW-001..004. Report-only.
 
 ## Accounts — Server Hardening domain
 
@@ -635,6 +694,78 @@ Checks that Apache is configured with 'ServerTokens Prod' and 'ServerSignature O
 
 **How it is reverted:** 'sudo auditxs rollback' deletes the drop-in (and its enabling symlink on the Debian family) and reloads Apache.
 
+### APP-003 — Apache sends security response headers
+
+- **Severity:** medium
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.PS-01, PR.DS-02
+- **Fix:** automatic (reversible)
+
+Checks that Apache emits baseline browser-security headers: X-Content-Type-Options (nosniff), X-Frame-Options (clickjacking protection) and Referrer-Policy. These instruct browsers to behave defensively and are a standard part of web-server hardening (OWASP Secure Headers). HSTS is intentionally left out of the automatic fix because it must only be enabled once HTTPS is confirmed working.
+
+**What the fix changes:** Enables mod_headers and writes a labelled conf drop-in (Debian: /etc/apache2/conf-available/zz-auditxs-headers.conf enabled via symlink; Fedora: /etc/httpd/conf.d/; openSUSE: /etc/apache2/conf.d/) adding X-Content-Type-Options, X-Frame-Options and Referrer-Policy. Validated with the Apache config test — removed on failure — then Apache is reloaded.
+
+**How it is reverted:** 'sudo auditxs rollback' deletes the drop-in (and its enabling symlink) and reloads Apache.
+
+### APP-004 — Web server does not list directory contents
+
+- **Severity:** medium
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.PS-01, PR.DS-01
+- **Fix:** manual (report-only)
+
+Checks that automatic directory listing is disabled. When a directory has no index file and listing is on, the web server exposes the full file tree — source, backups, configs — to anyone. Apache: the 'Indexes' option should not be enabled; nginx: 'autoindex' should be off (its default). Report-only: the correct place to disable it depends on your vhost/.htaccess layout, so AuditXS shows where it is enabled rather than guessing.
+
+## PHP — Application Hardening domain
+
+### PHP-001 — PHP does not expose its version (expose_php Off)
+
+- **Severity:** medium
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.PS-01
+- **Fix:** automatic (reversible)
+
+Checks that 'expose_php' is Off so PHP stops advertising its exact version in the X-Powered-By response header and on error pages. Version disclosure hands attackers a shortcut to matching exploits.
+
+**What the fix changes:** Sets 'expose_php = Off' in a 99-auditxs.ini drop-in inside each web SAPI's conf.d directory (Apache mod_php and PHP-FPM). Restart the web server / php-fpm to apply.
+
+**How it is reverted:** 'sudo auditxs rollback' removes the drop-in (or restores its previous content).
+
+### PHP-002 — PHP does not display errors to visitors (display_errors Off)
+
+- **Severity:** medium
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.PS-01, PR.PS-04
+- **Fix:** automatic (reversible)
+
+Checks that 'display_errors' is Off. Rendered PHP errors leak file paths, SQL fragments and stack details to anyone hitting the page — reconnaissance gold. Errors should go to the log, not the browser.
+
+**What the fix changes:** Sets 'display_errors = Off' (and leaves logging intact) in the 99-auditxs.ini drop-in for each web SAPI. Restart php-fpm / apache2 to apply.
+
+**How it is reverted:** 'sudo auditxs rollback' removes the drop-in (or restores its previous content).
+
+### PHP-003 — PHP session cookies are hardened (HttpOnly + Secure + SameSite)
+
+- **Severity:** medium
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.DS-02, PR.AA-05
+- **Fix:** automatic (reversible)
+
+Checks session.cookie_httponly (blocks JavaScript from reading the session cookie — mitigates XSS session theft), session.cookie_secure (cookie only sent over HTTPS) and session.cookie_samesite (CSRF mitigation). These are baseline web-session protections.
+
+**What the fix changes:** Sets session.cookie_httponly = On, session.cookie_secure = On and session.cookie_samesite = Lax in the 99-auditxs.ini drop-in for each web SAPI. NOTE: cookie_secure requires the site to be served over HTTPS; on a plain-HTTP test site, sessions will only work once TLS is in place. Restart php-fpm / apache2 to apply.
+
+**How it is reverted:** 'sudo auditxs rollback' removes the drop-in (or restores its previous content).
+
+### PHP-004 — Dangerous PHP functions are reviewed (disable_functions)
+
+- **Severity:** high
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.PS-01
+- **Fix:** manual (report-only)
+
+Checks whether high-risk functions that turn a PHP-code-execution bug into full command execution (exec, system, shell_exec, passthru, popen, proc_open, and the config-reading php_uname) are listed in 'disable_functions'. Report-only: many legitimate applications and control panels rely on some of these, so blindly disabling them can break the site — AuditXS shows you the recommended list to add after confirming your apps do not need them.
+
 ## Network — Network Security domain
 
 ### NET-001 — Listening network services inventory
@@ -677,6 +808,82 @@ Detects Wi-Fi interfaces on machines using the server profile. Wireless links on
 
 Compares every listening TCP/UDP port against the administrator-approved allowlist in /etc/auditxs/allowed-ports.conf. This turns 'what is listening?' (NET-001) into drift detection: a service that appears without being approved — a forgotten debug port, a dropped implant, a misconfigured install — is flagged immediately. Report-only: YOU decide what belongs on the list; AuditXS never opens or closes ports. Pair with 'auditxs schedule' for continuous drift monitoring.
 
+## Mail — Application Hardening domain
+
+### PFX-001 — Postfix is not an open relay
+
+- **Severity:** critical
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.AA-05, PR.IR-01
+- **Fix:** manual (report-only)
+
+Checks Postfix relay controls: smtpd_relay_restrictions / smtpd_recipient_restrictions must reject mail for domains you do not host (reject_unauth_destination), and mynetworks must not be dangerously broad. An open relay is abused within hours to send spam and gets your IP blacklisted. Report-only — relay policy depends on your network.
+
+### PFX-002 — Postfix requires TLS for SMTP
+
+- **Severity:** high
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.DS-02
+- **Fix:** manual (report-only)
+
+Checks that Postfix offers/uses TLS: smtpd_tls_security_level should be 'may' (opportunistic) or 'encrypt', and for submission (port 587) 'encrypt'. Without TLS, credentials and mail cross the network in cleartext. Report-only.
+
+### PFX-003 — Postfix SMTP banner does not leak software details
+
+- **Severity:** low
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.PS-01
+- **Fix:** manual (report-only)
+
+Checks that smtpd_banner does not advertise the Postfix/OS version and that the VRFY command is disabled (disable_vrfy_command=yes — VRFY lets attackers enumerate valid usernames). Report-only.
+
+### DOV-001 — Dovecot disables cleartext authentication without TLS
+
+- **Severity:** high
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.DS-02, PR.AA-01
+- **Fix:** manual (report-only)
+
+Checks that Dovecot's 'disable_plaintext_auth' is yes, so IMAP/POP passwords are never accepted over an unencrypted connection. Otherwise a passive network observer captures every mailbox password. Report-only — Dovecot config is include-based and easy to break.
+
+### DOV-002 — Dovecot enforces modern TLS
+
+- **Severity:** high
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.DS-02
+- **Fix:** manual (report-only)
+
+Checks that Dovecot requires SSL/TLS (ssl = required) and disables obsolete protocols (ssl_min_protocol = TLSv1.2 or higher). Old TLS/SSL versions have exploitable weaknesses. Report-only.
+
+## DNS — Network Security domain
+
+### BND-001 — BIND does not allow open recursion
+
+- **Severity:** high
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.IR-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Checks that BIND restricts recursion (allow-recursion / allow-query) to trusted clients rather than the whole internet. An open recursive resolver is abused for DNS amplification DDoS and cache poisoning. Report-only — recursion policy depends on who your resolver serves.
+
+### BND-002 — BIND hides its version
+
+- **Severity:** low
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.PS-01
+- **Fix:** manual (report-only)
+
+Checks that BIND overrides the 'version' option (version "not disclosed";) so a 'dig chaos txt version.bind' query does not reveal the exact BIND version and its known CVEs. Report-only.
+
+### UNB-001 — Unbound restricts access and hides identity
+
+- **Severity:** high
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.IR-01, PR.PS-01
+- **Fix:** manual (report-only)
+
+Checks Unbound's access-control and information-leak settings: 'access-control' should not allow the whole internet (open resolver / amplification), and hide-identity / hide-version should be yes. Report-only.
+
 ## Database — Database Hardening domain
 
 ### DB-001 — MySQL/MariaDB is not needlessly exposed to the network
@@ -696,6 +903,24 @@ When MySQL/MariaDB is installed, checks whether it listens only on localhost. A 
 - **Fix:** manual (report-only)
 
 When PostgreSQL is installed, checks (1) whether it listens only on localhost and (2) whether pg_hba.conf contains 'trust' entries, which grant access WITHOUT ANY authentication. Report-only: AuditXS never edits database configuration. Findings include the fix path: replace 'trust' with 'scram-sha-256', set 'password_encryption = scram-sha-256', restrict listen_addresses, enable TLS (ssl=on), and use encrypted storage for the data directory.
+
+### DB-003 — MySQL/MariaDB local_infile is disabled
+
+- **Severity:** medium
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.DS-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+When MySQL/MariaDB is installed, checks that 'local_infile' is OFF. LOAD DATA LOCAL INFILE lets a client (or an attacker who gains SQL access, e.g. via SQL injection) read arbitrary files from the database server's filesystem. Almost no application needs it. Report-only: AuditXS never edits database configuration — the finding gives the exact setting.
+
+### DB-004 — MySQL/MariaDB has no anonymous or passwordless accounts
+
+- **Severity:** high
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.AA-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+When MySQL/MariaDB is installed, checks for anonymous accounts (empty User) and accounts with an empty authentication string — both allow login without credentials. These are exactly what 'mysql_secure_installation' removes. Report-only: account changes require DBA judgement; the finding lists what to run.
 
 ## Logging — OS Hardening domain
 
@@ -750,4 +975,78 @@ Checks /var/log for files that any user can modify. World-writable logs let an a
 **What the fix changes:** Removes the world-write bit (chmod o-w) from each affected file under /var/log, recording every file's previous mode. Nothing is deleted; read permissions are not changed.
 
 **How it is reverted:** 'sudo auditxs rollback' restores each file's exact previous mode.
+
+## SecurityTools — OS Hardening domain
+
+### SEC-001 — A host audit scanner is installed (Lynis)
+
+- **Severity:** medium
+- **Profiles:** server,workstation
+- **NIST CSF 2.0:** ID.RA-01, DE.CM-08
+- **Fix:** automatic (reversible)
+
+Checks for Lynis, the de-facto open-source host security auditor. Lynis performs hundreds of deep checks that complement AuditXS. Having it available means you can cross-verify hardening and produce an independent report ('auditxs tools scan lynis').
+
+**What the fix changes:** Installs 'lynis' from the distribution repositories (recorded for rollback). AuditXS does not run it automatically — use 'auditxs tools scan lynis'.
+
+**How it is reverted:** 'sudo auditxs rollback' offers to remove the package it installed.
+
+### SEC-002 — A rootkit / malware detector is installed
+
+- **Severity:** medium
+- **Profiles:** server
+- **NIST CSF 2.0:** DE.CM-08, DE.CM-01
+- **Fix:** automatic (reversible)
+
+Checks for a rootkit detector (rkhunter or chkrootkit). These scan for known rootkits, suspicious SUID files, and altered system binaries — a basic detective control on any server. Run via 'auditxs tools scan rkhunter'.
+
+**What the fix changes:** Installs 'rkhunter' (recorded for rollback) and performs its initial file-property baseline ('rkhunter --propupd') so future scans can detect changes.
+
+**How it is reverted:** 'sudo auditxs rollback' offers to remove the package it installed.
+
+### SEC-003 — A file integrity monitor is installed (AIDE)
+
+- **Severity:** medium
+- **Profiles:** server
+- **NIST CSF 2.0:** PR.DS-06, DE.CM-01
+- **Fix:** automatic (reversible)
+
+Checks for AIDE (Advanced Intrusion Detection Environment). AIDE records cryptographic hashes of system files so tampering by an intruder is detected at the next check. It is the standard CIS/STIG file-integrity control. Report/installs only — AuditXS does not initialise the database automatically because that can take time and must happen on a known-good system.
+
+**What the fix changes:** Installs 'aide'. IMPORTANT: after install, initialise the baseline on a trusted system with 'aideinit' (Debian) or 'aide --init', then move the new database into place. AuditXS does not do this for you so the baseline reflects a state you have verified.
+
+**How it is reverted:** 'sudo auditxs rollback' offers to remove the package it installed.
+
+### SEC-004 — An intrusion prevention / IDS engine is present (CrowdSec/Suricata/fail2ban)
+
+- **Severity:** low
+- **Profiles:** server
+- **NIST CSF 2.0:** DE.CM-01, PR.IR-01
+- **Fix:** manual (report-only)
+
+Checks whether at least one active-defence engine is present: CrowdSec (collaborative IPS), Suricata (network IDS/IPS) or fail2ban (log-based banning). At least one is expected on an internet-facing server to detect and block attacks in progress. Use 'auditxs tools install crowdsec|suricata' for a guided setup.
+
+## Vulnerabilities — OS Hardening domain
+
+### VULN-001 — No installed package has a known vulnerability with an available fix
+
+- **Severity:** critical
+- **Profiles:** server,workstation
+- **NIST CSF 2.0:** ID.RA-01, DE.CM-08, PR.PS-02
+- **Fix:** manual (report-only)
+
+Cross-references installed package versions against the distribution's own security data (Debian: debsecan or the security apt suite; Ubuntu: security suite; Fedora: dnf updateinfo; openSUSE: zypper patches). A finding means a package you have installed is known-vulnerable and a fixed version is already available in your repositories — the highest-value, lowest-noise vulnerability signal a host can produce offline. Report-only: AuditXS never upgrades packages, because upgrades are not reversible; apply security updates with your package manager.
+
+### VULN-002 — A precise CVE data source is available
+
+- **Severity:** medium
+- **Profiles:** server,workstation
+- **NIST CSF 2.0:** ID.RA-01, DE.CM-08
+- **Fix:** automatic (reversible)
+
+Checks that the host can produce a precise per-CVE report, not just a security-update count. On Debian this is the 'debsecan' package (queries the Debian Security Tracker); on Ubuntu it is Ubuntu Pro / ubuntu-security-status. Having it installed means VULN-001 can name exact CVEs rather than approximating from the security suite.
+
+**What the fix changes:** Debian: installs 'debsecan'. Other families already ship their advisory tooling (dnf updateinfo, zypper patches) and this check passes there.
+
+**How it is reverted:** 'sudo auditxs rollback' offers to remove the package it installed.
 

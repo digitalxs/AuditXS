@@ -23,6 +23,21 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.4
+
+- Debian 13 "trixie" awareness and Debian-family checks (APT signature
+  enforcement, release EOL, needrestart).
+- Service hardening: PHP, MySQL/MariaDB (config + accounts), Apache security
+  headers & directory listing, ufw logging/gufw, Postfix + Dovecot, BIND +
+  Unbound.
+- **CVE / known-vulnerability warnings** from distribution security data,
+  surfaced on console, log, HTML report and GUI (`auditxs cve`, `VULN-001`).
+- **Security-tool integration** (`auditxs tools`): install/scan Lynis,
+  rkhunter, Tiger, chkrootkit, checksecurity, lsat, AIDE; set up CrowdSec /
+  Suricata; VPN (WireGuard/OpenVPN) config review. File-integrity (AIDE) and
+  IDS/IPS presence checks (`SEC-001..004`).
+- **nala-style console** output and a **Material Design 3** HTML report.
+
 ## Next (high value, in order)
 
 1. **Notification channels for drift** — `schedule run` currently fails

@@ -68,8 +68,23 @@ results_json() {
     printf '\n  ]\n}\n'
 }
 
+# results_html — self-contained Material Design 3 report (theme-aware,
+# responsive). Grouped by category within its assessment domain. Shows the
+# severity-weighted score, a CVE warning banner when applicable, and per-check
+# status/severity/NIST/finding.
 results_html() {
-    local id st col cat="" fixable
+    local id st cat="" fixable score_color cve_banner=""
+    case $SCORE in
+        [0-9]|[0-3][0-9]|4[0-9]) score_color="var(--err)" ;;
+        5[0-9]|6[0-9]|7[0-4])    score_color="var(--warn)" ;;
+        *)                       score_color="var(--ok)" ;;
+    esac
+    # CVE banner — CVE_COUNT is populated by VULN-001 during run_audit.
+    case "${CVE_COUNT:-?}" in
+        ''|'?'|0) : ;;
+        *) cve_banner="<div class=\"alert\"><span class=\"alert-ic\">⚠</span><div><strong>Vulnerability warning:</strong> ${CVE_COUNT} installed package(s) have a reported security issue with a fix available (source: ${CVE_SOURCE}). Apply security updates promptly — see check VULN-001 below.</div></div>" ;;
+    esac
+
     cat <<HTMLHEAD
 <!DOCTYPE html>
 <html lang="en">
@@ -78,31 +93,102 @@ results_html() {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AuditXS report — $(html_escape "$(hostname 2>/dev/null)")</title>
 <style>
-  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 2rem auto; max-width: 60rem; padding: 0 1rem; color: #1a1d21; background: #f7f8fa; }
-  h1 { font-size: 1.5rem; } h2 { font-size: 1.15rem; margin-top: 2rem; border-bottom: 1px solid #d5d9df; padding-bottom: .3rem; }
-  .meta { color: #555; margin-bottom: 1.5rem; }
-  table { border-collapse: collapse; width: 100%; background: #fff; }
-  th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid #e4e7eb; vertical-align: top; font-size: .9rem; }
-  th { background: #eef0f3; }
-  .badge { display: inline-block; padding: .1rem .5rem; border-radius: .35rem; font-weight: 600; font-size: .78rem; color: #fff; }
-  .PASS { background: #2e7d32; } .FAIL { background: #c62828; } .WARN { background: #b26a00; } .SKIP { background: #78909c; }
-  .detail { color: #555; font-size: .82rem; white-space: pre-wrap; }
-  .score { font-size: 2rem; font-weight: 700; }
-  .note { background: #fff8e1; border: 1px solid #ecd9a0; padding: .7rem 1rem; border-radius: .4rem; margin: 1rem 0; font-size: .88rem; }
-  footer { margin-top: 2rem; color: #777; font-size: .8rem; }
+  :root {
+    --bg:#f6f6fa; --surface:#ffffff; --surface-2:#eef0f6; --on-surface:#1b1b21;
+    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#4b56d2; --primary-c:#fff;
+    --ok:#1e7d46; --err:#ba1a1a; --warn:#a25b00; --skip:#6b7280;
+    --ok-c:#e6f4ea; --err-c:#ffe9e7; --warn-c:#fff3e0; --skip-c:#eceef2;
+    --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121318; --surface:#1c1d24; --surface-2:#23252e; --on-surface:#e4e2e9;
+      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#bcc2ff; --primary-c:#1a2277;
+      --ok:#7fd99b; --err:#ffb4ab; --warn:#f5bd6e; --skip:#a8abb4;
+      --ok-c:#12331f; --err-c:#3d1512; --warn-c:#3a2a12; --skip-c:#282a32; }
+  }
+  :root[data-theme="light"] { --bg:#f6f6fa; --surface:#fff; --on-surface:#1b1b21; }
+  :root[data-theme="dark"]  { --bg:#121318; --surface:#1c1d24; --on-surface:#e4e2e9; }
+  * { box-sizing:border-box; }
+  body { font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif; margin:0;
+    background:var(--bg); color:var(--on-surface); line-height:1.5;
+    -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:70rem; margin:0 auto; padding:1.5rem 1.25rem 4rem; }
+  header.top { display:flex; align-items:center; gap:.75rem; padding:.5rem 0 1.25rem; }
+  .logo { width:2.5rem; height:2.5rem; border-radius:.9rem; background:var(--primary);
+    color:var(--primary-c); display:grid; place-items:center; font-weight:700; font-size:1.1rem; }
+  h1 { font-size:1.4rem; font-weight:600; margin:0; }
+  .sub { color:var(--on-surface-var); font-size:.85rem; }
+  .card { background:var(--surface); border:1px solid var(--outline); border-radius:1.25rem;
+    box-shadow:var(--shadow); padding:1.25rem 1.4rem; margin:1rem 0; }
+  .hero { display:flex; flex-wrap:wrap; gap:1.5rem; align-items:center; }
+  .score { --v:$SCORE; width:8rem; height:8rem; border-radius:50%; flex:0 0 auto;
+    background:conic-gradient($score_color calc(var(--v)*1%), var(--surface-2) 0);
+    display:grid; place-items:center; }
+  .score > div { width:6.2rem; height:6.2rem; border-radius:50%; background:var(--surface);
+    display:grid; place-items:center; text-align:center; }
+  .score b { font-size:1.8rem; } .score span { font-size:.7rem; color:var(--on-surface-var); }
+  .chips { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.25rem; }
+  .chip { display:inline-flex; align-items:center; gap:.35rem; padding:.35rem .75rem;
+    border-radius:2rem; font-size:.82rem; font-weight:600; }
+  .chip.pass { background:var(--ok-c); color:var(--ok); }
+  .chip.fail { background:var(--err-c); color:var(--err); }
+  .chip.warn { background:var(--warn-c); color:var(--warn); }
+  .chip.skip { background:var(--skip-c); color:var(--skip); }
+  .alert { display:flex; gap:.75rem; align-items:flex-start; background:var(--err-c);
+    color:var(--err); border-radius:1rem; padding:1rem 1.2rem; margin:1rem 0; font-size:.9rem; }
+  .alert-ic { font-size:1.3rem; line-height:1; }
+  .note { background:var(--warn-c); color:var(--warn); border-radius:1rem; padding:.9rem 1.2rem;
+    margin:1rem 0; font-size:.85rem; }
+  h2 { font-size:1.05rem; font-weight:600; margin:2rem 0 .5rem; }
+  h2 small { color:var(--on-surface-var); font-weight:400; font-size:.8rem; }
+  .tablewrap { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; min-width:40rem; }
+  th,td { text-align:left; padding:.6rem .75rem; border-bottom:1px solid var(--outline);
+    vertical-align:top; font-size:.88rem; }
+  th { color:var(--on-surface-var); font-weight:600; font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.04em; }
+  tr:last-child td { border-bottom:none; }
+  .badge { display:inline-block; min-width:3.2rem; text-align:center; padding:.2rem .55rem;
+    border-radius:.6rem; font-weight:700; font-size:.72rem; }
+  .badge.PASS { background:var(--ok-c); color:var(--ok); }
+  .badge.FAIL { background:var(--err-c); color:var(--err); }
+  .badge.WARN { background:var(--warn-c); color:var(--warn); }
+  .badge.SKIP { background:var(--skip-c); color:var(--skip); }
+  .cid { font-family:ui-monospace,"Cascadia Code",monospace; font-size:.8rem; white-space:nowrap; }
+  .detail { color:var(--on-surface-var); font-size:.82rem; white-space:pre-wrap; margin-top:.25rem; }
+  .nist { font-size:.72rem; color:var(--on-surface-var); white-space:nowrap; }
+  footer { color:var(--on-surface-var); font-size:.78rem; margin-top:2.5rem;
+    border-top:1px solid var(--outline); padding-top:1rem; }
+  code { background:var(--surface-2); padding:.1rem .35rem; border-radius:.35rem; font-size:.82em; }
+  @media (max-width:640px){ .hero{gap:1rem} .score{width:6.5rem;height:6.5rem}
+    .score>div{width:5rem;height:5rem} }
 </style>
 </head>
 <body>
-<h1>AuditXS security audit report</h1>
-<p class="meta">
-  Host: <strong>$(html_escape "$(hostname 2>/dev/null)")</strong> ·
-  $(html_escape "$DISTRO_NAME") ·
-  Profile: <strong>$(html_escape "$PROFILE")</strong> ·
-  ${AUDIT_DATE:-$(date -Is)} ·
-  AuditXS v$AUDITXS_VERSION
-</p>
-<p class="score">Hardening score: $SCORE/100</p>
-<p>Passed: <strong>$N_PASS</strong> · Failed: <strong>$N_FAIL</strong> · Warnings: <strong>$N_WARN</strong> · Skipped: <strong>$N_SKIP</strong></p>
+<div class="wrap">
+<header class="top">
+  <div class="logo">A</div>
+  <div>
+    <h1>AuditXS security audit</h1>
+    <div class="sub">$(html_escape "$(hostname 2>/dev/null)") · $(html_escape "$DISTRO_NAME") · profile <strong>$(html_escape "$PROFILE")</strong> · ${AUDIT_DATE:-$(date -Is)} · v$AUDITXS_VERSION</div>
+  </div>
+</header>
+
+$cve_banner
+
+<div class="card hero">
+  <div class="score"><div><div><b>$SCORE</b><br><span>/ 100</span></div></div></div>
+  <div style="flex:1 1 15rem">
+    <div style="font-weight:600;margin-bottom:.4rem">Hardening score <span class="sub">(severity-weighted, PASS vs FAIL)</span></div>
+    <div class="chips">
+      <span class="chip pass">● $N_PASS passed</span>
+      <span class="chip fail">● $N_FAIL failed</span>
+      <span class="chip warn">● $N_WARN warnings</span>
+      <span class="chip skip">● $N_SKIP skipped</span>
+    </div>
+  </div>
+</div>
+
 <div class="note">This report was produced by a <strong>read-only</strong> audit — nothing on the system
 was changed. Fixes are only applied by <code>sudo auditxs harden</code>, after showing exactly what will
 change, and every change is recorded in a snapshot that <code>sudo auditxs rollback</code> can restore.</div>
@@ -111,26 +197,28 @@ HTMLHEAD
     for id in "${CHECK_IDS[@]}"; do
         [ -n "${RESULT_STATUS[$id]:-}" ] || continue
         if [ "${CHECK_CATEGORY[$id]}" != "$cat" ]; then
-            [ -n "$cat" ] && printf '</table>\n'
+            [ -n "$cat" ] && printf '</table></div></div>\n'
             cat=${CHECK_CATEGORY[$id]}
-            printf '<h2>%s <small style="color:#777;font-weight:400">— %s domain</small></h2>\n<table>\n<tr><th>Status</th><th>ID</th><th>Severity</th><th>Fix</th><th>NIST CSF</th><th>Finding</th></tr>\n' \
+            printf '<h2>%s <small>— %s domain</small></h2>\n<div class="card" style="padding:.5rem .5rem"><div class="tablewrap"><table>\n<tr><th>Status</th><th>Check</th><th>Sev</th><th>Fix</th><th>NIST CSF</th></tr>\n' \
                 "$(html_escape "$cat")" "$(html_escape "$(domain_of "$cat")")"
         fi
         st=${RESULT_STATUS[$id]}
         if has_fix "$id"; then fixable=auto; else fixable=manual; fi
-        printf '<tr><td><span class="badge %s">%s</span></td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s' \
-            "$st" "$st" "$id" "${CHECK_SEVERITY[$id]}" "$fixable" \
-            "$(html_escape "$(nist_of "$id")")" "$(html_escape "${CHECK_TITLE[$id]}")"
+        printf '<tr><td><span class="badge %s">%s</span></td><td><span class="cid">%s</span> %s' \
+            "$st" "$st" "$id" "$(html_escape "${CHECK_TITLE[$id]}")"
         if [ -n "${RESULT_DETAIL[$id]}" ]; then
             printf '<div class="detail">%s</div>' "$(html_escape "${RESULT_DETAIL[$id]}")"
         fi
-        printf '</td></tr>\n'
+        printf '</td><td>%s</td><td>%s</td><td class="nist">%s</td></tr>\n' \
+            "${CHECK_SEVERITY[$id]}" "$fixable" "$(html_escape "$(nist_of "$id")")"
     done
-    [ -n "$cat" ] && printf '</table>\n'
+    [ -n "$cat" ] && printf '</table></div></div>\n'
 
     cat <<'HTMLFOOT'
-<footer>Generated by AuditXS — transparent, reversible Linux security auditing.
-Check documentation: <code>auditxs explain &lt;ID&gt;</code> · Change ledger: <code>/var/lib/auditxs/changes.log</code></footer>
+<footer>Generated by <strong>AuditXS</strong> — transparent, reversible Linux security auditing.
+Check documentation: <code>auditxs explain &lt;ID&gt;</code> · Change ledger: <code>/var/lib/auditxs/changes.log</code> · CVE detail: <code>auditxs cve</code>
+</footer>
+</div>
 </body>
 </html>
 HTMLFOOT

@@ -183,3 +183,45 @@ fix_FW_003() {
             return 1 ;;
     esac
 }
+
+register_check "FW-004" "Firewall" "low" "server,workstation" \
+    "ufw logging is enabled"
+set_meta FW-004 desc "Checks that ufw logging is on (at least 'low'), so blocked/allowed connection decisions are recorded. Firewall logs are essential evidence when investigating scans, intrusions or misconfigured services. Only applies where ufw is the active firewall."
+set_meta FW-004 fix "Runs 'ufw logging low', recording the previous logging state so rollback restores it. No rules are changed."
+set_meta FW-004 revert "'sudo auditxs rollback' restores the previous ufw logging level."
+set_meta FW-004 nist "DE.CM-01, PR.PS-04"
+
+audit_FW_004() {
+    [ "$(firewall_tool)" = ufw ] || { DETAIL="ufw is not the active firewall on this system"; return 3; }
+    local lvl
+    lvl=$(ufw status verbose 2>/dev/null | sed -n 's/^Logging: \(.*\)/\1/p')
+    case $lvl in
+        on*) DETAIL="ufw logging is $lvl"; return 0 ;;
+        off) DETAIL="ufw logging is off — firewall decisions are not recorded"; return 1 ;;
+        "")  DETAIL="ufw logging state not readable (is ufw active?)"; return 2 ;;
+        *)   DETAIL="ufw logging: $lvl"; return 0 ;;
+    esac
+}
+
+fix_FW_004() {
+    local prev
+    prev=$(ufw status verbose 2>/dev/null | sed -n 's/^Logging: \([a-z]*\).*/\1/p')
+    record_action ufw_logging logging "${prev:-off}" low
+    xrun_q ufw logging low
+}
+
+register_check "FW-005" "Firewall" "low" "workstation" \
+    "A firewall management GUI is available on desktops (gufw)"
+set_meta FW-005 desc "On workstations with a graphical desktop, checks for 'gufw' — the graphical front-end for ufw — so non-CLI users can review and manage firewall rules. Purely a usability/visibility control; the firewall itself is covered by FW-001..004. Report-only."
+set_meta FW-005 nist "PR.IR-01"
+
+audit_FW_005() {
+    [ "$(firewall_tool)" = ufw ] || { DETAIL="Applies to ufw-based systems only"; return 3; }
+    if [ -z "${XDG_CURRENT_DESKTOP:-}${DISPLAY:-}" ] && [ ! -d /usr/share/xsessions ]; then
+        DETAIL="No graphical desktop detected — gufw not needed"
+        return 3
+    fi
+    if have gufw || pkg_installed gufw; then DETAIL="gufw is installed"; return 0; fi
+    DETAIL="gufw (graphical ufw manager) is not installed — 'sudo apt install gufw' for a desktop firewall UI"
+    return 2
+}

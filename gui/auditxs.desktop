@@ -7,4 +7,4 @@ Exec=auditxs-gui
 Icon=security-high
 Terminal=false
 Categories=System;Security;Settings;
-Keywords=security;audit;hardening;firewall;ssh;
+Keywords=security;audit;hardening;firewall;ssh;compliance;cve;lynis;crowdsec;

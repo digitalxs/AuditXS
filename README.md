@@ -8,7 +8,7 @@ AuditXS audits Linux systems against fundamental, professional security
 baselines (inspired by CIS-style controls) and — only if you ask it to —
 hardens them, **one explained, consented, reversible change at a time**.
 
-Supported distributions: **Debian · Ubuntu · Pop!\_OS · Arch · Fedora · openSUSE** (and their derivatives).
+Supported distributions: **Debian (incl. Debian 13 "trixie") · Ubuntu · Pop!\_OS · Arch · Fedora · openSUSE** (and their derivatives).
 
 ---
 
@@ -67,12 +67,23 @@ sudo auditxs report --format html      fresh report to stdout (also: json, tsv)
 sudo auditxs audit --baseline old.json compare a fresh audit against a saved report
 auditxs diff old.json new.json         compare two saved reports (exits 1 on regressions)
 sudo auditxs audit --domain "Database" audit one assessment domain
+sudo auditxs cve                       warn about installed packages with a known CVE
+sudo auditxs tools status              which security tools are installed
+sudo auditxs tools install lynis       install a security tool (reversible)
+sudo auditxs tools scan                run installed scanners (Lynis, rkhunter…)
+auditxs tools vpn                      review WireGuard / OpenVPN configuration
 sudo auditxs baseline set              approve the latest report for drift alerts
 sudo auditxs schedule enable           daily audit + drift alert (systemd timer)
 auditxs doctor                         diagnose installation, tooling, snapshots
 sudo auditxs audit --debug             verbose diagnostics (timings, decisions)
 auditxs-gui                            graphical interface (zenity + pkexec)
 ```
+
+The console uses a clean **nala-style** boxed layout; the HTML report is
+**Material Design 3** (theme-aware, score ring, status chips, per-domain
+cards). Both the console and the report show a **CVE warning banner** when an
+installed package has a known vulnerability with a fix available, and the
+warning is written to the log and surfaced in the GUI.
 
 A severity-weighted **hardening score (0–100)** summarizes each audit, and
 every audit saves timestamped HTML + JSON reports under
@@ -113,12 +124,19 @@ Every check carries an indicative **NIST CSF 2.0** mapping, shown in
 `auditxs explain`, the reports and [docs/CHECKS.md](docs/CHECKS.md).
 Details: [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
 
-## What is covered (60 checks, 14 categories)
+## What is covered (87 checks, 20 categories)
 
 **Updates** (pending updates, automatic security updates, pending reboot) ·
+**Debian** (APT signature enforcement, release EOL awareness, needrestart) ·
 **OS** (login banners, /tmp mount options) · **Privileged** (sudo
 pty+logging, SSH MFA posture, admin inventory) · **Applications**
-(nginx/Apache version disclosure) · **Database** (MySQL/MariaDB and
+(nginx/Apache version disclosure, Apache security headers, directory
+listing) · **PHP** (expose_php, display_errors, session cookies, dangerous
+functions) · **Mail** (Postfix open-relay/TLS/banner, Dovecot plaintext-auth
+and TLS) · **DNS** (BIND recursion/version, Unbound access control) ·
+**SecurityTools** (Lynis, rootkit detector, AIDE, IDS/IPS present) ·
+**Vulnerabilities** (known-CVE packages, precise CVE data source) ·
+**Database** (MySQL/MariaDB exposure, local_infile, anonymous accounts;
 PostgreSQL exposure and authentication) ·
 **SSH** (root login, auth limits, empty passwords, X11, key-only auth with
 lockout guard, idle timeout, grace time, fail2ban/sshguard brute-force
@@ -168,6 +186,29 @@ actions are deliberately left to the administrator.
   baseline, so existing monitoring alerts on configuration regressions.
 - `sudo update-auditxs` — in-place updates; the uninstaller protects your
   snapshots and removes the scheduler units.
+
+## Security tooling, external scanners & CVE warnings
+
+AuditXS covers configuration hardening itself, and *integrates* the wider
+ecosystem rather than reinventing it:
+
+- **`auditxs tools install`** — guided, reversible install of Lynis,
+  rkhunter, chkrootkit, Tiger, checksecurity, lsat, AIDE, debsecan,
+  Suricata, fail2ban and CrowdSec. Third-party installers (CrowdSec,
+  OSSEC/Wazuh) are shown as official steps, never piped blindly to a shell.
+- **`auditxs tools scan`** — runs the installed scanners and collects their
+  reports under `/var/lib/auditxs/reports/tools/` so you can cross-verify.
+- **`auditxs tools vpn`** — reviews WireGuard and OpenVPN configuration
+  (private-key file permissions, weak ciphers, HMAC).
+- **`auditxs cve`** — warns when an installed package has a **known
+  vulnerability with a fix available**, using the distribution's own
+  security data (Debian debsecan / security suite, Fedora `dnf updateinfo`,
+  openSUSE `zypper patches`). The warning appears on the console, in the log,
+  in the HTML report banner, as check `VULN-001`, and in the GUI. AuditXS
+  never upgrades packages for you — upgrades are not reversible.
+- Checks `SEC-001..004` report whether the host is equipped with a host
+  auditor, rootkit detector, file-integrity monitor and an IDS/IPS engine —
+  i.e. whether the installed software is in a good, defended state.
 
 ## Documentation
 

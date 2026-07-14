@@ -119,6 +119,123 @@ run_harden_gui() {
         --text "Re-run the audit now to verify the new state?" 2>/dev/null && run_audit_gui
 }
 
+# Features on/off — the toggle view the user drives to enable security
+# controls. Checked = the control is ON (currently passing). Ticking an OFF
+# control and applying turns it ON (harden). Turning a control OFF is done via
+# Rollback (per-run, fully reversible) — noted in the dialog.
+run_features_gui() {
+    local out="$WORK_DIR/audit.tsv"
+    if [ ! -s "$out" ]; then
+        zenity --info --title "AuditXS" --text "Run an <b>Audit</b> first so AuditXS knows the current state of each feature." 2>/dev/null
+        return
+    fi
+    local rows=() status id sev cat fixable title detail state
+    while IFS=$'\t' read -r status id sev cat fixable title detail; do
+        [ "$fixable" = yes ] || continue
+        case $status in
+            PASS) state=TRUE ;;   # feature is ON
+            *)    state=FALSE ;;  # OFF / not applied
+        esac
+        rows+=("$state" "$id" "$([ "$state" = TRUE ] && echo 'ON ✓' || echo 'off')" "$cat" "$title")
+    done < "$out"
+    if [ ${#rows[@]} -eq 0 ]; then
+        zenity --info --title "AuditXS" --text "No toggleable security features in the last audit." 2>/dev/null
+        return
+    fi
+
+    local chosen
+    chosen=$(zenity --list --checklist --title "AuditXS — Security features (on/off)" \
+        --text "Each row is a security control. <b>Ticked = ON</b>. Tick an <b>off</b> control and press OK to turn it on — you will review exactly what changes first, and it is fully reversible.\nTo turn a control <b>off</b> again, use <b>Rollback</b>." \
+        --column "On" --column "ID" --column "State" --column "Category" --column "Feature" \
+        --width 940 --height 560 --separator " " "${rows[@]}" 2>/dev/null) || return
+    [ -n "$chosen" ] || return
+
+    # Enable only those that are ticked AND currently OFF (FAIL).
+    local to_enable="" c cur
+    for c in $chosen; do
+        cur=$(awk -F'\t' -v id="$c" '$2==id{print $1}' "$out")
+        [ "$cur" = PASS ] || to_enable+=" $c"
+    done
+    to_enable=${to_enable# }
+    if [ -z "$to_enable" ]; then
+        zenity --info --title "AuditXS" --text "Every ticked feature is already ON. Nothing to change.\n(To turn features off, use Rollback.)" 2>/dev/null
+        return
+    fi
+
+    # shellcheck disable=SC2086
+    "$AUDITXS_BIN" explain $to_enable 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' > "$WORK_DIR/explain.txt"
+    zenity --text-info --title "AuditXS — what turning these on will change" \
+        --filename "$WORK_DIR/explain.txt" \
+        --checkbox "I reviewed these changes and want to turn these features ON." \
+        --width 860 --height 600 2>/dev/null || return
+
+    local cmd=("$AUDITXS_BIN" harden --yes --quiet) log="$WORK_DIR/harden.log"
+    for c in $to_enable; do cmd+=(--check "$c"); done
+    ( elevate "${cmd[@]}" > "$log" 2>&1; echo $? > "$WORK_DIR/harden.rc" ) | \
+        zenity --progress --title "AuditXS" --text "Turning on selected features…" --pulsate --no-cancel --auto-close 2>/dev/null
+    sed 's/\x1b\[[0-9;]*m//g' "$log" > "$log.clean" 2>/dev/null && mv "$log.clean" "$log"
+    zenity --text-info --title "AuditXS — result (every change is listed & reversible)" \
+        --filename "$log" --width 860 --height 600 2>/dev/null
+    zenity --question --title "AuditXS" --text "Re-run the audit to refresh feature states?" 2>/dev/null && run_audit_gui
+}
+
+# Security tooling submenu (status / install / scanners / VPN).
+run_tools_gui() {
+    local action
+    action=$(zenity --list --title "AuditXS — Security tools" \
+        --text "Install and run established security tooling. Installs are recorded and reversible via Rollback." \
+        --column "Action" --column "Description" \
+        "Status"   "Which security tools are installed" \
+        "Install"  "Install a security tool (Lynis, CrowdSec, Suricata, AIDE, …)" \
+        "Scan"     "Run installed scanners (Lynis, rkhunter, …) and collect reports" \
+        "VPN"      "Review WireGuard / OpenVPN configuration" \
+        --width 640 --height 400 2>/dev/null) || return
+    case $action in
+        Status)
+            elevate "$AUDITXS_BIN" tools status 2>&1 | sed 's/\x1b\[[0-9;]*m//g' > "$WORK_DIR/tools.txt"
+            zenity --text-info --title "AuditXS — security tooling" --filename "$WORK_DIR/tools.txt" --width 700 --height 480 2>/dev/null ;;
+        Install)
+            local tool
+            tool=$(zenity --list --radiolist --title "AuditXS — install security tool" \
+                --text "Choose a tool to install. AuditXS never pipes remote scripts to your shell — for CrowdSec/OSSEC it shows the official steps instead." \
+                --column "" --column "Tool" --column "Purpose" \
+                FALSE lynis "Host security auditor" \
+                FALSE rkhunter "Rootkit detector" \
+                FALSE aide "File integrity monitoring" \
+                FALSE debsecan "Precise Debian CVE tracking" \
+                FALSE suricata "Network IDS/IPS" \
+                FALSE crowdsec "Collaborative intrusion prevention" \
+                FALSE fail2ban "Log-based ban engine" \
+                --width 660 --height 460 2>/dev/null) || return
+            [ -n "$tool" ] || return
+            ( elevate "$AUDITXS_BIN" tools install "$tool" > "$WORK_DIR/toolinstall.log" 2>&1; echo $? >"$WORK_DIR/ti.rc" ) | \
+                zenity --progress --title "AuditXS" --text "Installing $tool…" --pulsate --no-cancel --auto-close 2>/dev/null
+            sed 's/\x1b\[[0-9;]*m//g' "$WORK_DIR/toolinstall.log" > "$WORK_DIR/toolinstall.clean" 2>/dev/null && mv "$WORK_DIR/toolinstall.clean" "$WORK_DIR/toolinstall.log"
+            zenity --text-info --title "AuditXS — install $tool" --filename "$WORK_DIR/toolinstall.log" --width 760 --height 480 2>/dev/null ;;
+        Scan)
+            zenity --question --title "AuditXS" --text "Run all installed external scanners now?\n(This can take several minutes.)" 2>/dev/null || return
+            ( elevate "$AUDITXS_BIN" tools scan > "$WORK_DIR/scan.log" 2>&1; echo $? >"$WORK_DIR/scan.rc" ) | \
+                zenity --progress --title "AuditXS" --text "Running scanners…" --pulsate --no-cancel --auto-close 2>/dev/null
+            sed 's/\x1b\[[0-9;]*m//g' "$WORK_DIR/scan.log" > "$WORK_DIR/scan.clean" 2>/dev/null && mv "$WORK_DIR/scan.clean" "$WORK_DIR/scan.log"
+            zenity --text-info --title "AuditXS — scanner results" --filename "$WORK_DIR/scan.log" --width 820 --height 560 2>/dev/null ;;
+        VPN)
+            elevate "$AUDITXS_BIN" tools vpn 2>&1 | sed 's/\x1b\[[0-9;]*m//g' > "$WORK_DIR/vpn.txt"
+            zenity --text-info --title "AuditXS — VPN review" --filename "$WORK_DIR/vpn.txt" --width 760 --height 460 2>/dev/null ;;
+    esac
+}
+
+# CVE warning banner — shown after an audit when vulnerable packages exist.
+cve_warn_gui() {
+    local out="$WORK_DIR/cve.txt"
+    elevate "$AUDITXS_BIN" cve > "$out" 2>/dev/null
+    local rc=$?
+    if [ "$rc" != 0 ] && grep -q 'reported vulnerability' "$out" 2>/dev/null; then
+        sed 's/\x1b\[[0-9;]*m//g' "$out" > "$out.c" 2>/dev/null && mv "$out.c" "$out"
+        zenity --warning --title "AuditXS — vulnerability warning" \
+            --text "$(head -c 1200 "$out")" --width 640 2>/dev/null
+    fi
+}
+
 run_report_gui() {
     local f="$WORK_DIR/report.html"
     (
@@ -181,18 +298,22 @@ while true; do
         --text "Transparent, reversible security auditing.\n<b>Audit</b> never changes anything; <b>Harden</b> asks before every fix; <b>Rollback</b> undoes it." \
         --column "Action" --column "Description" \
         "Audit"     "Run a read-only security audit of this system" \
+        "Features"  "Turn security controls on/off (reversible)" \
         "Harden"    "Review and apply fixes for failed checks (reversible)" \
-        "Report"    "Generate and open an HTML audit report" \
+        "Tools"     "Install and run security tools (Lynis, CrowdSec, Suricata…)" \
+        "Report"    "Generate and open a Material-style HTML report" \
         "Rollback"  "Undo the changes of a previous hardening run" \
         "Baseline"  "Save the latest audit as the approved baseline (drift alerts)" \
         "Doctor"    "Diagnose the AuditXS installation and system tooling" \
         "Catalogue" "Browse all checks and what they do" \
         "About"     "About AuditXS" \
-        --width 640 --height 480 2>/dev/null) || exit 0
+        --width 660 --height 540 2>/dev/null) || exit 0
 
     case $choice in
-        Audit)     run_audit_gui ;;
+        Audit)     run_audit_gui; cve_warn_gui ;;
+        Features)  run_features_gui ;;
         Harden)    run_harden_gui ;;
+        Tools)     run_tools_gui ;;
         Report)    run_report_gui ;;
         Rollback)  run_rollback_gui ;;
         Baseline)

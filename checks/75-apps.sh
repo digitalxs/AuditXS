@@ -121,3 +121,81 @@ ServerSignature Off" || return 1
     [ "$DRYRUN" = 1 ] || { svc_active "$unit" && xrun_q systemctl reload "$unit"; }
     return 0
 }
+
+register_check "APP-003" "Applications" "medium" "server" \
+    "Apache sends security response headers"
+set_meta APP-003 desc "Checks that Apache emits baseline browser-security headers: X-Content-Type-Options (nosniff), X-Frame-Options (clickjacking protection) and Referrer-Policy. These instruct browsers to behave defensively and are a standard part of web-server hardening (OWASP Secure Headers). HSTS is intentionally left out of the automatic fix because it must only be enabled once HTTPS is confirmed working."
+set_meta APP-003 fix "Enables mod_headers and writes a labelled conf drop-in (Debian: /etc/apache2/conf-available/zz-auditxs-headers.conf enabled via symlink; Fedora: /etc/httpd/conf.d/; openSUSE: /etc/apache2/conf.d/) adding X-Content-Type-Options, X-Frame-Options and Referrer-Policy. Validated with the Apache config test — removed on failure — then Apache is reloaded."
+set_meta APP-003 revert "'sudo auditxs rollback' deletes the drop-in (and its enabling symlink) and reloads Apache."
+set_meta APP-003 nist "PR.PS-01, PR.DS-02"
+
+audit_APP_003() {
+    _apache_installed || { DETAIL="Apache is not installed"; return 3; }
+    local roots="/etc/apache2 /etc/httpd" missing="" h
+    for h in X-Content-Type-Options X-Frame-Options Referrer-Policy; do
+        grep -rqsiE "Header[[:space:]]+(set|always set)[[:space:]]+$h" $roots || missing+="$h "
+    done
+    if [ -z "$missing" ]; then DETAIL="Security headers present (X-Content-Type-Options, X-Frame-Options, Referrer-Policy)"; return 0; fi
+    DETAIL="Missing Apache security headers: $missing"
+    return 1
+}
+
+fix_APP_003() {
+    local f link="" ctl unit
+    if [ -d /etc/apache2/conf-available ]; then
+        f=/etc/apache2/conf-available/zz-auditxs-headers.conf
+        link=/etc/apache2/conf-enabled/zz-auditxs-headers.conf
+        unit=apache2
+        [ "$DRYRUN" = 1 ] || a2enmod headers >/dev/null 2>&1
+    elif [ -d /etc/httpd/conf.d ]; then
+        f=/etc/httpd/conf.d/zz-auditxs-headers.conf; unit=httpd
+    elif [ -d /etc/apache2/conf.d ]; then
+        f=/etc/apache2/conf.d/zz-auditxs-headers.conf; unit=apache2
+    else
+        DETAIL="Unrecognized Apache layout"; return 1
+    fi
+    ctl=$(_apache_ctl) || { DETAIL="No Apache control binary found"; return 1; }
+    track_file "$f"
+    write_file "$f" 0644 "# AuditXS APP-003 — browser security headers.
+# Written by AuditXS $AUDITXS_VERSION on $(date -Is).
+# Revert with: sudo auditxs rollback <snapshot>
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options \"nosniff\"
+  Header always set X-Frame-Options \"SAMEORIGIN\"
+  Header always set Referrer-Policy \"strict-origin-when-cross-origin\"
+</IfModule>" || return 1
+    if [ -n "$link" ]; then
+        track_file "$link"
+        [ "$DRYRUN" = 1 ] || ln -sfn ../conf-available/zz-auditxs-headers.conf "$link"
+    fi
+    if [ "$DRYRUN" != 1 ] && ! $ctl -t >/dev/null 2>&1 && ! $ctl configtest >/dev/null 2>&1; then
+        err "Apache config test failed — removing the drop-in."
+        [ -n "$link" ] && emergency_restore_file "$link"
+        emergency_restore_file "$f"
+        DETAIL="Apache rejected the change; nothing was applied"; return 1
+    fi
+    [ "$DRYRUN" = 1 ] || { svc_active "$unit" && xrun_q systemctl reload "$unit"; }
+    return 0
+}
+
+register_check "APP-004" "Applications" "medium" "server" \
+    "Web server does not list directory contents"
+set_meta APP-004 desc "Checks that automatic directory listing is disabled. When a directory has no index file and listing is on, the web server exposes the full file tree — source, backups, configs — to anyone. Apache: the 'Indexes' option should not be enabled; nginx: 'autoindex' should be off (its default). Report-only: the correct place to disable it depends on your vhost/.htaccess layout, so AuditXS shows where it is enabled rather than guessing."
+set_meta APP-004 nist "PR.PS-01, PR.DS-01"
+
+audit_APP_004() {
+    local hits=""
+    if _apache_installed; then
+        hits=$(grep -rlsE '^[^#]*Options[^#]*\bIndexes\b' /etc/apache2 /etc/httpd 2>/dev/null | grep -v '\-Indexes')
+    fi
+    if [ -n "$hits" ]; then
+        DETAIL="Apache directory listing (Options Indexes) is enabled in:"$'\n'"$hits"$'\n'"Change 'Options Indexes' to 'Options -Indexes' in those files."
+        return 1
+    fi
+    if _apache_installed || have nginx; then
+        DETAIL="No directory-listing (Indexes/autoindex) enabled in the reviewed configuration"
+        return 0
+    fi
+    DETAIL="No supported web server installed"
+    return 3
+}

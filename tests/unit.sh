@@ -37,6 +37,8 @@ QUIET=1
 . lib/report.sh
 . lib/fixlib.sh
 . lib/maintenance.sh
+. lib/cve.sh
+. lib/tools.sh
 for c in checks/*.sh; do . "$c"; done
 
 TMPD=$(mktemp -d)
@@ -60,7 +62,7 @@ t "status_str 2"            'WARN' "$(status_str 2)"
 t "status_str 3"            'SKIP' "$(status_str 3)"
 tt "has_fix SSH-001 yes"    yes has_fix SSH-001
 tt "has_fix ACC-001 no"     no  has_fix ACC-001
-t "registry has 60 checks"  '60' "${#CHECK_IDS[@]}"
+tt "registry has 80+ checks" yes test "${#CHECK_IDS[@]}" -ge 80
 
 PROFILE=server
 tt "SSH-004 applies to server"          yes check_applies SSH-004
@@ -83,7 +85,17 @@ FILTER_DOMAIN=""
 t "domain of Database"      'Database Hardening'    "$(domain_of Database)"
 t "domain of SSH"           'Server Hardening'      "$(domain_of SSH)"
 t "domain of Kernel"        'OS Hardening'          "$(domain_of Kernel)"
+t "domain of Mail"          'Application Hardening' "$(domain_of Mail)"
+t "domain of DNS"           'Network Security'      "$(domain_of DNS)"
+t "domain of PHP"           'Application Hardening' "$(domain_of PHP)"
 t "domain fallback"         'Other'                 "$(domain_of Nonsense)"
+# nala-style helpers strip ANSI/glyphs correctly
+t "_vlen strips ansi"       '5' "$(NALA_W=68; _vlen "$(printf '\033[31mhello\033[0m')")"
+t "_repeat n"               '---' "$(_repeat 3 '-')"
+# CVE / tools entry points are defined
+defined() { declare -F "$1" >/dev/null; }
+tt "cve_scan is defined"    yes defined cve_scan
+tt "cmd_tools is defined"   yes defined cmd_tools
 tt "nist_of SSH-001 non-empty"  yes test -n "$(nist_of SSH-001)"
 t "nist_of override (PRV-002)"  'PR.AA-03' "$(nist_of PRV-002)"
 

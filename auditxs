@@ -18,7 +18,7 @@
 AUDITXS_SELF=$(readlink -f "${BASH_SOURCE[0]}")
 AUDITXS_ROOT=$(dirname "$AUDITXS_SELF")
 
-for _lib in core distro backup registry report fixlib maintenance; do
+for _lib in core distro backup registry report fixlib maintenance cve tools; do
     # shellcheck disable=SC1090
     . "$AUDITXS_ROOT/lib/$_lib.sh" || { echo "auditxs: missing library lib/$_lib.sh" >&2; exit 1; }
 done
@@ -49,6 +49,8 @@ ${BOLD}COMMANDS${RC}
   baseline    Manage the approved baseline:  auditxs baseline set [report] | show | clear
   schedule    Daily audit + drift alert:  auditxs schedule enable | disable | status | run
   doctor      Diagnose the AuditXS installation, tooling and snapshot integrity
+  cve         Warn about installed packages with a known vulnerability / CVE
+  tools       Security tooling:  auditxs tools status | install <name> | scan | vpn
   version     Show version
   help        Show this help
 
@@ -157,6 +159,7 @@ main() {
                     print_audit_header
                     run_audit
                     print_summary
+                    cve_scan; cve_banner
                     save_reports
                     [ -n "$BASELINE_FILE" ] && diff_current_against "$BASELINE_FILE" ;;
                 tsv)  QUIET=1; run_audit; results_tsv ;;
@@ -204,6 +207,13 @@ main() {
             return $? ;;
         doctor)
             cmd_doctor
+            return $? ;;
+        cve)
+            require_root cve
+            cmd_cve
+            return $? ;;
+        tools)
+            cmd_tools "${ARGS[@]}"
             return $? ;;
         baseline)
             cmd_baseline "${ARGS[@]}"
