@@ -7,7 +7,7 @@
 # https://github.com/digitalxs/AuditXS
 #
 
-AUDITXS_VERSION="0.4.0"
+AUDITXS_VERSION="0.5.0"
 
 # ------------------------------------------------------------------ colours
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
@@ -70,6 +70,14 @@ QUIET=${QUIET:-0}
 ASSUME_YES=${ASSUME_YES:-0}
 DRYRUN=${DRYRUN:-0}
 DEBUG=${AUDITXS_DEBUG:-0}
+
+# AX_ROOT — filesystem root prefix. Empty in normal operation (real system);
+# set to a fixture directory via AUDITXS_ROOT_PREFIX so check logic can be
+# unit-tested against a fake /etc tree without touching the host. Checks that
+# read config files should resolve paths through axpath(); see tests/check_test.sh
+# and docs/ARCHITECTURE.md ("Fixture-testable checks").
+AX_ROOT="${AUDITXS_ROOT_PREFIX:-}"
+axpath() { printf '%s%s' "$AX_ROOT" "$1"; }
 
 # ------------------------------------------------------------------ logging
 init_logging() {

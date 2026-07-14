@@ -1,0 +1,163 @@
+.TH AUDITXS 8 "2026" "AuditXS" "System Administration"
+.SH NAME
+auditxs \- transparent, reversible Linux security auditing and hardening
+.SH SYNOPSIS
+.B auditxs
+.I command
+.RI [ options ]
+.SH DESCRIPTION
+.B AuditXS
+audits a Linux system against fundamental, professional security baselines
+(CIS Benchmark / DISA STIG aligned, mapped to NIST CSF 2.0) and \(em only with
+explicit consent \(em hardens it with fully reversible changes.
+.PP
+It is built on three principles:
+.RS
+.IP \(bu 2
+.B Transparent:
+.B "auditxs audit"
+is strictly read-only. Every check documents what it inspects, why it
+matters, exactly what its fix changes and how that change is reverted.
+.IP \(bu 2
+.B Reversible:
+before anything is modified it is copied into a timestamped snapshot;
+.B "auditxs rollback"
+restores it.
+.IP \(bu 2
+.B Consented:
+fixes are applied one at a time after review, with
+.B \-\-dry\-run
+to preview and
+.B \-\-yes
+for automation.
+.RE
+.SH COMMANDS
+.TP
+.B audit
+Run all applicable checks (read-only). Saves HTML and JSON reports and prints
+a severity-weighted hardening score and a CVE warning banner.
+.TP
+.B harden
+Review failed checks and apply fixes one by one, with consent.
+.TP
+.B rollback \fR<id>|latest\fP
+Revert a hardening snapshot.
+.TP
+.B snapshots
+List change snapshots.
+.TP
+.B list \fR[--markdown]\fP
+Show the check catalogue (or full documentation).
+.TP
+.B explain \fR<ID>...\fP
+Show full documentation for checks, including CIS id, level and NIST mapping.
+.TP
+.B report \fR--format html|json|tsv\fP
+Print a report of a fresh audit to stdout.
+.TP
+.B diff \fR<baseline.json> [current.json]\fP
+Compare two saved reports; exits non-zero on regressions.
+.TP
+.B baseline \fRset|show|clear\fP
+Manage the approved baseline used for drift detection.
+.TP
+.B schedule \fRenable|disable|status|run\fP
+Daily audit with baseline drift alerting (systemd timer).
+.TP
+.B doctor
+Diagnose the installation, tooling and snapshot integrity.
+.TP
+.B cve
+Warn about installed packages with a known vulnerability / CVE.
+.TP
+.B tools \fRstatus|install|scan|vpn\fP
+Install and run security tools (Lynis, rkhunter, CrowdSec, Suricata, \[char46]\[char46]\[char46]);
+review VPN configuration.
+.SH OPTIONS
+.TP
+.B \-\-profile server|workstation
+Override the configured profile.
+.TP
+.B \-\-category \fIname\fP
+Only checks in one category (e.g. SSH, Firewall).
+.TP
+.B \-\-domain \fIname\fP
+Only one assessment domain (Server, OS, Network, Application, Database).
+.TP
+.B \-\-level 1|2
+Only CIS Level \(<= N checks (2 includes 1).
+.TP
+.B \-\-framework cis
+Only checks carrying a CIS Benchmark reference.
+.TP
+.B \-\-check \fIID\fP
+Only this check (repeatable).
+.TP
+.B \-\-format text|tsv|json|html
+Output format.
+.TP
+.B \-\-baseline \fIreport.json\fP
+Compare audit results against a saved report.
+.TP
+.B \-\-dry\-run
+harden: show every intended change without applying it.
+.TP
+.B \-\-yes\fR, \fP\-y
+Assume "yes" to confirmations (automation).
+.TP
+.B \-\-quiet\fR, \fP\-q
+Suppress progress output.
+.TP
+.B \-\-debug
+Verbose diagnostics (timings, return codes).
+.SH FILES
+.TP
+.I /etc/auditxs/auditxs.conf
+Profile configuration.
+.TP
+.I /etc/auditxs/baseline.json
+Approved baseline (optional).
+.TP
+.I /var/lib/auditxs/snapshots/
+Rollback snapshots.
+.TP
+.I /var/lib/auditxs/reports/
+HTML/JSON audit reports.
+.TP
+.I /var/lib/auditxs/changes.log
+Append-only ledger of every change AuditXS ever made.
+.TP
+.I /var/log/auditxs/
+Daily logs.
+.SH EXIT STATUS
+.B audit
+and
+.B harden
+return 0 on completion (findings do not affect the exit code).
+.B diff
+and
+.B "schedule run"
+return non-zero when a regression/drift is detected.
+.B cve
+returns non-zero when vulnerable packages are found.
+.B doctor
+returns non-zero when problems are found.
+.SH EXAMPLES
+.TP
+.B sudo auditxs audit
+Full read-only audit with report and score.
+.TP
+.B sudo auditxs harden --dry-run
+Preview every change without applying it.
+.TP
+.B sudo auditxs audit --level 1 --framework cis
+Audit only CIS Level-1 controls.
+.TP
+.B sudo auditxs rollback latest
+Undo the most recent hardening run.
+.SH AUTHOR
+DigitalXS <luis@digitalxs.ca>
+.SH SEE ALSO
+Project homepage: https://github.com/digitalxs/AuditXS
+.br
+Full manual: /usr/share/doc/auditxs/USAGE.md

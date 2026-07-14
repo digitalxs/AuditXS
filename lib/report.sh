@@ -58,10 +58,11 @@ results_json() {
         if has_fix "$id"; then fixable=true; else fixable=false; fi
         [ "$first" = 1 ] || printf ',\n'
         first=0
-        printf '    { "id": "%s", "category": "%s", "domain": "%s", "nist": "%s", "severity": "%s", "status": "%s", "fixable": %s, "title": "%s", "detail": "%s" }' \
+        printf '    { "id": "%s", "category": "%s", "domain": "%s", "nist": "%s", "cis": "%s", "level": %s, "severity": "%s", "status": "%s", "fixable": %s, "title": "%s", "detail": "%s" }' \
             "$id" "$(json_escape "${CHECK_CATEGORY[$id]}")" \
             "$(json_escape "$(domain_of "${CHECK_CATEGORY[$id]}")")" \
-            "$(json_escape "$(nist_of "$id")")" "${CHECK_SEVERITY[$id]}" \
+            "$(json_escape "$(nist_of "$id")")" "$(json_escape "$(cis_of "$id")")" \
+            "$(level_of "$id")" "${CHECK_SEVERITY[$id]}" \
             "${RESULT_STATUS[$id]}" "$fixable" \
             "$(json_escape "${CHECK_TITLE[$id]}")" "$(json_escape "${RESULT_DETAIL[$id]}")"
     done
@@ -199,7 +200,7 @@ HTMLHEAD
         if [ "${CHECK_CATEGORY[$id]}" != "$cat" ]; then
             [ -n "$cat" ] && printf '</table></div></div>\n'
             cat=${CHECK_CATEGORY[$id]}
-            printf '<h2>%s <small>— %s domain</small></h2>\n<div class="card" style="padding:.5rem .5rem"><div class="tablewrap"><table>\n<tr><th>Status</th><th>Check</th><th>Sev</th><th>Fix</th><th>NIST CSF</th></tr>\n' \
+            printf '<h2>%s <small>— %s domain</small></h2>\n<div class="card" style="padding:.5rem .5rem"><div class="tablewrap"><table>\n<tr><th>Status</th><th>Check</th><th>Sev</th><th>L</th><th>Fix</th><th>CIS</th><th>NIST CSF</th></tr>\n' \
                 "$(html_escape "$cat")" "$(html_escape "$(domain_of "$cat")")"
         fi
         st=${RESULT_STATUS[$id]}
@@ -209,8 +210,9 @@ HTMLHEAD
         if [ -n "${RESULT_DETAIL[$id]}" ]; then
             printf '<div class="detail">%s</div>' "$(html_escape "${RESULT_DETAIL[$id]}")"
         fi
-        printf '</td><td>%s</td><td>%s</td><td class="nist">%s</td></tr>\n' \
-            "${CHECK_SEVERITY[$id]}" "$fixable" "$(html_escape "$(nist_of "$id")")"
+        printf '</td><td>%s</td><td>%s</td><td>%s</td><td class="nist">%s</td><td class="nist">%s</td></tr>\n' \
+            "${CHECK_SEVERITY[$id]}" "$(level_of "$id")" "$fixable" \
+            "$(html_escape "$(cis_of "$id")")" "$(html_escape "$(nist_of "$id")")"
     done
     [ -n "$cat" ] && printf '</table></div></div>\n'
 

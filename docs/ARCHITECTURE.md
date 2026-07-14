@@ -163,3 +163,30 @@ firewall (ufw logging/gufw), web (Apache headers/dir-listing) and MySQL
 
 Debian 13 "trixie": `lib/distro.sh` records `DISTRO_VERSION`/`DISTRO_CODENAME`;
 `DEB-002` treats Debian 12/13 as supported and flags EOL releases.
+
+## v0.5 additions
+
+**Fixture-testable checks (`AX_ROOT`).** `lib/core.sh` defines `AX_ROOT`
+(from `AUDITXS_ROOT_PREFIX`) and `axpath()`. Checks that read config files
+resolve paths through `axpath` so their `audit_<ID>` logic can be exercised
+against a fake `/etc` tree with no privileges. `tests/check_test.sh` builds
+fixtures and asserts PASS/FAIL/WARN outcomes for the Accounts and Filesystem
+checks and the Debian-release check. New file-reading checks should use
+`axpath` to remain testable. Converted so far: Accounts (ACC-*), Filesystem
+FS-004.
+
+**CIS Benchmark ids + profile levels.** `lib/registry.sh` holds a central,
+indicative CIS section map (`CIS_OF_CHECK`) and a Level-2 set
+(`LEVEL2_CHECK`); `cis_of`/`level_of` resolve per-check overrides
+(`set_meta <ID> cis|level`) first. Surfaced in `explain`, `list`,
+`docs/CHECKS.md`, and JSON/HTML reports. Filters: `--level 1|2` (2 includes
+1) and `--framework cis`, applied by `selected()` so they narrow audit,
+list and markdown output alike.
+
+**Debian packaging.** `packaging/build-deb.sh` produces an `all`-arch `.deb`
+with `dpkg-deb`: the program under `/usr/share/auditxs`, command symlinks in
+`/usr/bin`, `man auditxs(8)`, a desktop launcher, a conffile
+`/etc/auditxs/auditxs.conf`, and postinst/postrm maintainer scripts that
+create state dirs and preserve snapshots on removal. `update-auditxs`
+detects a dpkg-managed install and defers to apt. CI builds the package and
+installs/runs/purges it in a clean `debian:stable` container.

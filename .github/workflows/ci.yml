@@ -26,12 +26,46 @@ jobs:
           shellcheck -S warning auditxs setup.sh uninstall.sh gui/auditxs-gui scripts/updater.sh tests/*.sh lib/*.sh checks/*.sh
 
   unit:
-    name: Unit tests
+    name: Unit & check tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Run unit tests
         run: bash tests/unit.sh
+      - name: Run fixture-based check tests
+        run: bash tests/check_test.sh
+
+  package:
+    name: Build & install .deb
+    runs-on: ubuntu-latest
+    needs: [lint, unit]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the Debian package
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q dpkg-dev
+          ./packaging/build-deb.sh dist
+      - name: Install and smoke-test the packaged build (debian container)
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src debian:stable bash -c '
+            set -e
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -q
+            apt-get install -y -q ./dist/auditxs_*_all.deb
+            command -v auditxs
+            auditxs version
+            auditxs list --framework cis >/dev/null
+            auditxs audit --profile server --quiet --format json >/dev/null
+            test -f /usr/share/man/man8/auditxs.8.gz
+            apt-get purge -y -q auditxs
+            echo "package install/run/purge OK"
+          '
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: auditxs-deb
+          path: dist/*.deb
 
   smoke:
     name: Smoke (${{ matrix.distro }})

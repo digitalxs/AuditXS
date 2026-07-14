@@ -60,6 +60,8 @@ ${BOLD}OPTIONS${RC}
   --domain <name>                Only one assessment domain: Server Hardening,
                                  OS Hardening, Network Security,
                                  Application Hardening, Database Hardening
+  --level 1|2                    Only CIS Level ≤ N checks (2 includes 1)
+  --framework cis                Only checks carrying a CIS Benchmark reference
   --check <ID>                   Only this check (repeatable)
   --format text|tsv|json|html    Output format (audit/report)
   --baseline <report.json>       audit: compare results against a saved report
@@ -102,6 +104,8 @@ main() {
     FORMAT=text
     FILTER_CATEGORY=""
     FILTER_DOMAIN=""
+    FILTER_LEVEL=""
+    FILTER_FRAMEWORK=""
     FILTER_CHECKS=""
     PROFILE_OVERRIDE=""
     MARKDOWN=0
@@ -113,6 +117,8 @@ main() {
             --profile)   PROFILE_OVERRIDE=${2:?--profile needs a value}; shift ;;
             --category)  FILTER_CATEGORY=${2:?--category needs a value}; shift ;;
             --domain)    FILTER_DOMAIN=${2:?--domain needs a value}; shift ;;
+            --level)     FILTER_LEVEL=${2:?--level needs a value}; shift ;;
+            --framework) FILTER_FRAMEWORK=${2:?--framework needs a value}; shift ;;
             --check)     FILTER_CHECKS+=" ${2^^}"; shift ;;
             --format)    FORMAT=${2:?--format needs a value}; shift ;;
             --baseline)  BASELINE_FILE=${2:?--baseline needs a report file}; shift ;;

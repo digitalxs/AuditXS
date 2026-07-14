@@ -46,6 +46,32 @@ Where AuditXS sits in the CSF functions:
   known configuration state, and the change ledger provides the
   configuration-change record an investigation needs.
 
+## CIS Benchmark IDs and profile levels
+
+Every mappable check carries a structured, indicative CIS Benchmark
+section reference and a **profile level**:
+
+- **Level 1** — baseline hardening that applies broadly with little
+  operational impact (the default).
+- **Level 2** — stricter, defence-in-depth controls that may affect
+  functionality (e.g. SSH key-only auth, auditd + rules, `/tmp` noexec,
+  umask 027, blocking uncommon network protocols).
+
+Filter by them, mirroring how a CIS assessment is scoped:
+
+```bash
+sudo auditxs audit --level 1                 # Level-1 controls only
+sudo auditxs audit --level 2                 # Level 1 + Level 2
+sudo auditxs audit --framework cis           # only checks with a CIS reference
+auditxs list --framework cis                 # the CIS-mapped catalogue
+auditxs explain SSH-001                       # shows CIS id + level + NIST
+```
+
+The CIS id and level appear in `explain`, `list`, `docs/CHECKS.md`, and the
+JSON/HTML reports. The numbers track CIS section *areas* (Distribution
+Independent / Debian Linux Benchmark), not a specific revision — treat them
+as indicative cross-references, not certification.
+
 ## CIS Benchmark / DISA STIG alignment
 
 AuditXS checks correspond to Level-1-style CIS items that are safe to

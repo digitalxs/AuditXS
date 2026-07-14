@@ -10,7 +10,7 @@ set_meta ACC-001 desc "Scans /etc/passwd for accounts other than 'root' with UID
 
 audit_ACC_001() {
     local extra
-    extra=$(awk -F: '($3 == 0 && $1 != "root") {print $1}' /etc/passwd 2>/dev/null)
+    extra=$(awk -F: '($3 == 0 && $1 != "root") {print $1}' "$(axpath /etc/passwd)" 2>/dev/null)
     if [ -n "$extra" ]; then
         DETAIL="Additional UID-0 account(s) found: $(echo "$extra" | tr '\n' ' '). Investigate immediately — if unexpected, treat the system as compromised."
         return 2
@@ -26,9 +26,10 @@ set_meta ACC-002 fix "Locks each affected account with 'passwd -l <user>' (place
 set_meta ACC-002 revert "'sudo auditxs rollback' restores the saved /etc/shadow, returning the accounts to their previous state."
 
 audit_ACC_002() {
-    [ -r /etc/shadow ] || { DETAIL="/etc/shadow is not readable"; return 2; }
+    local shadow; shadow=$(axpath /etc/shadow)
+    [ -r "$shadow" ] || { DETAIL="/etc/shadow is not readable"; return 2; }
     local empty
-    empty=$(awk -F: '($2 == "") {print $1}' /etc/shadow)
+    empty=$(awk -F: '($2 == "") {print $1}' "$shadow")
     if [ -n "$empty" ]; then
         DETAIL="Account(s) with EMPTY password: $(echo "$empty" | tr '\n' ' ')"
         return 1
@@ -53,11 +54,11 @@ set_meta ACC-003 fix "Edits /etc/login.defs (backed up first) setting PASS_MAX_D
 set_meta ACC-003 revert "'sudo auditxs rollback' restores the saved /etc/login.defs."
 
 _logindefs_val() {
-    awk -v k="$1" '$1 == k {print $2}' /etc/login.defs 2>/dev/null | tail -n1
+    awk -v k="$1" '$1 == k {print $2}' "$(axpath /etc/login.defs)" 2>/dev/null | tail -n1
 }
 
 audit_ACC_003() {
-    [ -f /etc/login.defs ] || { DETAIL="/etc/login.defs not found"; return 3; }
+    [ -f "$(axpath /etc/login.defs)" ] || { DETAIL="/etc/login.defs not found"; return 3; }
     local max min warnage bad=""
     max=$(_logindefs_val PASS_MAX_DAYS)
     min=$(_logindefs_val PASS_MIN_DAYS)
@@ -111,7 +112,7 @@ _system_accounts_with_shell() {
     uid_min=${uid_min:-1000}
     awk -F: -v m="$uid_min" \
         '($3 > 0 && $3 < m && $1 != "root" && $7 !~ /(nologin|false)$/ && $1 !~ /^(sync|shutdown|halt)$/) {print $1}' \
-        /etc/passwd 2>/dev/null
+        "$(axpath /etc/passwd)" 2>/dev/null
 }
 
 audit_ACC_005() {
@@ -143,7 +144,7 @@ set_meta ACC-006 fix "Edits /etc/login.defs (backed up first) setting 'UMASK 027
 set_meta ACC-006 revert "'sudo auditxs rollback' restores the saved /etc/login.defs."
 
 audit_ACC_006() {
-    [ -f /etc/login.defs ] || { DETAIL="/etc/login.defs not found"; return 3; }
+    [ -f "$(axpath /etc/login.defs)" ] || { DETAIL="/etc/login.defs not found"; return 3; }
     local um
     um=$(_logindefs_val UMASK)
     case $um in

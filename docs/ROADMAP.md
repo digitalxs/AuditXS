@@ -23,6 +23,15 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.5
+
+- **CIS Benchmark ids + Level 1/2** on every mappable check, with
+  `--level` and `--framework cis` filters (surfaced in explain/list/reports).
+- **Fixture-testable checks** via an `AX_ROOT` path prefix; `tests/check_test.sh`
+  exercises real `audit_*` logic (Accounts, Filesystem, Debian) in CI.
+- **Debian `.deb` package** (`packaging/build-deb.sh`) with man page, desktop
+  launcher and conffile; built + install-tested in CI.
+
 ## Shipped in v0.4
 
 - Debian 13 "trixie" awareness and Debian-family checks (APT signature
@@ -43,23 +52,25 @@ they shipped first:
 1. **Notification channels for drift** — `schedule run` currently fails
    the systemd unit on regression; add native mail/webhook (Slack/Matrix)
    notifiers so small setups get alerts without a monitoring stack.
-2. **CIS profile levels** — tag checks Level 1 / Level 2 and add
-   `--level`, so stricter items (L2) can be adopted deliberately.
-3. **Multi-host operation** — `auditxs fleet` running audits over SSH
+2. **Multi-host operation** — `auditxs fleet` running audits over SSH
    against an inventory file, aggregating JSON reports into one HTML
    overview. The JSON format is already stable for this.
-4. **File-integrity monitoring** — AIDE install/initialise check plus
-   scheduled verification (detects tampering, not just misconfiguration).
-5. **PDF/signed reports** — assessors want tamper-evident evidence;
+3. **Scheduled AIDE verification** — a timer that runs `aide --check` and
+   feeds tampering findings back into the audit (install/presence already
+   covered by SEC-003).
+4. **PDF/signed reports** — assessors want tamper-evident evidence;
    render the HTML report to PDF and sign report archives (minisign).
-6. **MFA enrolment helper** — guided, opt-in `auditxs mfa enrol` wizard
+5. **MFA enrolment helper** — guided, opt-in `auditxs mfa enrol` wizard
    (google-authenticator/pam_u2f) that configures PAM+sshd only after a
    verified second-factor login in a parallel session.
-7. **Package-manager hook** — post-transaction hook re-running the port
+6. **Package-manager hook** — post-transaction hook re-running the port
    allowlist and services checks, catching drift the moment software is
    installed rather than at the next scheduled audit.
-8. **Man pages + shell completion** — `auditxs(8)` and bash/zsh/fish
-   completions for operator ergonomics.
+7. **Shell completion** — bash/zsh/fish completions for operator ergonomics
+   (the `auditxs(8)` man page ships with the .deb as of v0.5).
+8. **Broaden `AX_ROOT` coverage** — convert the remaining file-reading
+   checks (SSH drop-ins, sysctl readers, service configs) to `axpath` so
+   the fixture test suite can cover every module.
 9. **Localization** of check explanations (the metadata layer already
    separates text from logic).
 

@@ -21,7 +21,51 @@
 declare -a CHECK_IDS=()
 declare -A CHECK_TITLE=() CHECK_CATEGORY=() CHECK_SEVERITY=() CHECK_PROFILES=()
 declare -A CHECK_META_DESC=() CHECK_META_FIX=() CHECK_META_REVERT=() CHECK_META_NIST=()
+declare -A CHECK_META_CIS=() CHECK_META_LEVEL=()
 declare -A RESULT_STATUS=() RESULT_DETAIL=()
+
+# ------------------------------------------------- CIS Benchmark & levels
+# Indicative, section-level mapping to the CIS Distribution Independent /
+# Debian Linux Benchmark, plus a CIS profile Level (1 = baseline that
+# applies broadly with little operational impact; 2 = stricter, defence-in-
+# depth, may affect functionality). Checks not listed default to Level 1 and
+# no CIS reference. A check may override centrally here or inline with
+# 'set_meta <ID> cis "5.1.20"' / 'set_meta <ID> level 2'. These numbers track
+# CIS section areas, not a specific benchmark revision — treat as indicative.
+declare -A CIS_OF_CHECK=(
+    [UPD-001]="1.9" [UPD-002]="1.9"
+    [OSH-001]="1.7.1" [OSH-002]="1.1.2"
+    [MAC-001]="1.6.1"
+    [KRN-001]="1.5.3" [KRN-002]="1.5.1" [KRN-003]="3.3.9" [KRN-004]="3.3.2"
+    [KRN-005]="3.3.1" [KRN-006]="3.3.7" [KRN-007]="3.3.4" [KRN-008]="3.2.1"
+    [KRN-009]="1.5.1" [KRN-010]="1.4.3"
+    [SSH-001]="5.1.20" [SSH-002]="5.1.5" [SSH-003]="5.1.21" [SSH-004]="5.1.9"
+    [SSH-005]="5.1.22" [SSH-006]="5.1.10" [SSH-007]="5.1.4"
+    [ACC-001]="6.2.9" [ACC-002]="6.2.8" [ACC-003]="5.5.1.1" [ACC-005]="5.5.2"
+    [ACC-006]="5.5.5" [ACC-007]="5.4.1"
+    [PRV-001]="5.3.4" [PRV-002]="5.3.7"
+    [FS-001]="1.1.9" [FS-002]="6.1.10" [FS-003]="6.1.11" [FS-004]="6.1.2"
+    [FS-005]="6.2.7" [FS-006]="6.1.13"
+    [FW-001]="3.5.1" [FW-002]="3.5.1.1" [FW-003]="3.5.1.2" [FW-004]="3.5.1.3"
+    [NET-002]="3.4"
+    [SVC-001]="2.3" [SVC-002]="2.1.3" [SVC-003]="2.1.4" [SVC-004]="2.1.2"
+    [LOG-001]="6.2.1.1" [LOG-002]="6.3.1" [LOG-003]="6.3.3" [LOG-004]="6.2.3"
+    [VULN-001]="1.9"
+)
+# Level-2 (stricter) checks; everything else defaults to Level 1.
+declare -A LEVEL2_CHECK=(
+    [SSH-005]=1 [OSH-002]=1 [ACC-006]=1 [KRN-007]=1 [NET-002]=1
+    [LOG-002]=1 [LOG-003]=1 [SVC-002]=1 [SVC-003]=1 [SVC-004]=1
+    [SEC-003]=1
+)
+cis_of()   { echo "${CHECK_META_CIS[$1]:-${CIS_OF_CHECK[$1]:-}}"; }
+level_of() {
+    local id=$1
+    if [ -n "${CHECK_META_LEVEL[$id]:-}" ]; then echo "${CHECK_META_LEVEL[$id]}"
+    elif [ -n "${LEVEL2_CHECK[$id]:-}" ]; then echo 2
+    else echo 1
+    fi
+}
 
 # ------------------------------------------------- domains & NIST CSF 2.0
 # Each category belongs to one assessment domain, so audits and reports can
@@ -99,6 +143,8 @@ set_meta() { # <id> desc|fix|revert <text>
         fix)    CHECK_META_FIX[$id]=$val ;;
         revert) CHECK_META_REVERT[$id]=$val ;;
         nist)   CHECK_META_NIST[$id]=$val ;;
+        cis)    CHECK_META_CIS[$id]=$val ;;
+        level)  CHECK_META_LEVEL[$id]=$val ;;
     esac
 }
 
@@ -124,6 +170,14 @@ selected() { # <id> — honours --check and --category filters
         local d
         d=$(domain_of "${CHECK_CATEGORY[$id]}")
         [[ "${d,,}" == "${FILTER_DOMAIN,,}"* ]] || return 1
+    fi
+    # --level N: include checks at Level ≤ N (CIS L2 profile includes L1).
+    if [ -n "${FILTER_LEVEL:-}" ]; then
+        [ "$(level_of "$id")" -le "$FILTER_LEVEL" ] 2>/dev/null || return 1
+    fi
+    # --framework cis: only checks that carry a CIS reference.
+    if [ "${FILTER_FRAMEWORK:-}" = cis ]; then
+        [ -n "$(cis_of "$id")" ] || return 1
     fi
     return 0
 }
@@ -243,8 +297,9 @@ show_check_details() { # <id>
     local id=$1
     hr
     printf '%b\n' "${BOLD}$id — ${CHECK_TITLE[$id]}${RC}"
+    local _cis; _cis=$(cis_of "$id")
     printf '%b\n' "  Category: ${CHECK_CATEGORY[$id]} · Domain: $(domain_of "${CHECK_CATEGORY[$id]}") · Severity: ${CHECK_SEVERITY[$id]} · Profiles: ${CHECK_PROFILES[$id]}"
-    printf '%b\n' "  NIST CSF 2.0: $(nist_of "$id")"
+    printf '%b\n' "  NIST CSF 2.0: $(nist_of "$id")  ·  CIS: ${_cis:-—}  ·  Level: $(level_of "$id")"
     if [ -n "${CHECK_META_DESC[$id]:-}" ]; then
         printf '%b\n' "  ${CYAN}What is checked and why:${RC}"
         fold_indent "${CHECK_META_DESC[$id]}"
@@ -329,11 +384,12 @@ cmd_list() { # [--markdown]
     fi
     printf '%b\n' "${BOLD}AuditXS check catalogue${RC} (${#CHECK_IDS[@]} checks) — details: auditxs explain <ID>"
     hr
-    printf '%b\n' "${BOLD}ID        SEVERITY  FIX    PROFILES              TITLE${RC}"
+    printf '%b\n' "${BOLD}ID        SEVERITY  L  FIX    PROFILES              TITLE${RC}"
     for id in "${CHECK_IDS[@]}"; do
+        selected "$id" || continue
         if has_fix "$id"; then fixable="auto"; else fixable="manual"; fi
-        printf '%-9s %-9s %-6s %-21s %s\n' \
-            "$id" "${CHECK_SEVERITY[$id]}" "$fixable" "${CHECK_PROFILES[$id]}" "${CHECK_TITLE[$id]}"
+        printf '%-9s %-9s %-2s %-6s %-21s %s\n' \
+            "$id" "${CHECK_SEVERITY[$id]}" "$(level_of "$id")" "$fixable" "${CHECK_PROFILES[$id]}" "${CHECK_TITLE[$id]}"
     done
     hr
     printf '%b\n' "${DIM}Checks marked 'manual' only report — they never change the system.${RC}"
@@ -366,6 +422,7 @@ markdown_docs() {
     echo "**Manual** checks only report — they never change the system."
     echo
     for id in "${CHECK_IDS[@]}"; do
+        selected "$id" || continue
         if [ "${CHECK_CATEGORY[$id]}" != "$cat" ]; then
             cat=${CHECK_CATEGORY[$id]}
             echo "## $cat — $(domain_of "$cat") domain"
@@ -373,8 +430,10 @@ markdown_docs() {
         fi
         echo "### $id — ${CHECK_TITLE[$id]}"
         echo
+        local mcis; mcis=$(cis_of "$id")
         echo "- **Severity:** ${CHECK_SEVERITY[$id]}"
         echo "- **Profiles:** ${CHECK_PROFILES[$id]}"
+        echo "- **CIS Benchmark:** ${mcis:-—} · **Level:** $(level_of "$id")"
         echo "- **NIST CSF 2.0:** $(nist_of "$id")"
         if has_fix "$id"; then fixable="automatic (reversible)"; else fixable="manual (report-only)"; fi
         echo "- **Fix:** $fixable"

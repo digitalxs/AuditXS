@@ -1,6 +1,6 @@
 # AuditXS check catalogue
 
-Generated from the check registry by `auditxs list --markdown` (v0.4.0).
+Generated from the check registry by `auditxs list --markdown` (v0.5.0).
 
 Legend: checks with an **automatic fix** are only ever applied by
 `auditxs harden` after showing you exactly what will change, and every
@@ -13,6 +13,7 @@ change is recorded in a snapshot that `auditxs rollback` can restore.
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 1.9 · **Level:** 1
 - **NIST CSF 2.0:** ID.RA-01, PR.PS-02
 - **Fix:** manual (report-only)
 
@@ -22,6 +23,7 @@ Counts package updates pending in the package manager's cache. Unpatched softwar
 
 - **Severity:** high
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 1.9 · **Level:** 1
 - **NIST CSF 2.0:** ID.RA-01, PR.PS-02
 - **Fix:** automatic (reversible)
 
@@ -35,6 +37,7 @@ Verifies that the distribution's automatic (security) update mechanism is instal
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** ID.RA-01, PR.PS-02
 - **Fix:** manual (report-only)
 
@@ -46,6 +49,7 @@ Detects when installed updates (typically a new kernel or core libraries) requir
 
 - **Severity:** high
 - **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-06, PR.PS-01
 - **Fix:** automatic (reversible)
 
@@ -59,6 +63,7 @@ Checks that APT is not configured to install packages that fail signature verifi
 
 - **Severity:** high
 - **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** ID.RA-01, PR.PS-02
 - **Fix:** manual (report-only)
 
@@ -68,6 +73,7 @@ Compares the running release against the known end-of-life horizon. Debian 13 't
 
 - **Severity:** low
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-02, ID.RA-01
 - **Fix:** automatic (reversible)
 
@@ -83,6 +89,7 @@ Checks that 'needrestart' is installed. After a library security update, long-ru
 
 - **Severity:** low
 - **Profiles:** server
+- **CIS Benchmark:** 1.7.1 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-06
 - **Fix:** automatic (reversible)
 
@@ -96,6 +103,7 @@ Checks that SSH presents a login banner (/etc/issue.net via the sshd 'Banner' di
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** 1.1.2 · **Level:** 2
 - **NIST CSF 2.0:** PR.PS-01
 - **Fix:** manual (report-only)
 
@@ -107,6 +115,7 @@ Checks that /tmp is its own filesystem mounted with nodev, nosuid and noexec (CI
 
 - **Severity:** critical
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 5.1.20 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-03
 - **Fix:** automatic (reversible)
 
@@ -120,6 +129,7 @@ Checks the effective 'PermitRootLogin' value (via sshd -T). Direct root login is
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 5.1.5 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-03
 - **Fix:** automatic (reversible)
 
@@ -133,6 +143,7 @@ Checks that 'MaxAuthTries' is 4 or lower. A low limit slows down password-guessi
 
 - **Severity:** critical
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 5.1.21 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-03
 - **Fix:** automatic (reversible)
 
@@ -146,6 +157,7 @@ Checks that 'PermitEmptyPasswords' is disabled. Allowing empty passwords over SS
 
 - **Severity:** low
 - **Profiles:** server
+- **CIS Benchmark:** 5.1.9 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-03
 - **Fix:** automatic (reversible)
 
@@ -159,6 +171,7 @@ Checks that 'X11Forwarding' is disabled. Servers rarely need to forward graphica
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** 5.1.22 · **Level:** 2
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-03
 - **Fix:** automatic (reversible)
 
@@ -172,6 +185,7 @@ Checks whether 'PasswordAuthentication' is disabled. Key-based authentication is
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** 5.1.10 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-03
 - **Fix:** automatic (reversible)
 
@@ -185,6 +199,7 @@ Checks that 'ClientAliveInterval' (1–900 s) and 'ClientAliveCountMax' (3 or le
 
 - **Severity:** low
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 5.1.4 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-03
 - **Fix:** automatic (reversible)
 
@@ -198,6 +213,7 @@ Checks that 'LoginGraceTime' is 60 seconds or less. The grace period holds a con
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-03
 - **Fix:** automatic (reversible)
 
@@ -213,6 +229,7 @@ Checks that an intrusion-prevention service (fail2ban with an sshd jail, or sshg
 
 - **Severity:** critical
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 3.5.1 · **Level:** 1
 - **NIST CSF 2.0:** PR.IR-01
 - **Fix:** automatic (reversible)
 
@@ -226,6 +243,7 @@ Checks that a host firewall front-end is available: ufw, firewalld, or an active
 
 - **Severity:** critical
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 3.5.1.1 · **Level:** 1
 - **NIST CSF 2.0:** PR.IR-01
 - **Fix:** automatic (reversible)
 
@@ -239,6 +257,7 @@ Checks that the detected firewall is actually running: 'ufw status' reports acti
 
 - **Severity:** high
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 3.5.1.2 · **Level:** 1
 - **NIST CSF 2.0:** PR.IR-01
 - **Fix:** automatic (reversible)
 
@@ -252,6 +271,7 @@ Checks that unsolicited inbound traffic is denied by default so only explicitly 
 
 - **Severity:** low
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 3.5.1.3 · **Level:** 1
 - **NIST CSF 2.0:** DE.CM-01, PR.PS-04
 - **Fix:** automatic (reversible)
 
@@ -265,6 +285,7 @@ Checks that ufw logging is on (at least 'low'), so blocked/allowed connection de
 
 - **Severity:** low
 - **Profiles:** workstation
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.IR-01
 - **Fix:** manual (report-only)
 
@@ -276,6 +297,7 @@ On workstations with a graphical desktop, checks for 'gufw' — the graphical fr
 
 - **Severity:** critical
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 6.2.9 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-05
 - **Fix:** manual (report-only)
 
@@ -285,6 +307,7 @@ Scans /etc/passwd for accounts other than 'root' with UID 0. A second UID-0 acco
 
 - **Severity:** critical
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 6.2.8 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-05
 - **Fix:** automatic (reversible)
 
@@ -298,6 +321,7 @@ Scans /etc/shadow for accounts whose password field is empty. Such accounts can 
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 5.5.1.1 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-05
 - **Fix:** automatic (reversible)
 
@@ -311,6 +335,7 @@ Checks /etc/login.defs for a sane password aging baseline: PASS_MAX_DAYS ≤ 365
 
 - **Severity:** high
 - **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-05
 - **Fix:** manual (report-only)
 
@@ -320,6 +345,7 @@ Scans /etc/sudoers and /etc/sudoers.d/ for NOPASSWD entries. Passwordless sudo t
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 5.5.2 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-05
 - **Fix:** automatic (reversible)
 
@@ -333,6 +359,7 @@ Checks that system (service) accounts — UID below the regular-user threshold �
 
 - **Severity:** low
 - **Profiles:** server
+- **CIS Benchmark:** 5.5.5 · **Level:** 2
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-05
 - **Fix:** automatic (reversible)
 
@@ -346,6 +373,7 @@ Checks that the default UMASK in /etc/login.defs is 027 or stricter, so files cr
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 5.4.1 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-05
 - **Fix:** automatic (reversible)
 
@@ -361,6 +389,7 @@ Checks that pam_pwquality is part of the PAM password stack and that the effecti
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 5.3.4 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-05, PR.PS-04
 - **Fix:** automatic (reversible)
 
@@ -374,6 +403,7 @@ Checks that sudo is configured with 'Defaults use_pty' (prevents a malicious pro
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** 5.3.7 · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-03
 - **Fix:** manual (report-only)
 
@@ -383,6 +413,7 @@ Checks whether SSH requires more than one authentication factor: either 'Authent
 
 - **Severity:** low
 - **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-05, ID.AM-05
 - **Fix:** manual (report-only)
 
@@ -394,6 +425,7 @@ Lists every account with administrative rights: members of the sudo/wheel/admin 
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 1.1.9 · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-01, PR.AA-05
 - **Fix:** automatic (reversible)
 
@@ -407,6 +439,7 @@ Finds directories that any user may write to (like /tmp) but that lack the stick
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 6.1.10 · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-01, PR.AA-05
 - **Fix:** automatic (reversible)
 
@@ -420,6 +453,7 @@ Finds regular files that ANY user on the system may modify. World-writable files
 
 - **Severity:** low
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 6.1.11 · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-01, PR.AA-05
 - **Fix:** manual (report-only)
 
@@ -429,6 +463,7 @@ Finds files whose owner or group no longer exists (usually left behind by remove
 
 - **Severity:** high
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 6.1.2 · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-01, PR.AA-05
 - **Fix:** automatic (reversible)
 
@@ -442,6 +477,7 @@ Verifies that credential and boot files are not readable/writable more broadly t
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 6.2.7 · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-01, PR.AA-05
 - **Fix:** automatic (reversible)
 
@@ -455,6 +491,7 @@ Checks that each regular user's home directory is mode 750 or stricter, so other
 
 - **Severity:** low
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 6.1.13 · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-01, PR.AA-05
 - **Fix:** manual (report-only)
 
@@ -466,6 +503,7 @@ Inventories setuid/setgid binaries — programs that run with elevated privilege
 
 - **Severity:** high
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 1.5.3 · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01, PR.IR-01
 - **Fix:** automatic (reversible)
 
@@ -479,6 +517,7 @@ Checks kernel.randomize_va_space=2. ASLR randomizes process memory layout, makin
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 1.5.1 · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01, PR.IR-01
 - **Fix:** automatic (reversible)
 
@@ -492,6 +531,7 @@ Checks kernel.kptr_restrict ≥ 1 (hide kernel pointers from unprivileged users)
 
 - **Severity:** high
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 3.3.9 · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01, PR.IR-01
 - **Fix:** automatic (reversible)
 
@@ -505,6 +545,7 @@ Checks net.ipv4.tcp_syncookies=1. SYN cookies keep the system reachable during S
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 3.3.2 · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01, PR.IR-01
 - **Fix:** automatic (reversible)
 
@@ -518,6 +559,7 @@ Checks that the system neither accepts nor sends ICMP redirect messages (IPv4 an
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 3.3.1 · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01, PR.IR-01
 - **Fix:** automatic (reversible)
 
@@ -531,6 +573,7 @@ Checks that accept_source_route is 0 for IPv4 and IPv6. Source routing lets the 
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 3.3.7 · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01, PR.IR-01
 - **Fix:** automatic (reversible)
 
@@ -544,6 +587,7 @@ Checks net.ipv4.conf.{all,default}.rp_filter is 1 (strict) or 2 (loose). Reverse
 
 - **Severity:** low
 - **Profiles:** server
+- **CIS Benchmark:** 3.3.4 · **Level:** 2
 - **NIST CSF 2.0:** PR.PS-01, PR.IR-01
 - **Fix:** automatic (reversible)
 
@@ -557,6 +601,7 @@ Checks net.ipv4.conf.{all,default}.log_martians=1 so packets with impossible sou
 
 - **Severity:** high
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 3.2.1 · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01, PR.IR-01
 - **Fix:** automatic (reversible)
 
@@ -570,6 +615,7 @@ Checks that IPv4/IPv6 forwarding is off. A host that silently forwards packets c
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 1.5.1 · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01, PR.IR-01
 - **Fix:** automatic (reversible)
 
@@ -583,6 +629,7 @@ Checks fs.suid_dumpable=0. Core dumps of setuid programs can spill password hash
 
 - **Severity:** low
 - **Profiles:** server
+- **CIS Benchmark:** 1.4.3 · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01, PR.IR-01
 - **Fix:** automatic (reversible)
 
@@ -598,6 +645,7 @@ Checks that the ctrl-alt-del systemd target is masked. On servers, anyone with (
 
 - **Severity:** high
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 1.6.1 · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01, PR.AA-05
 - **Fix:** manual (report-only)
 
@@ -609,6 +657,7 @@ Checks whether SELinux is enforcing or AppArmor is active with loaded profiles. 
 
 - **Severity:** high
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 2.3 · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01
 - **Fix:** automatic (reversible)
 
@@ -622,6 +671,7 @@ Checks for enabled/active legacy services that transmit credentials in cleartext
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** 2.1.3 · **Level:** 2
 - **NIST CSF 2.0:** PR.PS-01
 - **Fix:** automatic (reversible)
 
@@ -635,6 +685,7 @@ Checks that avahi-daemon is not running. Avahi advertises the machine and its se
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** 2.1.4 · **Level:** 2
 - **NIST CSF 2.0:** PR.PS-01
 - **Fix:** automatic (reversible)
 
@@ -648,6 +699,7 @@ Checks that CUPS is not running. Print services listen on the network and have a
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** 2.1.2 · **Level:** 2
 - **NIST CSF 2.0:** PR.PS-01
 - **Fix:** automatic (reversible)
 
@@ -661,6 +713,7 @@ Checks that the bluetooth service is not running. Servers rarely use Bluetooth; 
 
 - **Severity:** low
 - **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01
 - **Fix:** manual (report-only)
 
@@ -672,6 +725,7 @@ Summarizes 'systemd-analyze security', which scores every running service by how
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01
 - **Fix:** automatic (reversible)
 
@@ -685,6 +739,7 @@ Checks that nginx is configured with 'server_tokens off' so error pages and the 
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01
 - **Fix:** automatic (reversible)
 
@@ -698,6 +753,7 @@ Checks that Apache is configured with 'ServerTokens Prod' and 'ServerSignature O
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01, PR.DS-02
 - **Fix:** automatic (reversible)
 
@@ -711,6 +767,7 @@ Checks that Apache emits baseline browser-security headers: X-Content-Type-Optio
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01, PR.DS-01
 - **Fix:** manual (report-only)
 
@@ -722,6 +779,7 @@ Checks that automatic directory listing is disabled. When a directory has no ind
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01
 - **Fix:** automatic (reversible)
 
@@ -735,6 +793,7 @@ Checks that 'expose_php' is Off so PHP stops advertising its exact version in th
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01, PR.PS-04
 - **Fix:** automatic (reversible)
 
@@ -748,6 +807,7 @@ Checks that 'display_errors' is Off. Rendered PHP errors leak file paths, SQL fr
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-02, PR.AA-05
 - **Fix:** automatic (reversible)
 
@@ -761,6 +821,7 @@ Checks session.cookie_httponly (blocks JavaScript from reading the session cooki
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01
 - **Fix:** manual (report-only)
 
@@ -772,6 +833,7 @@ Checks whether high-risk functions that turn a PHP-code-execution bug into full 
 
 - **Severity:** low
 - **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.IR-01, DE.CM-01
 - **Fix:** manual (report-only)
 
@@ -781,6 +843,7 @@ Lists every TCP/UDP port the system is listening on. Informational — the point
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 3.4 · **Level:** 2
 - **NIST CSF 2.0:** PR.IR-01, DE.CM-01
 - **Fix:** automatic (reversible)
 
@@ -794,6 +857,7 @@ Checks that rarely-used kernel network protocols (DCCP, SCTP, RDS, TIPC) cannot 
 
 - **Severity:** low
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.IR-01, DE.CM-01
 - **Fix:** manual (report-only)
 
@@ -803,6 +867,7 @@ Detects Wi-Fi interfaces on machines using the server profile. Wireless links on
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** DE.CM-01, PR.IR-01
 - **Fix:** manual (report-only)
 
@@ -814,6 +879,7 @@ Compares every listening TCP/UDP port against the administrator-approved allowli
 
 - **Severity:** critical
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-05, PR.IR-01
 - **Fix:** manual (report-only)
 
@@ -823,6 +889,7 @@ Checks Postfix relay controls: smtpd_relay_restrictions / smtpd_recipient_restri
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-02
 - **Fix:** manual (report-only)
 
@@ -832,6 +899,7 @@ Checks that Postfix offers/uses TLS: smtpd_tls_security_level should be 'may' (o
 
 - **Severity:** low
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01
 - **Fix:** manual (report-only)
 
@@ -841,6 +909,7 @@ Checks that smtpd_banner does not advertise the Postfix/OS version and that the 
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-02, PR.AA-01
 - **Fix:** manual (report-only)
 
@@ -850,6 +919,7 @@ Checks that Dovecot's 'disable_plaintext_auth' is yes, so IMAP/POP passwords are
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-02
 - **Fix:** manual (report-only)
 
@@ -861,6 +931,7 @@ Checks that Dovecot requires SSL/TLS (ssl = required) and disables obsolete prot
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.IR-01, PR.AA-05
 - **Fix:** manual (report-only)
 
@@ -870,6 +941,7 @@ Checks that BIND restricts recursion (allow-recursion / allow-query) to trusted 
 
 - **Severity:** low
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-01
 - **Fix:** manual (report-only)
 
@@ -879,6 +951,7 @@ Checks that BIND overrides the 'version' option (version "not disclosed";) so a 
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.IR-01, PR.PS-01
 - **Fix:** manual (report-only)
 
@@ -890,6 +963,7 @@ Checks Unbound's access-control and information-leak settings: 'access-control' 
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-01, PR.DS-02, PR.AA-05
 - **Fix:** manual (report-only)
 
@@ -899,6 +973,7 @@ When MySQL/MariaDB is installed, checks whether it listens only on localhost. A 
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-01, PR.DS-02, PR.AA-01
 - **Fix:** manual (report-only)
 
@@ -908,6 +983,7 @@ When PostgreSQL is installed, checks (1) whether it listens only on localhost an
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.DS-01, PR.AA-05
 - **Fix:** manual (report-only)
 
@@ -917,6 +993,7 @@ When MySQL/MariaDB is installed, checks that 'local_infile' is OFF. LOAD DATA LO
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** PR.AA-01, PR.AA-05
 - **Fix:** manual (report-only)
 
@@ -928,6 +1005,7 @@ When MySQL/MariaDB is installed, checks for anonymous accounts (empty User) and 
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 6.2.1.1 · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-04, DE.CM-01
 - **Fix:** automatic (reversible)
 
@@ -941,6 +1019,7 @@ Checks that systemd-journald stores logs on disk (/var/log/journal) instead of o
 
 - **Severity:** high
 - **Profiles:** server
+- **CIS Benchmark:** 6.3.1 · **Level:** 2
 - **NIST CSF 2.0:** PR.PS-04, DE.CM-01
 - **Fix:** automatic (reversible)
 
@@ -954,6 +1033,7 @@ Checks that auditd — the kernel's audit trail collector — is installed, enab
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** 6.3.3 · **Level:** 2
 - **NIST CSF 2.0:** PR.PS-04, DE.CM-01
 - **Fix:** automatic (reversible)
 
@@ -967,6 +1047,7 @@ Checks that auditd has at least a baseline rule set loaded. An audit daemon with
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 6.2.3 · **Level:** 1
 - **NIST CSF 2.0:** PR.PS-04, DE.CM-01
 - **Fix:** automatic (reversible)
 
@@ -982,6 +1063,7 @@ Checks /var/log for files that any user can modify. World-writable logs let an a
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** ID.RA-01, DE.CM-08
 - **Fix:** automatic (reversible)
 
@@ -995,6 +1077,7 @@ Checks for Lynis, the de-facto open-source host security auditor. Lynis performs
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** DE.CM-08, DE.CM-01
 - **Fix:** automatic (reversible)
 
@@ -1008,6 +1091,7 @@ Checks for a rootkit detector (rkhunter or chkrootkit). These scan for known roo
 
 - **Severity:** medium
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 2
 - **NIST CSF 2.0:** PR.DS-06, DE.CM-01
 - **Fix:** automatic (reversible)
 
@@ -1021,6 +1105,7 @@ Checks for AIDE (Advanced Intrusion Detection Environment). AIDE records cryptog
 
 - **Severity:** low
 - **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** DE.CM-01, PR.IR-01
 - **Fix:** manual (report-only)
 
@@ -1032,6 +1117,7 @@ Checks whether at least one active-defence engine is present: CrowdSec (collabor
 
 - **Severity:** critical
 - **Profiles:** server,workstation
+- **CIS Benchmark:** 1.9 · **Level:** 1
 - **NIST CSF 2.0:** ID.RA-01, DE.CM-08, PR.PS-02
 - **Fix:** manual (report-only)
 
@@ -1041,6 +1127,7 @@ Cross-references installed package versions against the distribution's own secur
 
 - **Severity:** medium
 - **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
 - **NIST CSF 2.0:** ID.RA-01, DE.CM-08
 - **Fix:** automatic (reversible)
 

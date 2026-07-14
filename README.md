@@ -32,6 +32,20 @@ Supported distributions: **Debian (incl. Debian 13 "trixie") · Ubuntu · Pop!\_
 
 ## Installation
 
+**Debian / Ubuntu (.deb):**
+
+```bash
+git clone https://github.com/digitalxs/AuditXS.git && cd AuditXS
+./packaging/build-deb.sh          # builds dist/auditxs_<version>_all.deb
+sudo apt install ./dist/auditxs_*_all.deb
+```
+
+The package installs to `/usr/share/auditxs`, provides `auditxs`,
+`auditxs-gui` and `update-auditxs`, a man page (`man auditxs`) and a desktop
+launcher, and updates cleanly with `apt`.
+
+**Any distribution (source installer, dxsbash-style):**
+
 ```bash
 git clone https://github.com/digitalxs/AuditXS.git
 cd AuditXS

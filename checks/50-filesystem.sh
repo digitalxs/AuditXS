@@ -120,14 +120,17 @@ _sensitive_files_over_permissive() {
 /boot/grub/grub.cfg 600
 /boot/grub2/grub.cfg 600
 /etc/ssh/sshd_config 600"
+    local real
     while read -r path max; do
-        [ -f "$path" ] || continue
-        cur=$(stat -c %a "$path" 2>/dev/null) || continue
+        real=$(axpath "$path")
+        [ -f "$real" ] || continue
+        cur=$(stat -c %a "$real" 2>/dev/null) || continue
         perm_exceeds "$cur" "$max" && printf '%s\t%s\t%s\n' "$path" "$max" "$cur"
     done <<< "$specs"
-    for path in /etc/ssh/ssh_host_*_key; do
-        [ -f "$path" ] || continue
-        cur=$(stat -c %a "$path" 2>/dev/null) || continue
+    for real in "$(axpath /etc/ssh)"/ssh_host_*_key; do
+        [ -f "$real" ] || continue
+        path=${real#"$AX_ROOT"}
+        cur=$(stat -c %a "$real" 2>/dev/null) || continue
         perm_exceeds "$cur" "600" && printf '%s\t%s\t%s\n' "$path" 600 "$cur"
     done
 }

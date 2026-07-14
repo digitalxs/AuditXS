@@ -99,6 +99,13 @@ tt "cmd_tools is defined"   yes defined cmd_tools
 tt "nist_of SSH-001 non-empty"  yes test -n "$(nist_of SSH-001)"
 t "nist_of override (PRV-002)"  'PR.AA-03' "$(nist_of PRV-002)"
 
+# CIS Benchmark id + Level
+t "cis_of SSH-001"          '5.1.20' "$(cis_of SSH-001)"
+t "cis_of unmapped empty"   ''       "$(cis_of PRV-003)"
+t "level_of default 1"      '1'      "$(level_of SSH-001)"
+t "level_of L2 override"    '2'      "$(level_of SSH-005)"
+t "level_of auditd is L2"   '2'      "$(level_of LOG-002)"
+
 # -------------------------------------------------------------- perm math
 tt "perm_exceeds 644>640"   yes perm_exceeds 644 640
 tt "perm_exceeds 600<640"   no  perm_exceeds 600 640

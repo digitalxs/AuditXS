@@ -14,6 +14,15 @@ fi
 INSTALL_DIR=/opt/auditxs
 
 [ "$(id -u)" -eq 0 ] || { printf '%b\n' "${RED}✗${RC} Please run as root: ${BOLD}sudo update-auditxs${RC}"; exit 1; }
+
+# Installed from the Debian package? Update through apt, not git.
+if command -v dpkg-query >/dev/null 2>&1 && dpkg-query -W -f '${Status}' auditxs 2>/dev/null | grep -q "install ok installed"; then
+    printf '%b\n' "${BOLD}AuditXS was installed from the Debian package.${RC}"
+    printf '%b\n' "Update it with your package manager:"
+    printf '%b\n' "  ${BOLD}sudo apt update && sudo apt install --only-upgrade auditxs${RC}"
+    exit 0
+fi
+
 [ -d "$INSTALL_DIR" ]  || { printf '%b\n' "${RED}✗${RC} AuditXS is not installed in $INSTALL_DIR."; exit 1; }
 
 if [ -d "$INSTALL_DIR/.git" ] && command -v git >/dev/null 2>&1; then
