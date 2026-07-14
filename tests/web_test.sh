@@ -18,7 +18,7 @@ ck(){ if [ "$2" = "$3" ]; then PASS=$((PASS+1)); else FAILED=$((FAILED+1)); echo
 PORT=8791
 OUT=$(mktemp)
 AUDITXS_BIN="$PWD/auditxs" AUDITXS_PROFILE=server \
-    python3 gui/auditxs-web.py --no-open --port "$PORT" > "$OUT" 2>&1 &
+    python3 -u gui/auditxs-web.py --no-open --port "$PORT" > "$OUT" 2>&1 &
 WPID=$!
 trap 'kill $WPID 2>/dev/null; rm -f "$OUT"' EXIT
 

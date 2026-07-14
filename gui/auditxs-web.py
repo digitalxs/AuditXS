@@ -452,6 +452,8 @@ def main():
     print(f"\033[36m│\033[0m    ssh -L {port}:127.0.0.1:{port} user@host")
     print(f"\033[36m│\033[0m  Stop with Ctrl-C.")
     print(f"\033[36m╰{line}╯\033[0m\n")
+    sys.stdout.flush()   # ensure the URL/token is visible immediately, even when
+                         # stdout is redirected to a file/pipe (block-buffered)
 
     if do_open:
         # Open as the invoking desktop user when launched via sudo.
