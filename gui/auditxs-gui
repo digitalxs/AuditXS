@@ -25,6 +25,12 @@ command -v zenity >/dev/null 2>&1 \
 command -v "$AUDITXS_BIN" >/dev/null 2>&1 \
     || die_gui "The 'auditxs' command was not found. Run the AuditXS installer first."
 
+# Graphical interfaces are workstation-only. On the server profile, steer the
+# user to the terminal UI (which works over SSH) instead.
+if [ "$("$AUDITXS_BIN" profile 2>/dev/null)" = server ]; then
+    die_gui "The graphical interface is disabled on the 'server' profile.\nUse the terminal UI over SSH:  sudo auditxs tui\nor the CLI:  sudo auditxs audit"
+fi
+
 # Privilege elevation: pkexec (GUI prompt) with sudo fallback for terminals.
 elevate() {
     if [ "$(id -u)" -eq 0 ]; then

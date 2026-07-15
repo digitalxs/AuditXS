@@ -30,7 +30,15 @@ _tool_pkg() {
         debsecan)      echo debsecan ;;
         suricata)      echo suricata ;;
         fail2ban)      echo fail2ban ;;
-        crowdsec)      echo crowdsec ;;      # may need the CrowdSec repo
+        clamav)        echo clamav ;;
+        openscap)      echo openscap-scanner ;;   # provides the 'oscap' binary
+        arpwatch)      echo arpwatch ;;
+        usbguard)      echo usbguard ;;
+        firejail)      echo firejail ;;
+        logwatch)      echo logwatch ;;
+        acct)          echo acct ;;               # process accounting (lastcomm/sa)
+        crowdsec)      echo crowdsec ;;           # may need the CrowdSec repo
+        auditd)        case $DISTRO_FAMILY in debian) echo auditd ;; *) echo audit ;; esac ;;
         *)             echo "" ;;
     esac
 }
@@ -39,19 +47,37 @@ _tool_present() {
     case "$1" in
         crowdsec) have cscli || have crowdsec ;;
         ossec)    [ -d /var/ossec ] || have ossec-control ;;
+        clamav)   have clamscan || have clamdscan ;;
+        openscap) have oscap ;;
+        osquery)  have osqueryi || have osqueryd ;;
+        auditd)   have auditctl || svc_active auditd.service ;;
+        acct)     have lastcomm || have sa || pkg_installed acct 2>/dev/null ;;
+        trivy)    have trivy ;;
         *)        have "$1" || pkg_installed "$(_tool_pkg "$1")" 2>/dev/null ;;
     esac
 }
 
 # ---------------------------------------------------------------- status ---
+# Grouped inventory: each tool tagged with the defensive capability it provides,
+# so an operator can see coverage gaps (e.g. "no file-integrity monitor").
 cmd_tools_status() {
     nala_box "Security tooling inventory"
     local t state
-    for t in lynis rkhunter chkrootkit tiger checksecurity lsat aide debsecan \
-             fail2ban crowdsec suricata; do
-        if _tool_present "$t"; then state="${GREEN}installed${RC}"; else state="${DIM}not installed${RC}"; fi
-        nala_row "$(printf '%-14s %b' "$t" "$state")"
-    done
+    _status_group() { # <heading> <tool...>
+        nala_row "${BOLD}$1${RC}"; shift
+        for t in "$@"; do
+            if _tool_present "$t"; then state="${GREEN}installed${RC}"; else state="${DIM}not installed${RC}"; fi
+            nala_row "  $(printf '%-14s %b' "$t" "$state")"
+        done
+    }
+    _status_group "Host auditing / compliance" lynis tiger lsat checksecurity openscap
+    _status_group "Rootkit / malware"          rkhunter chkrootkit clamav
+    _status_group "File integrity"             aide
+    _status_group "Vulnerability data"         debsecan trivy
+    _status_group "Audit / accounting"         auditd acct
+    _status_group "Active defence / IDS"       fail2ban crowdsec suricata arpwatch
+    _status_group "Isolation / device control" firejail usbguard
+    _status_group "Endpoint visibility / logs" osquery logwatch
     nala_row "${DIM}ossec/wazuh:${RC} $(_tool_present ossec && echo present || echo 'not present (see: auditxs tools install ossec)')"
     nala_end
     say ""
@@ -62,7 +88,10 @@ cmd_tools_status() {
 # --------------------------------------------------------------- install ---
 cmd_tools_install() {
     require_root "tools install"
-    [ $# -ge 1 ] || die "Usage: sudo auditxs tools install <lynis|rkhunter|tiger|chkrootkit|checksecurity|lsat|aide|debsecan|suricata|crowdsec|ossec> ..."
+    local known="lynis rkhunter chkrootkit tiger checksecurity lsat aide debsecan \
+suricata fail2ban clamav openscap auditd arpwatch usbguard firejail logwatch acct crowdsec ossec"
+    [ $# -ge 1 ] || die "Usage: sudo auditxs tools install <name...>
+Known: $(echo $known | tr -s ' ')"
     local name pkg rc=0
     for name in "$@"; do
         name=${name,,}
@@ -70,20 +99,17 @@ cmd_tools_install() {
             crowdsec) _install_crowdsec || rc=1 ;;
             ossec|wazuh) _install_ossec_guidance ;;
             ayasat) _install_ayasat_guidance ;;
+            osquery|trivy) _install_endpoint_guidance "$name" ;;
             *)
                 pkg=$(_tool_pkg "$name")
                 if [ -z "$pkg" ]; then
-                    warn "Unknown tool '$name'. Known: lynis rkhunter chkrootkit tiger checksecurity lsat aide debsecan suricata crowdsec ossec"
+                    warn "Unknown tool '$name'. Known: $(echo $known | tr -s ' ')"
                     rc=1; continue
                 fi
                 info "Installing $name ($pkg) …"
                 if pkg_install "$pkg"; then
                     ok "$name installed."
-                    case $name in
-                        rkhunter) [ "$DRYRUN" = 1 ] || { have rkhunter && xrun_q rkhunter --propupd; ok "rkhunter baseline initialised (rkhunter --propupd)"; } ;;
-                        aide)     say "  Next: initialise the AIDE database on this known-good system (aideinit / aide --init)." ;;
-                        suricata) say "  Next: set your monitored interface in /etc/suricata/suricata.yaml, then 'systemctl enable --now suricata'." ;;
-                    esac
+                    _install_post "$name"
                 else
                     warn "Could not install $name from the distribution repositories."
                     rc=1
@@ -92,6 +118,59 @@ cmd_tools_install() {
     done
     snapshot_finish
     return $rc
+}
+
+# _enable_note <success-msg> <unit...> — enable+start the first unit that
+# exists, and print an honest message only if one actually came up. No-op in
+# dry-run mode (the change is not made, so nothing is claimed).
+_enable_note() {
+    local msg=$1; shift
+    [ "$DRYRUN" = 1 ] && return 0
+    local u
+    for u in "$@"; do
+        if svc_enable "$u" 2>/dev/null; then ok "$msg"; return 0; fi
+    done
+    warn "Installed, but could not enable a service unit automatically — start it manually when ready."
+    return 0
+}
+
+# Post-install setup guidance / baseline initialisation, per tool.
+_install_post() {
+    case $1 in
+        rkhunter) [ "$DRYRUN" = 1 ] || { have rkhunter && xrun_q rkhunter --propupd; ok "rkhunter baseline initialised (rkhunter --propupd)"; } ;;
+        aide)     say "  Next: initialise the AIDE database on this known-good system (aideinit / aide --init)." ;;
+        suricata) say "  Next: set your monitored interface in /etc/suricata/suricata.yaml, then 'systemctl enable --now suricata'." ;;
+        clamav)   say "  Next: update signatures with 'sudo freshclam', then scan with 'sudo auditxs tools scan clamav'."
+                  say "  Tip: enable the freshclam service for automatic signature updates (systemctl enable --now clamav-freshclam)." ;;
+        openscap) say "  SCAP policy content is shipped separately. Install it, then evaluate a profile:"
+                  case $DISTRO_FAMILY in
+                      debian) say "    sudo apt install ssg-debderived   # SCAP Security Guide content" ;;
+                      redhat) say "    sudo dnf install scap-security-guide" ;;
+                      suse)   say "    sudo zypper install scap-security-guide" ;;
+                      *)      say "    install the 'scap-security-guide' (SSG) content package for your distro" ;;
+                  esac
+                  say "  Then: sudo auditxs tools scan openscap   (or: oscap xccdf eval --profile <id> <ssg.xml>)" ;;
+        auditd)   _enable_note "auditd enabled — kernel audit events are now recorded." auditd.service auditd
+                  say "  Review rules in /etc/audit/rules.d/ ; a CIS-aligned ruleset greatly improves forensics." ;;
+        usbguard) say "  Next: generate an allow-list from currently-connected devices BEFORE enabling, or you may lock out your keyboard:"
+                  say "    sudo usbguard generate-policy > /etc/usbguard/rules.conf && systemctl enable --now usbguard" ;;
+        arpwatch) _enable_note "arpwatch enabled — ARP/MAC changes will be logged (watch for spoofing)." arpwatch.service arpwatch ;;
+        acct)     _enable_note "process accounting active — audit with 'lastcomm' / 'sa'." acct.service psacct.service ;;
+        firejail) say "  Sandbox an application with: firejail <program>. See 'firejail --list' for active sandboxes." ;;
+        logwatch) say "  Next: review /etc/logwatch/conf/logwatch.conf ; a daily summary lands in root's mail or /var/log." ;;
+    esac
+}
+
+_install_endpoint_guidance() {
+    case $1 in
+        osquery) info "osquery (SQL-based endpoint visibility) is distributed by its upstream project, not the base repos."
+                 say  "  Install from the signed osquery repository: https://osquery.io/downloads"
+                 say  "  Once installed, 'osqueryi' gives an interactive SQL shell over live system state." ;;
+        trivy)   info "Trivy (vulnerability & misconfiguration scanner) is distributed by Aqua Security."
+                 say  "  Install from the signed Aqua repository: https://aquasecurity.github.io/trivy/latest/getting-started/installation/"
+                 say  "  Then scan the filesystem with: trivy filesystem /   or an image with: trivy image <name>." ;;
+    esac
+    say "  AuditXS deliberately does not add third-party repositories or run remote installers for you."
 }
 
 _install_crowdsec() {
@@ -128,6 +207,40 @@ _install_ayasat_guidance() {
     say  "  checklist audits, 'tiger' and 'lsat' are packaged and integrated here."
 }
 
+# Locate installed SCAP Security Guide content and evaluate a sensible profile.
+# Prints guidance (and returns non-zero) when content or a profile is missing,
+# so the scan report explains exactly what to install rather than failing blank.
+_scan_openscap() {
+    have oscap || { echo "oscap not installed"; return 1; }
+    local ds
+    ds=$(ls -1 /usr/share/xml/scap/ssg/content/*-ds.xml 2>/dev/null | head -1)
+    if [ -z "$ds" ]; then
+        echo "No SCAP Security Guide (SSG) content found under /usr/share/xml/scap/ssg/content/."
+        echo "Install it, then re-run this scan:"
+        case $DISTRO_FAMILY in
+            debian) echo "  sudo apt install ssg-debderived" ;;
+            redhat) echo "  sudo dnf install scap-security-guide" ;;
+            suse)   echo "  sudo zypper install scap-security-guide" ;;
+            *)      echo "  install the 'scap-security-guide' content package for your distro" ;;
+        esac
+        return 1
+    fi
+    # Prefer a CIS or standard profile if the datastream advertises one.
+    local prof
+    prof=$(oscap info "$ds" 2>/dev/null \
+           | grep -oE 'xccdf_org\.ssgproject\.content_profile_[A-Za-z0-9._-]+' \
+           | grep -iE 'cis|standard|stig' | head -1)
+    [ -n "$prof" ] || prof=$(oscap info "$ds" 2>/dev/null \
+           | grep -oE 'xccdf_org\.ssgproject\.content_profile_[A-Za-z0-9._-]+' | head -1)
+    if [ -z "$prof" ]; then
+        echo "SSG content $ds advertises no profiles; run 'oscap info $ds' to inspect."
+        return 1
+    fi
+    echo "# datastream: $ds"
+    echo "# profile:    $prof"
+    oscap xccdf eval --profile "$prof" "$ds"
+}
+
 # ------------------------------------------------------------------ scan ---
 cmd_tools_scan() {
     require_root "tools scan"
@@ -157,6 +270,10 @@ cmd_tools_scan() {
     _run_scan tiger          tiger -q
     _run_scan checksecurity  checksecurity
     _run_scan lsat           lsat -o /dev/stdout
+    # ClamAV: recursive, report infected only, on the areas most likely to be hit.
+    _run_scan clamav         clamscan -ri --exclude-dir='^/(proc|sys|dev|run)' /home /tmp /var/tmp /etc /usr/local
+    # OpenSCAP: evaluate against installed SSG content (best-effort profile pick).
+    _run_scan openscap       _scan_openscap
 
     if [ "$any" = 0 ]; then
         warn "No requested scanner is installed. Install one with 'auditxs tools install lynis' (recommended)."

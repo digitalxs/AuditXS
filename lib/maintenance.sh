@@ -60,6 +60,18 @@ zenity:GUI pkexec:GUI_elevation"
         fi
     done
 
+    printf '%b\n' "${BOLD}Interfaces${RC}"
+    if have whiptail || have dialog; then
+        _doc_ok "terminal UI (whiptail/dialog) — 'sudo auditxs tui' available"
+    else
+        _doc_warn "no whiptail/dialog — 'sudo auditxs tui' unavailable (CLI still works)"
+    fi
+    if [ "${PROFILE:-}" = server ]; then
+        _doc_ok "profile 'server': web/Qt/zenity interfaces intentionally disabled (use tui/CLI)"
+    else
+        if have python3; then _doc_ok "python3 — 'auditxs web' available"; else _doc_warn "no python3 — 'auditxs web' unavailable"; fi
+    fi
+
     printf '%b\n' "${BOLD}Configuration${RC}"
     if [ -r "$AUDITXS_CONF" ]; then
         case "${PROFILE:-}" in

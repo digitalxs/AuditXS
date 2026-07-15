@@ -71,19 +71,41 @@ Diagnose the installation, tooling and snapshot integrity.
 Warn about installed packages with a known vulnerability / CVE.
 .TP
 .B tools \fRstatus|install|scan|vpn\fP
-Install and run security tools (Lynis, rkhunter, CrowdSec, Suricata, \[char46]\[char46]\[char46]);
-review VPN configuration.
+Inventory, install and run security tools (Lynis, rkhunter, chkrootkit, AIDE,
+ClamAV, OpenSCAP, auditd, Fail2ban, CrowdSec, Suricata, \[char46]\[char46]\[char46]);
+review VPN configuration. Installs go through the same snapshot/rollback
+machinery as every other change.
+.TP
+.B tui
+Launch the ncurses terminal UI (requires
+.B whiptail
+or
+.BR dialog ).
+Runs entirely in the terminal over a plain SSH session \(em the recommended
+interactive interface for servers. Available on every profile.
 .TP
 .B web \fR[--port N] [--no-open]\fP
 Launch the local Material Design web UI. Binds 127.0.0.1 only and requires an
 ephemeral token; reach a remote server through an SSH tunnel.
+.B "Workstation profile only"
+\(em disabled on servers (use
+.B tui
+instead).
 .TP
 .B qt
 Launch the native Qt/QML desktop app (requires the optional
 .B auditxs-gui-qt
-package). On headless servers use
-.B web
+package).
+.B "Workstation profile only"
+\(em on servers use
+.B tui
 instead.
+.TP
+.B profile
+Print the active profile
+.RB ( server
+or
+.BR workstation ).
 .SH OPTIONS
 .TP
 .B \-\-profile server|workstation

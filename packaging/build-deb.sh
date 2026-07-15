@@ -75,8 +75,8 @@ Section: admin
 Priority: optional
 Architecture: $ARCH
 Depends: bash (>= 4.0), coreutils, sed, gawk | mawk, grep, findutils
-Recommends: zenity, policykit-1, python3
-Suggests: debsecan, lynis, aide, unattended-upgrades
+Recommends: whiptail | dialog, python3, zenity, policykit-1
+Suggests: debsecan, lynis, aide, rkhunter, clamav, auditd, unattended-upgrades
 Installed-Size: $INSTALLED_KB
 Maintainer: $MAINT
 Homepage: https://github.com/digitalxs/AuditXS

@@ -268,12 +268,45 @@ Assume prevention will sometimes fail; make sure you'll *know*:
 - **File integrity monitoring:** AIDE records hashes of system files so
   tampering is detected. Initialise the baseline on a known-good system.
   *(SEC-003.)*
-- **Rootkit detection:** rkhunter/chkrootkit. *(SEC-002.)*
+- **Rootkit / malware detection:** rkhunter and chkrootkit for rootkits;
+  ClamAV for known malware (`auditxs tools install clamav`, then
+  `auditxs tools scan clamav`). *(SEC-002.)*
+- **Endpoint visibility:** osquery exposes live system state as SQL tables
+  (processes, sockets, packages, users) — invaluable for hunting and
+  inventory. Trivy scans the filesystem and container images for known
+  vulnerabilities and misconfigurations.
+- **Device & application containment:** USBGuard allow-lists USB devices to
+  blunt BadUSB / rogue-device attacks; Firejail sandboxes risky applications;
+  arpwatch flags ARP/MAC changes that can signal spoofing on the LAN.
 - **Configuration drift:** an approved baseline + scheduled audit
   (`auditxs baseline set`, `auditxs schedule enable`) turns "did something
   change?" into an automatic alert. *(NET-004 for listening-port drift.)*
 - **Centralise and alert.** Ship logs off-box and alert on the signals that
   matter (auth failures, sudo use, new listeners, audit regressions).
+  Logwatch summarises daily log activity into a digest.
+
+### Security tooling AuditXS integrates
+
+AuditXS does not reimplement scanners — it installs, runs and collects the
+output of the established ones through one reversible interface. Inventory
+your coverage with `auditxs tools status` (grouped by capability), install
+with `auditxs tools install <name>`, and run with `auditxs tools scan`:
+
+| Capability | Tools |
+|---|---|
+| Host auditing / compliance | Lynis, Tiger, lsat, checksecurity, **OpenSCAP** (SCAP/SSG, CIS/STIG profiles) |
+| Rootkit / malware | rkhunter, chkrootkit, **ClamAV** |
+| File integrity | AIDE |
+| Vulnerability data | debsecan, **Trivy** |
+| Audit / accounting | auditd, process accounting (acct) |
+| Active defence / IDS | Fail2ban, CrowdSec, Suricata, arpwatch |
+| Isolation / device control | Firejail, USBGuard |
+| Endpoint visibility / logs | osquery, Logwatch |
+| Host IDS | OSSEC / Wazuh (guided setup) |
+
+OpenSCAP is the tool of choice for **formal compliance evidence**: point it
+at the SCAP Security Guide content for your distro and evaluate a CIS or STIG
+profile (`auditxs tools scan openscap` picks a sensible profile automatically).
 
 ---
 
@@ -345,6 +378,9 @@ security, not the end of it.
 - OWASP Secure Headers Project — <https://owasp.org/www-project-secure-headers/>
 - CISA Known Exploited Vulnerabilities — <https://www.cisa.gov/known-exploited-vulnerabilities-catalog>
 - Lynis — <https://cisofy.com/lynis/>
+- OpenSCAP & SCAP Security Guide — <https://www.open-scap.org/> · <https://github.com/ComplianceAsCode/content>
+- ClamAV — <https://www.clamav.net/> · osquery — <https://osquery.io/> · Trivy — <https://trivy.dev/>
+- USBGuard — <https://usbguard.github.io/> · Firejail — <https://firejail.wordpress.com/>
 - AuditXS check catalogue — [CHECKS.md](CHECKS.md) · usage — [USAGE.md](USAGE.md)
 
 ---

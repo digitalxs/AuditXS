@@ -4,14 +4,23 @@ A local, **Material Design 3** web interface for AuditXS. It is a thin
 front-end over the `auditxs` command — everything it does is a command you
 could type — so the transparency and reversibility guarantees are unchanged.
 
-## Why a web UI
+## Why a web UI (and who it is for)
 
-A hardening tool's most important targets are **servers**, which usually have
-no graphical desktop. A native desktop app (zenity/GTK/Qt) cannot run there.
-The web UI serves both audiences from one codebase:
+The web UI is the graphical interface for **workstations** — run it and it
+opens in your browser, with the full audit/harden/rollback workflow behind a
+Material Design 3 surface.
 
-- **Workstation:** run it and it opens in your browser.
-- **Headless server:** run it over SSH and reach it through a tunnel.
+It is **disabled on the `server` profile** by design. Servers are kept to
+text interfaces only, so a headless box never runs a root web server: use the
+ncurses terminal UI over a plain SSH session instead —
+
+```bash
+sudo auditxs tui                 # menu-driven, works over SSH, no browser/tunnel
+```
+
+— or the CLI directly. If a machine really is a desktop that was installed
+with the server profile, override for a one-off with `--profile workstation`
+(then the tunnel workflow below applies).
 
 ## Launching
 
@@ -21,8 +30,9 @@ sudo auditxs web --port 9000     # choose the port
 sudo auditxs web --no-open       # don't auto-open a browser (print the URL only)
 ```
 
-It requires `python3` (standard library only — no framework, no pip installs)
-and root, because auditing reads privileged files such as `/etc/shadow`.
+It requires the **workstation** profile, `python3` (standard library only —
+no framework, no pip installs) and root, because auditing reads privileged
+files such as `/etc/shadow`.
 
 On launch it prints a URL that contains a one-time token:
 

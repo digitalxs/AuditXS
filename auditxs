@@ -51,10 +51,16 @@ ${BOLD}COMMANDS${RC}
   doctor      Diagnose the AuditXS installation, tooling and snapshot integrity
   cve         Warn about installed packages with a known vulnerability / CVE
   tools       Security tooling:  auditxs tools status | install <name> | scan | vpn
-  web         Launch the local web UI (Material Design 3, localhost-only)
-  qt          Launch the native Qt/QML desktop app (needs the auditxs-gui-qt package)
+  tui         Launch the terminal (ncurses) interface — works over SSH; server-friendly
+  web         Launch the local web UI (Material Design 3) — workstation profile only
+  qt          Launch the native Qt/QML desktop app — workstation profile only
+  profile     Print the resolved profile (server|workstation)
   version     Show version
   help        Show this help
+
+${BOLD}INTERFACES BY PROFILE${RC}
+  server        CLI + terminal UI (tui) only — no web/graphical server on this box
+  workstation   all of the above plus web UI, Qt app and the zenity GUI
 
 ${BOLD}OPTIONS${RC}
   --profile server|workstation   Override the configured profile
@@ -99,6 +105,19 @@ resolve_profile() {
     esac
 }
 
+# Graphical / web interfaces are disabled on the server profile: servers should
+# expose only the CLI and the terminal (ncurses) UI — no web server or GUI
+# running with root on a headless box. Override for a one-off with
+# --profile workstation if you really are on a desktop.
+require_workstation_interface() {
+    if [ "$PROFILE" = server ]; then
+        die "$1 is disabled on the 'server' profile.
+On a server, use the terminal interface (works over SSH):  ${BOLD}sudo auditxs tui${RC}
+or the CLI directly:  ${BOLD}sudo auditxs audit${RC} / ${BOLD}harden${RC}.
+If this is actually a desktop, run with:  ${BOLD}--profile workstation${RC}"
+    fi
+}
+
 main() {
     local cmd=${1:-help}
     [ $# -gt 0 ] && shift
@@ -131,6 +150,8 @@ main() {
             --quiet|-q)  QUIET=1 ;;
             --debug)     DEBUG=1 ;;
             --help|-h)   usage; return 0 ;;
+            --port)      ARGS+=("--port" "${2:?--port needs a value}"); shift ;;   # passthrough to web/tui
+            --no-open)   ARGS+=("--no-open") ;;                                     # passthrough to web
             -*)          die "Unknown option: $1 (see 'auditxs help')" ;;
             *)           ARGS+=("$1") ;;
         esac
@@ -223,10 +244,18 @@ main() {
         tools)
             cmd_tools "${ARGS[@]}"
             return $? ;;
+        tui)
+            require_root tui
+            resolve_profile
+            [ -f "$AUDITXS_ROOT/gui/auditxs-tui.sh" ] || die "Terminal UI not found at $AUDITXS_ROOT/gui/auditxs-tui.sh"
+            log "tui starting (profile=$PROFILE)"
+            AUDITXS_BIN="$AUDITXS_SELF" AUDITXS_PROFILE="$PROFILE" \
+                exec bash "$AUDITXS_ROOT/gui/auditxs-tui.sh" "${ARGS[@]}" ;;
         web)
             require_root web
             resolve_profile
-            have python3 || die "The web UI requires python3 (standard library only). Install it, or use 'auditxs-gui' / the CLI."
+            require_workstation_interface "the web UI"
+            have python3 || die "The web UI requires python3 (standard library only). Install it, or use 'auditxs tui' / the CLI."
             [ -f "$AUDITXS_ROOT/gui/auditxs-web.py" ] || die "Web UI not found at $AUDITXS_ROOT/gui/auditxs-web.py"
             log "web UI starting (profile=$PROFILE)"
             AUDITXS_BIN="$AUDITXS_SELF" AUDITXS_PROFILE="$PROFILE" \
@@ -234,11 +263,16 @@ main() {
         qt)
             require_root qt
             resolve_profile
-            have python3 || die "The Qt GUI requires python3 + PySide6 (install the 'auditxs-gui-qt' package). Or use 'auditxs web'."
+            require_workstation_interface "the Qt GUI"
+            have python3 || die "The Qt GUI requires python3 + PySide6 (install the 'auditxs-gui-qt' package)."
             [ -f "$AUDITXS_ROOT/gui/auditxs-qt.py" ] || die "Qt GUI not found at $AUDITXS_ROOT/gui/auditxs-qt.py"
             log "qt GUI starting (profile=$PROFILE)"
             AUDITXS_BIN="$AUDITXS_SELF" AUDITXS_PROFILE="$PROFILE" \
                 exec python3 "$AUDITXS_ROOT/gui/auditxs-qt.py" "${ARGS[@]}" ;;
+        profile)
+            resolve_profile
+            echo "$PROFILE"
+            return 0 ;;
         baseline)
             cmd_baseline "${ARGS[@]}"
             return $? ;;

@@ -187,7 +187,41 @@ snapshot integrity (manifest structure and saved file copies), state size,
 the change ledger, and the scheduled-audit timer. Exit code 1 means at
 least one real problem was found.
 
-## The web UI
+## Interfaces by profile
+
+AuditXS deliberately limits its interfaces by profile. Servers get **text
+interfaces only** — the CLI and an ncurses terminal UI — so a headless box
+never runs a browser, an X client, or a root web server. Workstations may
+use any interface.
+
+| Interface | Command | Server | Workstation |
+|---|---|:---:|:---:|
+| Command line | `auditxs audit` / `harden` / … | ✔ | ✔ |
+| Terminal UI (ncurses) | `sudo auditxs tui` | ✔ | ✔ |
+| Localhost web UI | `sudo auditxs web` | – | ✔ |
+| Native desktop app (Qt) | `sudo auditxs qt` | – | ✔ |
+| Graphical launcher (zenity) | `auditxs-gui` | – | ✔ |
+
+`web`, `qt` and `auditxs-gui` refuse to start on the server profile and
+point you at `sudo auditxs tui`. Check the active profile with `auditxs
+profile`; override per-run with `--profile workstation` (or edit
+`/etc/auditxs/auditxs.conf`).
+
+## The terminal UI (ncurses)
+
+```bash
+sudo auditxs tui                 # menu-driven interface in the terminal
+```
+
+The recommended interface for servers: it runs entirely in the terminal
+over a plain SSH session — no browser, no tunnel, no X, no root web server.
+It is a thin front-end over the CLI (whiptail, or `dialog` as a fallback)
+and offers the full workflow — audit, turn controls on/off, roll back,
+CVE check, install/run security tools, generate a report, doctor — with the
+same mandatory *review before every change* screen as the CLI. Available on
+workstations too.
+
+## The web UI (workstation profile)
 
 ```bash
 sudo auditxs web                 # Material Design web UI on http://127.0.0.1:8787
@@ -195,15 +229,16 @@ sudo auditxs web --port 9000 --no-open
 ```
 
 A localhost-only, token-authenticated Material Design 3 interface (Python
-standard library — no framework). It works on desktops and, over an SSH
-tunnel, on headless servers. Full details and the security model:
+standard library — no framework). Disabled on the server profile (use the
+terminal UI over SSH instead). Full details and the security model:
 [WEBUI.md](WEBUI.md).
 
-## The GUI
+## The GUI (workstation profile)
 
 `auditxs-gui` (zenity) is a thin wrapper over the CLI — everything it does
 is a visible `auditxs` command, elevated per-operation via pkexec so you
-see an authentication prompt exactly when privileges are used.
+see an authentication prompt exactly when privileges are used. Like the web
+and Qt interfaces it is disabled on the server profile.
 
 - **Audit** — read-only audit with a sortable results table; a CVE warning
   pops up afterwards if vulnerable packages are found.

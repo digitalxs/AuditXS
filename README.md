@@ -86,8 +86,10 @@ sudo auditxs tools status              which security tools are installed
 sudo auditxs tools install lynis       install a security tool (reversible)
 sudo auditxs tools scan                run installed scanners (Lynis, rkhunter…)
 auditxs tools vpn                      review WireGuard / OpenVPN configuration
-sudo auditxs web                       launch the Material Design web UI (localhost-only)
-sudo auditxs qt                        launch the native Qt desktop app (optional auditxs-gui-qt)
+sudo auditxs tui                        terminal (ncurses) UI — works over SSH, any profile
+sudo auditxs web                       Material Design web UI, localhost-only (workstation only)
+sudo auditxs qt                        native Qt desktop app (workstation only; auditxs-gui-qt)
+auditxs profile                        print the active profile (server | workstation)
 sudo auditxs baseline set              approve the latest report for drift alerts
 sudo auditxs schedule enable           daily audit + drift alert (systemd timer)
 auditxs doctor                         diagnose installation, tooling, snapshots
@@ -121,6 +123,25 @@ overridable per-run with `--profile`):
 | auditd + baseline audit rules | ✔ | – |
 | Disable Avahi / CUPS / Bluetooth | ✔ | – (desktop needs them) |
 | Restrictive umask (027), Ctrl-Alt-Del guard, martian logging, wireless detection | ✔ | – |
+
+### Interfaces by profile
+
+The profile also decides which user interfaces are available — servers are
+kept to text interfaces only, so nothing runs a browser or a root web server
+on a headless box:
+
+| Interface | Command | Server | Workstation |
+|---|---|:---:|:---:|
+| Command line | `auditxs audit` / `harden` / … | ✔ | ✔ |
+| Terminal UI (ncurses, works over SSH) | `sudo auditxs tui` | ✔ | ✔ |
+| Localhost web UI (Material Design) | `sudo auditxs web` | – | ✔ |
+| Native desktop app (Qt) | `sudo auditxs qt` | – | ✔ |
+| Graphical launcher (zenity) | `auditxs-gui` | – | ✔ |
+
+On a server, `web`/`qt`/`auditxs-gui` refuse to start and point you at
+`sudo auditxs tui`. If a machine is really a desktop that was installed with
+the server profile, add `--profile workstation` for a one-off, or edit
+`/etc/auditxs/auditxs.conf`.
 
 ## Assessment domains & frameworks
 

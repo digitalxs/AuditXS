@@ -7,7 +7,7 @@
 # https://github.com/digitalxs/AuditXS
 #
 
-AUDITXS_VERSION="0.6.0"
+AUDITXS_VERSION="0.7.0"
 
 # ------------------------------------------------------------------ colours
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
@@ -136,6 +136,15 @@ has_systemd() { [ -d /run/systemd/system ]; }
 svc_active()  { has_systemd && systemctl is-active --quiet "$1" 2>/dev/null; }
 svc_enabled() { has_systemd && [ "$(systemctl is-enabled "$1" 2>/dev/null)" = "enabled" ]; }
 unit_exists() { has_systemd && systemctl list-unit-files "$1" 2>/dev/null | grep -q "^$1"; }
+
+# svc_enable <unit> — enable + start a unit now, honouring dry-run and logging.
+# Returns non-zero (quietly) if there is no systemd or the unit does not exist,
+# so callers can fall back to an alternative unit name.
+svc_enable() {
+    has_systemd || return 1
+    unit_exists "$1" || return 1
+    xrun_q systemctl enable --now "$1"
+}
 
 # Debian/Ubuntu call the unit "ssh", everyone else "sshd".
 ssh_service_name() {

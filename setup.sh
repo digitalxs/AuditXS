@@ -154,6 +154,7 @@ install_files() {
         cp -a "$SRC_DIR/." "$INSTALL_DIR/" || fail "Copy to $INSTALL_DIR failed"
     fi
     chmod 755 "$INSTALL_DIR/auditxs" "$INSTALL_DIR/gui/auditxs-gui" \
+              "$INSTALL_DIR/gui/auditxs-tui.sh" \
               "$INSTALL_DIR/setup.sh" "$INSTALL_DIR/uninstall.sh" \
               "$INSTALL_DIR/scripts/updater.sh" 2>/dev/null
     ok "Files installed"
@@ -225,7 +226,33 @@ EOF
     ilog "profile=$PROFILE"
 }
 
+# The ncurses terminal UI ('auditxs tui') is the interactive interface for
+# servers and is available on workstations too, so ensure a dialog tool exists
+# on every profile. whiptail is the Debian default; dialog is the fallback.
+setup_tui() {
+    if command -v whiptail >/dev/null 2>&1 || command -v dialog >/dev/null 2>&1; then
+        return 0
+    fi
+    say "Installing 'whiptail' for the terminal UI (auditxs tui) ..."
+    if pkg_install_one whiptail >/dev/null 2>&1 || pkg_install_one newt >/dev/null 2>&1 \
+       || pkg_install_one dialog >/dev/null 2>&1; then
+        ok "terminal UI dependency installed"
+    else
+        warn "Could not install whiptail/dialog automatically — 'auditxs tui' needs one of them."
+        warn "The CLI (sudo auditxs audit) works fully without it."
+    fi
+}
+
 setup_gui() {
+    setup_tui
+
+    # Graphical interfaces are disabled on the server profile — do not pull in
+    # zenity or a desktop launcher on a headless machine.
+    if [ "$PROFILE" = server ]; then
+        say "${DIM}Server profile: graphical interface disabled — use 'sudo auditxs tui' over SSH.${RC}"
+        return 0
+    fi
+
     local have_zenity=0
     command -v zenity >/dev/null 2>&1 && have_zenity=1
 
@@ -266,7 +293,12 @@ print_summary() {
     printf '%b\n' "  ${CYAN}sudo auditxs harden${RC}             apply fixes one by one, with consent"
     printf '%b\n' "  ${CYAN}sudo auditxs rollback latest${RC}    undo the last hardening run completely"
     printf '%b\n' "  ${CYAN}auditxs list${RC}                    browse all checks; ${CYAN}auditxs explain SSH-001${RC} for details"
-    printf '%b\n' "  ${CYAN}auditxs-gui${RC}                     graphical interface"
+    printf '%b\n' "  ${CYAN}sudo auditxs tui${RC}                menu-driven terminal UI (works over SSH)"
+    if [ "$PROFILE" = server ]; then
+        printf '%b\n' "  ${DIM}(graphical interfaces are disabled on the server profile — use 'tui' or the CLI)${RC}"
+    else
+        printf '%b\n' "  ${CYAN}auditxs-gui${RC}                     graphical interface (also: ${CYAN}sudo auditxs web${RC})"
+    fi
     printf '%b\n' "  ${CYAN}update-auditxs${RC}                  update to the latest version"
     echo
     printf '%b\n' "${DIM}Transparency: audits never change anything; every applied fix is recorded in"

@@ -23,6 +23,29 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.7
+
+- **Profile-gated interfaces.** Servers are restricted to text interfaces —
+  the CLI and a new **ncurses terminal UI** (`auditxs tui`, whiptail/dialog)
+  that runs over a plain SSH session; the web UI, Qt app and zenity GUI are
+  workstation-only and refuse to start on a server. No browser or root web
+  server ever runs on a headless box.
+- **Expanded security-tool integration.** `auditxs tools` now inventories,
+  installs and runs a broader, capability-grouped set: **ClamAV** (malware),
+  **OpenSCAP** (SCAP/SSG CIS/STIG evaluation), **auditd**, **osquery**,
+  **Trivy**, **USBGuard**, **Firejail**, **arpwatch**, **Logwatch** and
+  process accounting — alongside the existing Lynis/rkhunter/AIDE/CrowdSec/
+  Suricata, all through one reversible interface with per-tool post-install
+  setup guidance.
+
+## Shipped in v0.6
+
+- **Localhost web UI** (`auditxs web`): a Material Design 3 single-page app
+  served by the Python standard library — loopback-only bind, ephemeral
+  token auth, CSRF header, strict CSP, argv-only subprocess calls.
+- **Native Qt/QML desktop app** as the optional `auditxs-gui-qt` package,
+  with a headless data-layer selftest in CI.
+
 ## Shipped in v0.5
 
 - **CIS Benchmark ids + Level 1/2** on every mappable check, with
