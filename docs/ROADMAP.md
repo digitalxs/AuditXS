@@ -25,6 +25,10 @@ they shipped first:
 
 ## Shipped in v0.8
 
+- **Dedicated Fail2ban category** *(v0.8.2)*: four checks beyond the SSH-008
+  brute-force check — service enabled at boot (F2B-001), ban-policy sanity
+  (F2B-002), a recidive jail for repeat offenders (F2B-003, with a reversible
+  fix), and `ignoreip` breadth (F2B-004). Fixture-tested.
 - **Web UI default port is now 9000** *(v0.8.1)* (was 8787); override any time
   with `auditxs web --port N`.
 - **Fleet mode** (`auditxs fleet`): read-only audits across many hosts over SSH

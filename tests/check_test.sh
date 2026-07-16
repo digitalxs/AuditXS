@@ -83,6 +83,30 @@ audit_FS_004; ck "FS-004 shadow 644 (world-readable) → FAIL" 1 $?
 chmod 600 "$FIX/etc/shadow"
 audit_FS_004; ck "FS-004 shadow 600 → PASS" 0 $?
 
+echo "== Fail2ban (F2B-*) against fixtures =="
+mkdir -p "$FIX/etc/fail2ban/jail.d"
+
+# F2B-002 — lenient maxretry + short bantime → WARN
+printf '[DEFAULT]\nmaxretry = 10\nbantime = 60\nignoreip = 127.0.0.1/8 ::1\n' > "$FIX/etc/fail2ban/jail.local"
+audit_F2B_002; ck "F2B-002 lenient policy → WARN" 2 $?
+
+# F2B-002 — sane policy → PASS ; F2B-004 loopback+RFC1918 → PASS
+printf '[DEFAULT]\nmaxretry = 4\nbantime = 1h\nignoreip = 127.0.0.1/8 ::1 10.0.0.0/8\n' > "$FIX/etc/fail2ban/jail.local"
+audit_F2B_002; ck "F2B-002 sane policy → PASS" 0 $?
+audit_F2B_004; ck "F2B-004 loopback/RFC1918 ignoreip → PASS" 0 $?
+
+# F2B-004 — a broad public range in ignoreip → WARN
+printf '[DEFAULT]\nignoreip = 127.0.0.1/8 8.0.0.0/8 0.0.0.0/0\n' > "$FIX/etc/fail2ban/jail.local"
+audit_F2B_004; ck "F2B-004 broad ignoreip → WARN" 2 $?
+
+# F2B-003 — recidive jail enabled in jail.d → PASS ; absent → FAIL
+printf '[recidive]\nenabled = true\n' > "$FIX/etc/fail2ban/jail.d/recidive.conf"
+audit_F2B_003; ck "F2B-003 recidive enabled → PASS" 0 $?
+rm -f "$FIX/etc/fail2ban/jail.d/recidive.conf"
+printf '[DEFAULT]\nmaxretry = 4\n' > "$FIX/etc/fail2ban/jail.local"
+audit_F2B_003; ck "F2B-003 no recidive → FAIL" 1 $?
+rm -rf "$FIX/etc/fail2ban"
+
 echo "== Debian release (DEB-002) via variables =="
 DISTRO_FAMILY=debian; DISTRO_ID=debian
 DISTRO_VERSION=13 DISTRO_CODENAME=trixie;   audit_DEB_002; ck "DEB-002 Debian 13 → PASS" 0 $?

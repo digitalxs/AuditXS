@@ -1,6 +1,6 @@
 # AuditXS check catalogue
 
-Generated from the check registry by `auditxs list --markdown` (v0.8.1).
+Generated from the check registry by `auditxs list --markdown` (v0.8.2).
 
 Legend: checks with an **automatic fix** are only ever applied by
 `auditxs harden` after showing you exactly what will change, and every
@@ -222,6 +222,56 @@ Checks that an intrusion-prevention service (fail2ban with an sshd jail, or sshg
 **What the fix changes:** Installs fail2ban (plus the python systemd bindings it needs to read the journal), writes /etc/fail2ban/jail.d/99-auditxs.conf enabling the sshd jail with 'backend = systemd', and enables + restarts the fail2ban service. Existing fail2ban configuration is not modified — the drop-in only enables the sshd jail. Defaults apply (5 failures → 10 minute ban).
 
 **How it is reverted:** 'sudo auditxs rollback' removes the jail drop-in, restores the previous service state and offers to remove packages AuditXS installed.
+
+## Fail2ban — Network Security domain
+
+### F2B-001 — fail2ban is enabled to start at boot
+
+- **Severity:** medium
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** DE.CM-01, DE.CM-06
+- **Fix:** automatic (reversible)
+
+Checks that the fail2ban service is enabled (starts automatically at boot). A fail2ban that is running now but not enabled loses all brute-force protection after the next reboot — a common and easily-missed gap.
+
+**What the fix changes:** Enables the fail2ban service (systemctl enable fail2ban.service) so it starts on boot. Does not change any jail or ban configuration.
+
+**How it is reverted:** 'sudo auditxs rollback' disables the service again if it was disabled before.
+
+### F2B-002 — fail2ban ban policy is not too permissive
+
+- **Severity:** low
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** DE.CM-01, DE.CM-06
+- **Fix:** manual (report-only)
+
+Checks the effective default ban policy: 'maxretry' (failures before a ban) should be low (<= 5) and 'bantime' should be meaningful (>= 10 minutes). A high maxretry or a very short bantime lets brute-force attacks continue with little cost. Report-only — tuning ban policy is environment-specific.
+
+### F2B-003 — A recidive jail bans repeat offenders
+
+- **Severity:** low
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** DE.CM-01, DE.CM-06
+- **Fix:** automatic (reversible)
+
+Checks for an enabled 'recidive' jail. Recidive watches fail2ban's own log and applies long bans to IPs that keep getting banned across jails — a cheap, high-value defence-in-depth layer against persistent attackers.
+
+**What the fix changes:** Writes /etc/fail2ban/jail.d/99-auditxs-recidive.conf enabling the built-in [recidive] jail and restarts fail2ban. Recidive reads fail2ban's own logfile (/var/log/fail2ban.log); if your fail2ban logs only to the journal, set 'logtarget' to a file for recidive to work.
+
+**How it is reverted:** 'sudo auditxs rollback' removes the drop-in and restarts fail2ban.
+
+### F2B-004 — fail2ban ignoreip is not overly broad
+
+- **Severity:** medium
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** DE.CM-01, DE.CM-06
+- **Fix:** manual (report-only)
+
+Checks that the 'ignoreip' allow-list does not whitelist large public ranges. A broad ignoreip (e.g. 0.0.0.0/0 or a public /8) silently exempts attackers from banning. Loopback and private (RFC1918) ranges are expected and fine. Report-only — the correct allow-list is site-specific, and editing it automatically could lock you out.
 
 ## Firewall — Network Security domain
 

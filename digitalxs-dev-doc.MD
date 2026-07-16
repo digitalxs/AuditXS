@@ -75,7 +75,7 @@ lib/                    the engine (pure Bash, one concern per file)
   tools.sh              'auditxs tools' — install/scan external security tooling
   fleet.sh              'auditxs fleet' — read-only audit across hosts over SSH
   maintenance.sh        doctor, baseline, schedule, diff
-checks/                 20 self-registering check modules (87 checks); numbered by category
+checks/                 21 self-registering check modules (91 checks); numbered by category
 gui/
   auditxs-gui           zenity front-end (per-op pkexec; prefers the Qt app when present)
   auditxs-tui.sh        ncurses (whiptail/dialog) terminal UI — the server interface

@@ -8,10 +8,10 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.8.1-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.8.2-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
-[![Checks](https://img.shields.io/badge/checks-87-8957e5)](docs/CHECKS.md)
+[![Checks](https://img.shields.io/badge/checks-91-8957e5)](docs/CHECKS.md)
 [![Frameworks](https://img.shields.io/badge/NIST%20CSF%202.0%20·%20CIS%20·%20STIG-informational)](docs/COMPLIANCE.md)
 
 **Debian** · **Ubuntu** · **Pop!\_OS** · **Arch** · **Fedora** · **openSUSE** *(and derivatives)*
@@ -213,7 +213,7 @@ Full detail: [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
 
 ## 📋 What is covered
 
-**87 checks across 20 categories.** The full catalogue — with per-check
+**91 checks across 21 categories.** The full catalogue — with per-check
 documentation generated from the code itself — lives in
 [docs/CHECKS.md](docs/CHECKS.md) (or run `auditxs list --markdown`).
 
@@ -223,6 +223,7 @@ documentation generated from the code itself — lives in
 | **Debian** | APT signature enforcement, release EOL awareness, needrestart |
 | **SSH** | root login, auth limits, empty passwords, X11, key-only auth *(with lockout guard)*, idle timeout, grace time, fail2ban/sshguard |
 | **Firewall** | installed, active, default-deny — with an SSH **lockout guard** before enabling |
+| **Fail2ban** | service enabled at boot, ban policy sanity (maxretry/bantime), recidive jail for repeat offenders, `ignoreip` not overly broad |
 | **Accounts** | UID-0 uniqueness, empty passwords, password aging, NOPASSWD sudo, system-account shells, umask, `pam_pwquality` |
 | **Privileged** | sudo pty + logging, SSH MFA posture, admin inventory |
 | **Filesystem** | sticky bits, world-writable &amp; unowned files, sensitive-file &amp; home permissions, SUID inventory |
@@ -318,7 +319,7 @@ AX6002`, or search with `auditxs errors ssh`. Full table:
 ```text
 auditxs             CLI entry point
 lib/                engine — core, distro, snapshot/rollback, registry, reports, fix helpers, maintenance
-checks/             20 self-registering, self-documenting check modules (87 checks)
+checks/             21 self-registering, self-documenting check modules (91 checks)
 gui/                terminal UI (ncurses), zenity GUI, web UI, Qt/QML app + desktop launcher
 setup.sh            installer (Server / Workstation selection)
 uninstall.sh        uninstaller (protects your snapshots)
