@@ -15,15 +15,41 @@ display; the QML view requires PySide6 + a desktop to render.
 import json
 import os
 import re
+import shutil
 import socket
 import subprocess
 import sys
 
 _ID = re.compile(r"[A-Za-z0-9-]+")
 
+# Subcommands that need root. When the GUI runs unprivileged (e.g. launched
+# from the desktop), each of these is elevated per-operation via pkexec — the
+# same model as the zenity GUI — so the window itself stays unprivileged and
+# displays normally on X11 and Wayland.
+_ROOT_CMDS = {"audit", "report", "harden", "rollback", "snapshots",
+              "tools", "cve", "baseline", "doctor", "schedule"}
+
+
+def _elevate(cmd):
+    """Prefix a command with pkexec/sudo when elevation is needed and possible.
+
+    `cmd` is [auditxs_bin, subcommand, ...]; elevation keys off the subcommand.
+    """
+    sub = cmd[1] if len(cmd) > 1 else ""
+    if os.geteuid() == 0 or sub not in _ROOT_CMDS:
+        return cmd
+    if shutil.which("pkexec"):
+        return ["pkexec"] + cmd
+    # Fall back to sudo only with a terminal, so a windowed GUI never hangs
+    # waiting for a password on stdin (matches the zenity GUI's elevate()).
+    if shutil.which("sudo") and sys.stdin.isatty():
+        return ["sudo"] + cmd
+    return cmd
+
 
 def run_auditxs(args, timeout=240):
-    cmd = [os.environ.get("AUDITXS_BIN", "auditxs")] + args
+    bin_ = os.environ.get("AUDITXS_BIN", "auditxs")
+    cmd = _elevate([bin_] + list(args))
     try:
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         return p.returncode, p.stdout, p.stderr
@@ -101,7 +127,11 @@ def selftest():
         print(("PASS" if cond else "FAIL") + " " + name)
         ok = ok and cond
 
+    _bin = os.environ.get("AUDITXS_BIN", "auditxs")
     check("strip_ansi removes escapes", strip_ansi("\x1b[31mx\x1b[0m") == "x")
+    check("non-privileged subcommand is never elevated",
+          _elevate([_bin, "explain", "SSH-001"]) == [_bin, "explain", "SSH-001"])
+    check("audit is treated as privileged", "audit" in _ROOT_CMDS)
     check("explain rejects bad id", data_explain("a;b") == "invalid id")
     check("harden rejects bad id", data_harden("a b")["rc"] == 1)
     check("rollback rejects bad id", data_rollback("../x")["rc"] == 1)

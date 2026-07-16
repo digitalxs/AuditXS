@@ -261,7 +261,9 @@ main() {
             AUDITXS_BIN="$AUDITXS_SELF" AUDITXS_PROFILE="$PROFILE" \
                 exec python3 -u "$AUDITXS_ROOT/gui/auditxs-web.py" "${ARGS[@]}" ;;
         qt)
-            require_root qt
+            # The Qt app runs UNPRIVILEGED and elevates each privileged action
+            # itself (pkexec, like the zenity GUI), so the window displays
+            # normally on both X11 and Wayland. No require_root here on purpose.
             resolve_profile
             require_workstation_interface "the Qt GUI"
             have python3 || die "The Qt GUI requires python3 + PySide6 (install the 'auditxs-gui-qt' package)."

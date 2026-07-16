@@ -31,6 +31,12 @@ they shipped first:
   dependency), drag-to-move (`startSystemMove`), double-click-to-maximize and
   edge/corner resize (`startSystemResize`). An offscreen `tests/qml_test.py`
   loads the QML and exercises the window controls in CI.
+- **`auditxs-gui` prefers the windowed app** *(v0.7.2)*. On a workstation the
+  graphical launcher opens the Qt window (with the controls above) whenever
+  PySide6 is present, falling back to the zenity dialogs otherwise
+  (`AUDITXS_GUI=qt|zenity` overrides). The Qt app now runs unprivileged and
+  elevates each action with pkexec — matching the zenity model — so it
+  displays on both X11 and Wayland.
 - **Profile-gated interfaces.** Servers are restricted to text interfaces —
   the CLI and a new **ncurses terminal UI** (`auditxs tui`, whiptail/dialog)
   that runs over a plain SSH session; the web UI, Qt app and zenity GUI are

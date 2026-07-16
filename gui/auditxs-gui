@@ -31,6 +31,26 @@ if [ "$("$AUDITXS_BIN" profile 2>/dev/null)" = server ]; then
     die_gui "The graphical interface is disabled on the 'server' profile.\nUse the terminal UI over SSH:  sudo auditxs tui\nor the CLI:  sudo auditxs audit"
 fi
 
+# The zenity dialogs are drawn by the window manager and cannot carry their own
+# minimize/maximize buttons. The Qt app IS a single application window with
+# real window controls (minimize / maximize / restore / move / resize), so when
+# it is available we prefer it. Force the choice with:
+#   AUDITXS_GUI=qt      use the Qt window (error if PySide6 is missing)
+#   AUDITXS_GUI=zenity  use the classic zenity dialogs
+AUDITXS_QT_PY="$(dirname "$(readlink -f "$0")")/auditxs-qt.py"
+qt_gui_available() {
+    [ -f "$AUDITXS_QT_PY" ] && command -v python3 >/dev/null 2>&1 \
+        && python3 -c 'import PySide6' >/dev/null 2>&1
+}
+case "${AUDITXS_GUI:-auto}" in
+    zenity) : ;;                                   # keep the classic dialogs
+    qt)
+        qt_gui_available \
+            || die_gui "AUDITXS_GUI=qt but the Qt window app is unavailable.\nInstall the 'auditxs-gui-qt' package (PySide6), or unset AUDITXS_GUI for the zenity interface."
+        exec "$AUDITXS_BIN" qt ;;
+    *)  qt_gui_available && exec "$AUDITXS_BIN" qt ;;   # auto: prefer the window app
+esac
+
 # Privilege elevation: pkexec (GUI prompt) with sudo fallback for terminals.
 elevate() {
     if [ "$(id -u)" -eq 0 ]; then

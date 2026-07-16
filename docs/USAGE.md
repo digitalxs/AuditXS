@@ -235,10 +235,28 @@ terminal UI over SSH instead). Full details and the security model:
 
 ## The GUI (workstation profile)
 
-`auditxs-gui` (zenity) is a thin wrapper over the CLI — everything it does
-is a visible `auditxs` command, elevated per-operation via pkexec so you
-see an authentication prompt exactly when privileges are used. Like the web
-and Qt interfaces it is disabled on the server profile.
+`auditxs-gui` is a thin wrapper over the CLI — everything it does is a visible
+`auditxs` command, elevated per-operation via pkexec so you see an
+authentication prompt exactly when privileges are used. Like the web and Qt
+interfaces it is disabled on the server profile.
+
+**Which window you get.** When the Qt app (`auditxs-gui-qt`, PySide6) is
+installed, `auditxs-gui` opens the **windowed Qt interface** — a single
+application window with its own title bar and full window controls (minimize,
+maximize/restore, move, resize). Without PySide6 it falls back to the classic
+**zenity** dialogs. zenity dialogs are drawn by your window manager and cannot
+carry their own min/max buttons (on GNOME's default layout the WM shows only a
+close button), which is why the windowed Qt app is preferred when available.
+Force one or the other:
+
+```bash
+AUDITXS_GUI=qt      auditxs-gui      # require the windowed Qt app
+AUDITXS_GUI=zenity  auditxs-gui      # use the classic zenity dialogs
+```
+
+The Qt window runs unprivileged and elevates each action with pkexec, so it
+displays normally on both X11 and Wayland. The zenity flow (below) behaves the
+same way.
 
 - **Audit** — read-only audit with a sortable results table; a CVE warning
   pops up afterwards if vulnerable packages are found.
