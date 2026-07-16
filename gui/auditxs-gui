@@ -207,12 +207,18 @@ run_tools_gui() {
                 --column "" --column "Tool" --column "Purpose" \
                 FALSE lynis "Host security auditor" \
                 FALSE rkhunter "Rootkit detector" \
+                FALSE chkrootkit "Rootkit detector (second opinion)" \
+                FALSE clamav "Antivirus / malware scanner" \
                 FALSE aide "File integrity monitoring" \
+                FALSE openscap "SCAP compliance scanner (CIS/STIG)" \
+                FALSE auditd "Linux kernel audit daemon" \
                 FALSE debsecan "Precise Debian CVE tracking" \
-                FALSE suricata "Network IDS/IPS" \
-                FALSE crowdsec "Collaborative intrusion prevention" \
                 FALSE fail2ban "Log-based ban engine" \
-                --width 660 --height 460 2>/dev/null) || return
+                FALSE crowdsec "Collaborative intrusion prevention" \
+                FALSE suricata "Network IDS/IPS" \
+                FALSE usbguard "USB device allow-listing" \
+                FALSE firejail "Application sandboxing" \
+                --width 680 --height 540 2>/dev/null) || return
             [ -n "$tool" ] || return
             ( elevate "$AUDITXS_BIN" tools install "$tool" > "$WORK_DIR/toolinstall.log" 2>&1; echo $? >"$WORK_DIR/ti.rc" ) | \
                 zenity --progress --title "AuditXS" --text "Installing $tool…" --pulsate --no-cancel --auto-close 2>/dev/null

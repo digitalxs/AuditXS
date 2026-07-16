@@ -25,6 +25,12 @@ they shipped first:
 
 ## Shipped in v0.7
 
+- **Native window chrome for the Qt app** *(v0.7.1)*. The desktop app is now a
+  frameless window with its own Material title bar: in-app minimize /
+  maximize-restore / close buttons (drawn as shapes, no glyph-font
+  dependency), drag-to-move (`startSystemMove`), double-click-to-maximize and
+  edge/corner resize (`startSystemResize`). An offscreen `tests/qml_test.py`
+  loads the QML and exercises the window controls in CI.
 - **Profile-gated interfaces.** Servers are restricted to text interfaces —
   the CLI and a new **ncurses terminal UI** (`auditxs tui`, whiptail/dialog)
   that runs over a plain SSH session; the web UI, Qt app and zenity GUI are

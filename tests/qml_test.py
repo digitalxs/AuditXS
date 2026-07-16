@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+"""
+AuditXS Qt/QML view test — loads gui/auditxs.qml offscreen with a stub backend
+and exercises the window-control methods, so QML syntax errors, broken bindings
+and typo'd method calls (which are runtime-only in QML) are caught in CI.
+
+Requires PySide6 + a headless GL stack; if PySide6 cannot be imported the test
+prints SKIP and exits 0, so it is safe to run anywhere.
+"""
+import os
+import sys
+
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+os.environ.setdefault("QT_QUICK_CONTROLS_STYLE", "Material")
+os.environ.setdefault("QT_QUICK_CONTROLS_MATERIAL_THEME", "System")
+
+try:
+    from PySide6.QtCore import QObject, Slot, QUrl, QTimer, Qt
+    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtQml import QQmlApplicationEngine
+except ImportError as e:  # PySide6 not installed — nothing to test here
+    print(f"SKIP qml_test: PySide6 not available ({e})")
+    sys.exit(0)
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+QML = os.path.join(HERE, "..", "gui", "auditxs.qml")
+
+
+class StubBackend(QObject):
+    """Deterministic stand-in for the real CLI-backed backend."""
+
+    @Slot(result=str)
+    def meta(self):
+        return '{"version":"0.0.0","host":"test","profile":"workstation"}'
+
+    @Slot(result=str)
+    def audit(self):
+        return ('{"summary":{"pass":1,"fail":1,"warn":0,"skip":0,"score":"80"},'
+                '"results":[{"id":"SSH-001","title":"root login","status":"FAIL",'
+                '"severity":"critical","level":"1","cis":"5.1.20","detail":"x",'
+                '"fixable":true}]}')
+
+    @Slot(str, result=str)
+    def explain(self, cid):
+        return "explain " + cid
+
+    @Slot(str, result=str)
+    def harden(self, cid):
+        return '{"rc":0,"log":"ok"}'
+
+    @Slot(result=str)
+    def snapshots(self):
+        return "[]"
+
+    @Slot(str, result=str)
+    def rollback(self, sid):
+        return '{"rc":0,"log":"ok"}'
+
+
+def main():
+    app = QGuiApplication(sys.argv)
+    engine = QQmlApplicationEngine()
+
+    warnings = []
+    engine.warnings.connect(
+        lambda ws: warnings.extend(w.toString() for w in ws))
+
+    backend = StubBackend()
+    engine.rootContext().setContextProperty("backend", backend)
+    engine.load(QUrl.fromLocalFile(os.path.abspath(QML)))
+
+    roots = engine.rootObjects()
+    if not roots:
+        print("FAIL: QML did not load (no root object)")
+        for w in warnings:
+            print("  ", w)
+        return 1
+    win = roots[0]
+
+    failures = []
+
+    def runtime_warnings():
+        bad = ("TypeError", "ReferenceError", "is not a function", "Unable to assign")
+        return [w for w in warnings if any(b in w for b in bad)]
+
+    def drive():
+        try:
+            # window-state controls used by the title-bar buttons
+            assert win.property("isMax") is False, "window should start un-maximized"
+            win.showMaximized()
+            assert win.property("isMax") is True, "isMax should track showMaximized()"
+            win.metaObject().invokeMethod(win, "toggleMaximize")
+            assert win.property("isMax") is False, "toggleMaximize should restore"
+            win.showMinimized()
+            win.showNormal()
+            # frameless move/resize entry points (QWindow methods)
+            win.startSystemResize(Qt.Edge.RightEdge | Qt.Edge.BottomEdge)
+            win.startSystemMove()
+        except Exception as e:  # noqa: BLE001 — report any driving failure
+            failures.append(repr(e))
+        finally:
+            app.quit()
+
+    QTimer.singleShot(300, drive)
+    app.exec()
+
+    rt = runtime_warnings()
+    if rt:
+        failures.append("runtime QML warnings: " + " | ".join(rt))
+
+    if failures:
+        print("FAIL qml_test:")
+        for f in failures:
+            print("  -", f)
+        return 1
+
+    print("PASS qml_test: auditxs.qml loads and window controls work")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

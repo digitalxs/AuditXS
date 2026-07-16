@@ -1,7 +1,12 @@
 // AuditXS — Qt Quick Controls (Material) native interface.
 // Bound to the Python `backend` (see gui/auditxs-qt.py). All actions call the
 // auditxs CLI; hardening is only ever applied after the review dialog.
+//
+// The window is frameless with its own Material title bar: the min / maximize
+// / close buttons, drag-to-move and edge-resize are provided in-app (client-
+// side decorations) so the chrome matches the app on every desktop.
 import QtQuick
+import QtQuick.Window
 import QtQuick.Controls.Material
 import QtQuick.Layouts
 
@@ -10,13 +15,17 @@ ApplicationWindow {
     visible: true
     width: 940
     height: 680
+    minimumWidth: 680
+    minimumHeight: 480
     title: "AuditXS"
+    flags: Qt.Window | Qt.FramelessWindowHint
 
     Material.theme: Material.System
     Material.primary: Material.Indigo
     Material.accent: Material.Indigo
 
     property var summary: ({ pass: 0, fail: 0, warn: 0, skip: 0, score: "-" })
+    property bool isMax: win.visibility === Window.Maximized || win.visibility === Window.FullScreen
 
     function refreshAudit() {
         var d = JSON.parse(backend.audit());
@@ -47,19 +56,98 @@ ApplicationWindow {
              : status === "WARN" ? "#b26a00" : "#78909c";
     }
 
-    header: ToolBar {
-        RowLayout {
-            anchors.fill: parent
-            Label { text: "AuditXS"; font.pixelSize: 20; font.bold: true; Layout.leftMargin: 16 }
-            Label { id: scoreLabel; text: "Score –/100"; opacity: 0.9; Layout.leftMargin: 12 }
-            Item { Layout.fillWidth: true }
-            Button { text: "Run audit"; highlighted: true; Layout.rightMargin: 12; onClicked: refreshAudit() }
+    function toggleMaximize() {
+        if (win.isMax) win.showNormal();
+        else           win.showMaximized();
+    }
+
+    // A window-control button. Icons are drawn as shapes (no glyph-font
+    // dependency), so they look identical on every system and follow the theme.
+    component WinButton: ToolButton {
+        id: wb
+        property string kind: "min"      // min | max | restore | close
+        property bool danger: false      // close button turns red on hover
+        implicitWidth: 46
+        implicitHeight: 38
+        Layout.preferredWidth: 46
+        Layout.preferredHeight: 38
+        focusPolicy: Qt.NoFocus
+        property color glyph: (danger && (hovered || down)) ? "white" : Material.foreground
+        background: Rectangle {
+            color: wb.down    ? (wb.danger ? "#b71c1c" : Qt.rgba(0.5, 0.5, 0.5, 0.30))
+                 : wb.hovered ? (wb.danger ? "#e53935" : Qt.rgba(0.5, 0.5, 0.5, 0.16))
+                 : "transparent"
+        }
+        contentItem: Item {
+            Item {
+                anchors.centerIn: parent
+                width: 12; height: 12
+                // minimize — a single bar
+                Rectangle {
+                    visible: wb.kind === "min"; anchors.centerIn: parent
+                    width: 11; height: 2; radius: 1; color: wb.glyph
+                }
+                // maximize — one square outline
+                Rectangle {
+                    visible: wb.kind === "max"; anchors.fill: parent
+                    color: "transparent"; border.color: wb.glyph; border.width: 1.6; radius: 1.5
+                }
+                // restore — two offset square outlines
+                Item {
+                    visible: wb.kind === "restore"; anchors.fill: parent
+                    Rectangle {   // back square (upper-right)
+                        x: 3; y: 0; width: 9; height: 9; radius: 1
+                        color: "transparent"; border.color: wb.glyph; border.width: 1.5
+                    }
+                    Rectangle {   // front square (lower-left), fills to occlude
+                        x: 0; y: 3; width: 9; height: 9; radius: 1
+                        color: win.color; border.color: wb.glyph; border.width: 1.5
+                    }
+                }
+                // close — an X of two crossed bars
+                Rectangle {
+                    visible: wb.kind === "close"; anchors.centerIn: parent
+                    width: 15; height: 2; radius: 1; rotation: 45; color: wb.glyph
+                }
+                Rectangle {
+                    visible: wb.kind === "close"; anchors.centerIn: parent
+                    width: 15; height: 2; radius: 1; rotation: -45; color: wb.glyph
+                }
+            }
         }
     }
 
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
+
+        // ---- custom title bar (drag to move, double-click to maximize) ----
+        ToolBar {
+            id: titleBar
+            Layout.fillWidth: true
+
+            TapHandler {
+                onDoubleTapped: win.toggleMaximize()
+            }
+            DragHandler {
+                target: null
+                onActiveChanged: if (active) win.startSystemMove()
+            }
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 6
+                spacing: 6
+                Label { text: "AuditXS"; font.pixelSize: 20; font.bold: true; Layout.leftMargin: 10 }
+                Label { id: scoreLabel; text: "Score –/100"; opacity: 0.9; Layout.leftMargin: 10 }
+                Item { Layout.fillWidth: true }   // draggable gap
+                Button { text: "Run audit"; highlighted: true; focusPolicy: Qt.NoFocus; onClicked: refreshAudit() }
+                Item { width: 10 }
+                WinButton { kind: "min";                onClicked: win.showMinimized() }
+                WinButton { kind: win.isMax ? "restore" : "max"; onClicked: win.toggleMaximize() }
+                WinButton { kind: "close"; danger: true; onClicked: win.close() }
+            }
+        }
 
         Label {
             id: chips
@@ -198,6 +286,49 @@ ApplicationWindow {
             backend.rollback(sid);
             refreshSnaps();
         }
+    }
+
+    // ---- frameless-window resize grips (thin, so scrollbars stay reachable) ----
+    // Declared last so they sit above the content at the window's very edges.
+    MouseArea {   // left edge
+        anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+        width: 4; cursorShape: Qt.SizeHorCursor
+        onPressed: win.startSystemResize(Qt.LeftEdge)
+    }
+    MouseArea {   // right edge
+        anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
+        width: 4; cursorShape: Qt.SizeHorCursor
+        onPressed: win.startSystemResize(Qt.RightEdge)
+    }
+    MouseArea {   // top edge
+        anchors { top: parent.top; left: parent.left; right: parent.right }
+        height: 4; cursorShape: Qt.SizeVerCursor
+        onPressed: win.startSystemResize(Qt.TopEdge)
+    }
+    MouseArea {   // bottom edge
+        anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
+        height: 4; cursorShape: Qt.SizeVerCursor
+        onPressed: win.startSystemResize(Qt.BottomEdge)
+    }
+    MouseArea {   // top-left corner
+        anchors { left: parent.left; top: parent.top }
+        width: 10; height: 10; cursorShape: Qt.SizeFDiagCursor
+        onPressed: win.startSystemResize(Qt.LeftEdge | Qt.TopEdge)
+    }
+    MouseArea {   // top-right corner
+        anchors { right: parent.right; top: parent.top }
+        width: 10; height: 10; cursorShape: Qt.SizeBDiagCursor
+        onPressed: win.startSystemResize(Qt.RightEdge | Qt.TopEdge)
+    }
+    MouseArea {   // bottom-left corner
+        anchors { left: parent.left; bottom: parent.bottom }
+        width: 10; height: 10; cursorShape: Qt.SizeBDiagCursor
+        onPressed: win.startSystemResize(Qt.LeftEdge | Qt.BottomEdge)
+    }
+    MouseArea {   // bottom-right corner
+        anchors { right: parent.right; bottom: parent.bottom }
+        width: 10; height: 10; cursorShape: Qt.SizeFDiagCursor
+        onPressed: win.startSystemResize(Qt.RightEdge | Qt.BottomEdge)
     }
 
     Component.onCompleted: refreshAudit()
