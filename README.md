@@ -8,7 +8,7 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.7.2-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.8.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![Checks](https://img.shields.io/badge/checks-87-8957e5)](docs/CHECKS.md)
@@ -113,6 +113,8 @@ sudo auditxs tools status              inventory of installed security tooling
 sudo auditxs tools install lynis       install a security tool (reversible)
 sudo auditxs tools scan                run installed scanners (Lynis, rkhunter, …)
 auditxs tools vpn                      review WireGuard / OpenVPN configuration
+auditxs fleet web01 db01 --sudo        audit many hosts over SSH (read-only), aggregate
+auditxs errors AX6002                  explain an error number (auditxs errors = full catalogue)
 
 sudo auditxs tui                       terminal (ncurses) UI — works over SSH, any profile
 sudo auditxs web                       Material Design web UI, localhost-only (workstation)
@@ -263,6 +265,38 @@ rather than reinventing it — all through the same reversible interface:
 
 ---
 
+## 🌐 Fleet mode — audit many hosts over SSH
+
+```bash
+auditxs fleet web01 db01 --user admin --key ~/.ssh/id_ed25519 --sudo
+auditxs fleet --inventory hosts.txt --ask-pass          # password auth (via sshpass)
+```
+
+Run a **read-only** audit across a fleet from one machine and get an aggregated
+score table plus per-host JSON reports under `/var/lib/auditxs/reports/fleet/`.
+By design fleet mode never hardens over SSH — review each host's report, then
+harden that host locally.
+
+- **Authentication** — key auth is preferred (`--key` or your SSH agent);
+  password auth (`--ask-pass`) feeds the password to `sshpass` via the
+  environment, never the command line.
+- **Host keys are verified** (trust-on-first-use, refusing *changed* keys);
+  `--strict-host-key` and `--insecure-host-key` tune this.
+- **Exit codes** are CI-friendly: `2` if any host couldn't be reached, `1` if
+  some host has failing checks, `0` if the whole fleet is clean.
+- Every failure prints a **stable error number** (e.g. `AX6002`) you can look
+  up with `auditxs errors <code>` — see the [error catalogue](docs/ERRORS.md).
+
+## 🔢 Error catalogue
+
+Every recoverable failure reports a unique, stable `AXnnnn` number with a plain
+explanation and a fix, on the console and in `/var/lib/auditxs/errors.log`.
+Browse the database with `auditxs errors`, explain one with `auditxs errors
+AX6002`, or search with `auditxs errors ssh`. Full table:
+[docs/ERRORS.md](docs/ERRORS.md).
+
+---
+
 ## 📚 Documentation
 
 | Guide | What's inside |
@@ -271,8 +305,10 @@ rather than reinventing it — all through the same reversible interface:
 | [docs/SECURITY-GUIDE.md](docs/SECURITY-GUIDE.md) | **Cybersecurity best-practices playbook** — the reasoning behind every control |
 | [docs/WEBUI.md](docs/WEBUI.md) | The localhost web UI (`auditxs web`) and its security model |
 | [docs/CHECKS.md](docs/CHECKS.md) | Every check: what/why, what the fix changes, how it reverts *(generated from code)* |
+| [docs/ERRORS.md](docs/ERRORS.md) | The `AXnnnn` error catalogue — every code, why it happens, how to resolve *(generated)* |
 | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Domains, NIST CSF 2.0, CIS/STIG alignment, assessor evidence |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Engine, snapshot format, check API, testing |
+| [**digitalxs-dev-doc.MD**](digitalxs-dev-doc.MD) | **Developer & maintainer guide** — architecture, code map, debugging, testing, releases, GitHub workflow |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Must-have feature rationale and deliberate non-goals |
 
 ---

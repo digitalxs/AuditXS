@@ -23,6 +23,22 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.8
+
+- **Fleet mode** (`auditxs fleet`): read-only audits across many hosts over SSH
+  (key or password auth via sshpass), aggregated score table + per-host JSON,
+  CI-friendly exit codes. Never hardens over SSH by design.
+- **Error-code system**: every recoverable failure reports a stable `AXnnnn`
+  number with a plain why/fix, logged to `/var/lib/auditxs/errors.log`;
+  browsable with `auditxs errors` and generated into `docs/ERRORS.md`.
+- **Trust & distribution**: `.deb` builds now emit a SHA256 checksum; a
+  tag-triggered `release.yml` publishes a signed GitHub Release (GPG when a key
+  secret is configured), and `scripts/release.sh` prepares releases locally.
+  The root `VERSION` file is now the single source of truth (fixes a
+  version/​package drift).
+- **Developer guide** `digitalxs-dev-doc.MD`: architecture, code map, check
+  API, debugging, testing, release process and GitHub workflow.
+
 ## Shipped in v0.7
 
 - **Native window chrome for the Qt app** *(v0.7.1)*. The desktop app is now a

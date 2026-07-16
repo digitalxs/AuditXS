@@ -31,6 +31,7 @@ tt() { # tt <description> <expected yes|no> <command...> — test exit status
 # Load the engine quietly (function definitions + registration only).
 QUIET=1
 . lib/core.sh
+. lib/errors.sh
 . lib/distro.sh
 . lib/backup.sh
 . lib/registry.sh
@@ -39,6 +40,7 @@ QUIET=1
 . lib/maintenance.sh
 . lib/cve.sh
 . lib/tools.sh
+. lib/fleet.sh
 for c in checks/*.sh; do . "$c"; done
 
 TMPD=$(mktemp -d)
@@ -148,6 +150,24 @@ tt "diff lists BBB-001 improvement"  yes grep -q 'BBB-001: FAIL → PASS' <<< "$
 out=$(cmd_diff "$TMPD/old.json" "$TMPD/old.json"); rc=$?
 t "diff identical reports (exit 0)"  '0' "$rc"
 tt "diff identical says none"        yes grep -q 'No regressions' <<< "$out"
+
+# ---- error catalogue (lib/errors.sh) -------------------------------------
+AX_ERROR_LEDGER="$TMPD/errors.log"     # keep the test side-effect-free
+t "error catalogue AX6002 title"     "SSH authentication failed" "${AX_ERR_TITLE[AX6002]:-}"
+t "error catalogue is populated"     yes "$([ ${#AX_ERR_CODES[@]} -ge 20 ] && echo yes || echo no)"
+errout=$(ax_error AXZZZZ 2>&1)
+tt "unknown code maps to AX9001"     yes grep -q 'AX9001' <<< "$errout"
+tt "ax_error returns non-zero"       no  ax_error AX9000 2>/dev/null
+mdrows=$(cmd_errors --markdown | grep -c '| `AX')
+t "errors --markdown emits rows"     yes "$([ "$mdrows" -ge 20 ] && echo yes || echo no)"
+tt "ax_error wrote to the ledger"    yes test -s "$TMPD/errors.log"
+
+# ---- fleet JSON summary parsing (lib/fleet.sh) ---------------------------
+fjson='{"summary": { "pass": 12, "fail": 3, "warn": 2, "skip": 5, "score": "82" }, "results": []}'
+t "_fleet_field pass"                "12" "$(_fleet_field "$fjson" pass)"
+t "_fleet_field fail"                "3"  "$(_fleet_field "$fjson" fail)"
+t "_fleet_field warn"                "2"  "$(_fleet_field "$fjson" warn)"
+t "_fleet_score"                     "82" "$(_fleet_score "$fjson")"
 
 echo
 echo "unit tests: $PASS passed, $FAILED failed"

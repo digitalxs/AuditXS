@@ -1,0 +1,99 @@
+name: Release
+
+# Publish a GitHub Release when a version tag (v1.2.3) is pushed. The release
+# is built on a clean runner, the .deb is checksummed, the checksums are
+# GPG-signed when a signing key is configured, and everything is attached to
+# the Release so downloads can be verified.
+#
+# To enable signing, add two repository secrets (Settings → Secrets → Actions):
+#   GPG_PRIVATE_KEY  — ASCII-armoured private key ('gpg --armor --export-secret-keys')
+#   GPG_PASSPHRASE   — its passphrase
+# Without them the release still publishes, just unsigned (checksums only).
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write        # required to create the Release
+
+jobs:
+  release:
+    name: Build, sign and publish
+    runs-on: ubuntu-latest
+    env:
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify the tag matches VERSION
+        run: |
+          set -e
+          file_ver=$(tr -d '[:space:]' < VERSION)
+          tag_ver="${GITHUB_REF_NAME#v}"
+          echo "VERSION file: $file_ver   tag: $tag_ver"
+          [ "$file_ver" = "$tag_ver" ] || {
+            echo "::error::Tag $GITHUB_REF_NAME does not match VERSION ($file_ver). Bump VERSION first."; exit 1; }
+          [ "$(./auditxs version)" = "AuditXS v$file_ver" ] \
+            || { echo "::error::'auditxs version' disagrees with VERSION"; exit 1; }
+
+      - name: Lint + tests (release gate)
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q shellcheck
+          shellcheck -S warning auditxs setup.sh uninstall.sh gui/auditxs-gui gui/auditxs-tui.sh scripts/*.sh lib/*.sh checks/*.sh
+          bash tests/unit.sh
+          bash tests/check_test.sh
+          bash tests/web_test.sh
+
+      - name: Build the .deb and checksums
+        run: |
+          sudo apt-get install -y -q dpkg-dev
+          ./packaging/build-deb.sh dist
+          ( cd dist && sha256sum ./*.deb > SHA256SUMS && cat SHA256SUMS )
+
+      - name: Sign the checksums (optional — needs GPG_PRIVATE_KEY secret)
+        if: env.GPG_PRIVATE_KEY != ''
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+              --armor --detach-sign --output dist/SHA256SUMS.asc dist/SHA256SUMS
+          echo "Signed dist/SHA256SUMS.asc"
+
+      - name: Assemble release notes
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          {
+            echo "## AuditXS $GITHUB_REF_NAME"
+            echo
+            echo "Transparent, reversible Linux security auditing & hardening."
+            echo
+            echo "### Install (Debian/Ubuntu)"
+            echo '```bash'
+            echo "sudo apt install ./auditxs_${ver}_all.deb"
+            echo '```'
+            echo
+            echo "### Verify the download"
+            echo '```bash'
+            echo "sha256sum -c SHA256SUMS"
+            if [ -f dist/SHA256SUMS.asc ]; then
+              echo "gpg --verify SHA256SUMS.asc SHA256SUMS   # checksums are GPG-signed"
+            fi
+            echo '```'
+            echo
+            echo '```'
+            cat dist/SHA256SUMS
+            echo '```'
+          } > RELEASE_NOTES.md
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          files=(dist/*.deb dist/SHA256SUMS packaging/auditxs.8)
+          [ -f dist/SHA256SUMS.asc ] && files+=(dist/SHA256SUMS.asc)
+          gh release create "$GITHUB_REF_NAME" "${files[@]}" \
+            --title "AuditXS $GITHUB_REF_NAME" \
+            --notes-file RELEASE_NOTES.md

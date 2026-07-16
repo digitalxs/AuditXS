@@ -175,6 +175,52 @@ Scanner reports are saved under `/var/lib/auditxs/reports/tools/<timestamp>/`.
 CrowdSec and OSSEC/Wazuh require third-party installers — AuditXS prints the
 official steps rather than piping a remote script into your shell.
 
+## Fleet mode — auditing many hosts over SSH
+
+```bash
+auditxs fleet web01 db01 app03            # audit three hosts (uses your SSH agent/keys)
+auditxs fleet web01 --user admin --key ~/.ssh/id_ed25519 --sudo
+auditxs fleet --inventory hosts.txt --ask-pass   # one password for all hosts (needs sshpass)
+```
+
+Fleet mode runs a **read-only** `auditxs audit` on each host and prints an
+aggregated score table, saving each host's JSON under
+`/var/lib/auditxs/reports/fleet/<timestamp>/`. It **never** hardens over SSH —
+review each report and harden that host locally. Each remote host must have
+AuditXS installed; fleet never pushes code.
+
+| Option | Meaning |
+|---|---|
+| `--hosts a,b,c` / positional | hosts to audit (`user@host` or `host`) |
+| `--inventory <file>` | read hosts from a file (one `user@host` per line, `#` comments) |
+| `--user <name>` | default SSH user for hosts written without `user@` |
+| `--key <file>` | SSH private key (key auth is preferred) |
+| `--ask-pass` | prompt once for a password, used for all hosts (via `sshpass`) |
+| `--port <n>` | SSH port (default 22) · `--sudo` runs the remote audit via `sudo -n` |
+| `--timeout <sec>` | per-host timeout (default 120) · `--output <dir>` where reports go |
+| `--strict-host-key` / `--insecure-host-key` | tighten or disable host-key checking |
+
+**Authentication** prefers keys; password auth passes the password to `sshpass`
+through the environment, never the command line. **Host keys** are verified
+(trust-on-first-use, refusing changed keys). **Exit codes**: `2` if any host
+could not be audited, `1` if some host has failing checks, `0` if all clean.
+Any failure prints a stable error number (see below).
+
+## Error numbers
+
+Every recoverable failure reports a unique `AXnnnn` code with a plain
+explanation and fix, on the console and in `/var/lib/auditxs/errors.log`.
+
+```bash
+auditxs errors            # the whole catalogue (the "database")
+auditxs errors AX6002     # explain one code
+auditxs errors ssh        # search titles/descriptions
+auditxs errors log        # recent occurrences on this host
+```
+
+The full catalogue is also in [ERRORS.md](ERRORS.md) (regenerate with
+`auditxs errors --markdown`).
+
 ## Maintenance (doctor)
 
 ```bash

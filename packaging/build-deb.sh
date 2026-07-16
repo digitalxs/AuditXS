@@ -145,3 +145,10 @@ DEB="$OUT_DIR/${PKG}_${VERSION}_${ARCH}.deb"
 dpkg-deb --root-owner-group --build "$STAGE" "$DEB" >/dev/null
 echo "Built: $DEB"
 dpkg-deb --info "$DEB" | sed -n '1,20p'
+
+# ---- integrity: SHA256 checksum for verification -------------------------
+# A SHA256SUMS file lets anyone verify the download with 'sha256sum -c'; the
+# release workflow additionally GPG-signs it when a signing key is configured.
+( cd "$OUT_DIR" && sha256sum "$(basename "$DEB")" > "$(basename "$DEB").sha256" )
+echo "Checksum: ${DEB}.sha256"
+cat "${DEB}.sha256"

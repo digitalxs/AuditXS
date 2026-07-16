@@ -7,7 +7,16 @@
 # https://github.com/digitalxs/AuditXS
 #
 
-AUDITXS_VERSION="0.7.2"
+# Version — the repository-root VERSION file is the single source of truth
+# (the .deb, git tags and this string all read from it). The literal is only a
+# fallback for the unlikely case the file is missing.
+_ax_version_file="${AUDITXS_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." 2>/dev/null && pwd)}/VERSION"
+if [ -r "$_ax_version_file" ]; then
+    AUDITXS_VERSION=$(tr -d '[:space:]' < "$_ax_version_file")
+else
+    AUDITXS_VERSION="0.8.0"
+fi
+unset _ax_version_file
 
 # ------------------------------------------------------------------ colours
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then

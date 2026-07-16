@@ -76,6 +76,24 @@ ClamAV, OpenSCAP, auditd, Fail2ban, CrowdSec, Suricata, \[char46]\[char46]\[char
 review VPN configuration. Installs go through the same snapshot/rollback
 machinery as every other change.
 .TP
+.B fleet \fR<host...> [options]\fP
+Audit many hosts over SSH and aggregate the results. Read-only by design \(em
+never hardens over SSH. Key authentication is preferred; password auth uses
+.BR sshpass .
+Options include
+.BR --hosts ", " --inventory ", " --user ", " --key ", " --ask-pass ", "
+.BR --sudo ", " --port ", " --timeout ", " --output " and the host-key controls."
+Per-host JSON reports are saved under
+.IR /var/lib/auditxs/reports/fleet/ .
+.TP
+.B errors \fR[CODE|term|log]\fP
+Browse the error catalogue. With no argument, list every
+.B AXnnnn
+code; with a code, explain it; with a term, search; with
+.BR log ,
+show recent occurrences from
+.IR /var/lib/auditxs/errors.log .
+.TP
 .B tui
 Launch the ncurses terminal UI (requires
 .B whiptail

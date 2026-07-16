@@ -18,7 +18,7 @@
 AUDITXS_SELF=$(readlink -f "${BASH_SOURCE[0]}")
 AUDITXS_ROOT=$(dirname "$AUDITXS_SELF")
 
-for _lib in core distro backup registry report fixlib maintenance cve tools; do
+for _lib in core errors distro backup registry report fixlib maintenance cve tools fleet; do
     # shellcheck disable=SC1090
     . "$AUDITXS_ROOT/lib/$_lib.sh" || { echo "auditxs: missing library lib/$_lib.sh" >&2; exit 1; }
 done
@@ -51,6 +51,8 @@ ${BOLD}COMMANDS${RC}
   doctor      Diagnose the AuditXS installation, tooling and snapshot integrity
   cve         Warn about installed packages with a known vulnerability / CVE
   tools       Security tooling:  auditxs tools status | install <name> | scan | vpn
+  fleet       Audit many hosts over SSH (read-only):  auditxs fleet <host...> [options]
+  errors      Browse the error-code catalogue:  auditxs errors [CODE|term|log]
   tui         Launch the terminal (ncurses) interface — works over SSH; server-friendly
   web         Launch the local web UI (Material Design 3) — workstation profile only
   qt          Launch the native Qt/QML desktop app — workstation profile only
@@ -79,6 +81,19 @@ ${BOLD}OPTIONS${RC}
   --debug                        Verbose diagnostics (timings, return codes)
   --tsv                          Shortcut for --format tsv
 
+${BOLD}FLEET OPTIONS${RC} (auditxs fleet — read-only audit over SSH)
+  --hosts a,b,c                  Hosts to audit (or list them as arguments)
+  --inventory <file>             Read hosts from a file (one user@host per line)
+  --user <name>                  Default SSH user for hosts without user@
+  --key <file>                   SSH private key (key auth is preferred)
+  --ask-pass                     Prompt once for an SSH password (needs sshpass)
+  --port <n>                     SSH port (default 22)
+  --sudo                         Run the remote audit via sudo -n
+  --timeout <sec>                Per-host timeout (default 120)
+  --output <dir>                 Where to save per-host JSON reports
+  --strict-host-key              Require a pre-known host key (most strict)
+  --insecure-host-key            Disable host-key checking (trusted networks only)
+
 ${BOLD}EXAMPLES${RC}
   sudo auditxs audit                        Full read-only audit + HTML/JSON report
   sudo auditxs harden --dry-run             Preview every change without applying
@@ -86,6 +101,8 @@ ${BOLD}EXAMPLES${RC}
   sudo auditxs rollback latest              Undo the most recent hardening run
   auditxs explain FW-002                    What it checks, changes, and how to revert
   sudo auditxs audit --baseline old.json    Show regressions/improvements vs. an old report
+  auditxs fleet web01 db01 --user admin --key ~/.ssh/id_ed25519 --sudo
+  auditxs errors AX6002                     Explain an error number
 
 Supported: Debian, Ubuntu, Pop!_OS, Arch, Fedora, openSUSE (and derivatives).
 Profiles:  server, workstation — chosen during installation (see /etc/auditxs/auditxs.conf).
@@ -150,8 +167,13 @@ main() {
             --quiet|-q)  QUIET=1 ;;
             --debug)     DEBUG=1 ;;
             --help|-h)   usage; return 0 ;;
-            --port)      ARGS+=("--port" "${2:?--port needs a value}"); shift ;;   # passthrough to web/tui
+            --port)      ARGS+=("--port" "${2:?--port needs a value}"); shift ;;   # passthrough to web/tui/fleet
             --no-open)   ARGS+=("--no-open") ;;                                     # passthrough to web
+            # fleet-mode options — passed through to 'auditxs fleet'
+            --hosts|--inventory|--user|--key|--timeout|--output)
+                         ARGS+=("$1" "${2:?"$1 needs a value"}"); shift ;;
+            --sudo|--ask-pass|--strict-host-key|--insecure-host-key)
+                         ARGS+=("$1") ;;
             -*)          die "Unknown option: $1 (see 'auditxs help')" ;;
             *)           ARGS+=("$1") ;;
         esac
@@ -275,6 +297,13 @@ main() {
             resolve_profile
             echo "$PROFILE"
             return 0 ;;
+        errors|error)
+            if [ "$MARKDOWN" = 1 ]; then cmd_errors --markdown; else cmd_errors "${ARGS[@]}"; fi
+            return $? ;;
+        fleet)
+            resolve_profile
+            cmd_fleet "${ARGS[@]}"
+            return $? ;;
         baseline)
             cmd_baseline "${ARGS[@]}"
             return $? ;;
