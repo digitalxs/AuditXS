@@ -25,10 +25,12 @@ with the server profile, override for a one-off with `--profile workstation`
 ## Launching
 
 ```bash
-sudo auditxs web                 # starts on http://127.0.0.1:8787 and opens a browser
-sudo auditxs web --port 9000     # choose the port
+sudo auditxs web                 # starts on http://127.0.0.1:9000 and opens a browser
+sudo auditxs web --port 8080     # choose a different port
 sudo auditxs web --no-open       # don't auto-open a browser (print the URL only)
 ```
+
+The default port is **9000**; override it any time with `--port`.
 
 It requires the **workstation** profile, `python3` (standard library only —
 no framework, no pip installs) and root, because auditing reads privileged
@@ -38,9 +40,9 @@ On launch it prints a URL that contains a one-time token:
 
 ```
 ╭─ AuditXS web UI ───────────────────────────────╮
-│  Open: http://127.0.0.1:8787/?t=<token>
+│  Open: http://127.0.0.1:9000/?t=<token>
 │  Bound to 127.0.0.1 only. Remote server? Tunnel first:
-│    ssh -L 8787:127.0.0.1:8787 user@host
+│    ssh -L 9000:127.0.0.1:9000 user@host
 │  Stop with Ctrl-C.
 ╰────────────────────────────────────────────────╯
 ```
@@ -55,9 +57,9 @@ Reach it through an SSH tunnel from your workstation:
 sudo auditxs web --no-open
 
 # on your laptop (new terminal) — forward the local port
-ssh -L 8787:127.0.0.1:8787 user@server
+ssh -L 9000:127.0.0.1:9000 user@server
 
-# then open the printed http://127.0.0.1:8787/?t=<token> URL in your browser
+# then open the printed http://127.0.0.1:9000/?t=<token> URL in your browser
 ```
 
 ## What you can do

@@ -25,6 +25,8 @@ they shipped first:
 
 ## Shipped in v0.8
 
+- **Web UI default port is now 9000** *(v0.8.1)* (was 8787); override any time
+  with `auditxs web --port N`.
 - **Fleet mode** (`auditxs fleet`): read-only audits across many hosts over SSH
   (key or password auth via sshpass), aggregated score table + per-host JSON,
   CI-friendly exit codes. Never hardens over SSH by design.

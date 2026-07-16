@@ -6,7 +6,7 @@ front-end that drives the `auditxs` command-line tool.
 Design & security model (this is a security tool, so the front-end is too):
   * Binds 127.0.0.1 ONLY. It refuses to bind any non-loopback address, so the
     UI is never exposed to the network. Reach a remote server over an SSH
-    tunnel:  ssh -L 8787:127.0.0.1:8787 user@host  then open the printed URL.
+    tunnel:  ssh -L 9000:127.0.0.1:9000 user@host  then open the printed URL.
   * An ephemeral bearer token (new every launch) is required on every request.
     The launch URL embeds it once; the page then sends it as X-Auth-Token.
   * State-changing actions (harden, rollback, tool install) are POST-only,
@@ -428,7 +428,7 @@ def _osname():
 # ------------------------------------------------------------------- main
 def main():
     global VERSION
-    port = 8787
+    port = 9000
     do_open = True
     args = sys.argv[1:]
     i = 0

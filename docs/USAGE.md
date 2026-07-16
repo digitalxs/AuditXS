@@ -270,7 +270,7 @@ workstations too.
 ## The web UI (workstation profile)
 
 ```bash
-sudo auditxs web                 # Material Design web UI on http://127.0.0.1:8787
+sudo auditxs web                 # Material Design web UI on http://127.0.0.1:9000
 sudo auditxs web --port 9000 --no-open
 ```
 
