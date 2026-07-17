@@ -253,6 +253,22 @@ ApplicationWindow {
                 Item { Layout.fillHeight: true }
             }
         }
+
+        // ---- branding footer ----
+        Rectangle {
+            Layout.fillWidth: true
+            implicitHeight: 30
+            color: Qt.rgba(0.5, 0.5, 0.5, 0.06)
+            Label {
+                anchors.centerIn: parent
+                width: parent.width - 24
+                horizontalAlignment: Text.AlignHCenter
+                elide: Text.ElideRight
+                font.pixelSize: 11
+                opacity: 0.7
+                text: "🛡️ AuditXS  ·  Made with ❤ from Canada 🍁  ·  © 2026 DigitalXS — Programming & Development"
+            }
+        }
     }
 
     // Review-before-apply dialog (transparency + consent).

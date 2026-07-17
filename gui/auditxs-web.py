@@ -83,10 +83,22 @@ body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
 .appbar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:.8rem;
  padding:.7rem 1.1rem;background:var(--surface);border-bottom:1px solid var(--outline);
  box-shadow:var(--shadow)}
-.logo{width:2.2rem;height:2.2rem;border-radius:.7rem;background:var(--primary);color:var(--primaryc);
- display:grid;place-items:center;font-weight:700}
-.appbar h1{font-size:1.1rem;margin:0;font-weight:600}
+.appbar::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;
+ background:linear-gradient(90deg,var(--primary),#7b84ff 55%,#38bdf8)}
+.logo{width:2.4rem;height:2.4rem;border-radius:.75rem;color:#fff;font-size:1.3rem;
+ background:linear-gradient(135deg,var(--primary),#7b84ff 70%,#38bdf8);
+ display:grid;place-items:center;font-weight:700;box-shadow:0 2px 8px rgba(75,86,210,.35)}
+.appbar h1{font-size:1.12rem;margin:0;font-weight:700;letter-spacing:.01em;display:flex;align-items:baseline;gap:.4rem}
+.appbar h1 .by{font-size:.62rem;font-weight:600;color:var(--onv);letter-spacing:.02em}
 .appbar .sub{font-size:.72rem;color:var(--onv)}
+footer.brand{max-width:64rem;margin:.5rem auto 2.2rem;padding:1.4rem 1.1rem .4rem;text-align:center;
+ color:var(--onv);font-size:.8rem;line-height:1.7;border-top:1px solid var(--outline)}
+footer.brand .name{font-weight:700;font-size:.95rem;color:var(--on);letter-spacing:.02em}
+footer.brand .made .heart{color:#e0245e}
+footer.brand .copy b{color:var(--on)}
+footer.brand a{color:var(--primary);text-decoration:none;font-weight:600}
+footer.brand a:hover{text-decoration:underline}
+footer.brand .links{margin-top:.15rem;font-size:.76rem}
 .spacer{flex:1}
 .btn{border:none;border-radius:2rem;padding:.55rem 1.1rem;font-weight:600;font-size:.85rem;
  cursor:pointer;background:var(--surface2);color:var(--on)}
@@ -145,8 +157,8 @@ body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
 @keyframes sp{to{transform:rotate(360deg)}}
 </style></head><body>
 <div class="appbar">
-  <div class="logo">A</div>
-  <div><h1>AuditXS</h1><div class="sub" id="hostmeta">loading…</div></div>
+  <div class="logo" aria-hidden="true">A</div>
+  <div><h1>AuditXS <span class="by">by DigitalXS</span></h1><div class="sub" id="hostmeta">loading…</div></div>
   <div class="spacer"></div>
   <button class="btn" id="reportBtn">Open report</button>
   <button class="btn primary" id="auditBtn">Run audit</button>
@@ -161,6 +173,12 @@ body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
   <div id="cveHolder"></div>
   <div id="view"></div>
 </div>
+<footer class="brand">
+  <div class="name">🛡️ AuditXS</div>
+  <div class="made">Made with <span class="heart">❤</span> from Canada 🍁</div>
+  <div class="copy">© 2026 <b>DigitalXS</b> — Programming &amp; Development</div>
+  <div class="links"><a href="https://digitalxs.ca" target="_blank" rel="noopener noreferrer">digitalxs.ca</a> · <a href="https://github.com/digitalxs/AuditXS" target="_blank" rel="noopener noreferrer">github.com/digitalxs/AuditXS</a></div>
+</footer>
 <div class="modal" id="modal"><div class="sheet">
   <h3 id="mTitle">Review</h3><div id="mBody"></div>
   <div class="actions">

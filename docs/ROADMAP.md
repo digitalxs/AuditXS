@@ -25,6 +25,10 @@ they shipped first:
 
 ## Shipped in v0.9
 
+- **GUI branding & polish** *(v0.9.1)*: gradient brand logo and "by DigitalXS"
+  in the web UI top bar; a consistent footer across the web UI, Qt app, HTML
+  report and zenity About — 🛡️ AuditXS · Made with ❤ from Canada 🍁 · © 2026
+  DigitalXS — Programming & Development.
 - **Web-stack & CMS coverage** (14 new checks, now 105 total across 23
   categories):
   - **nginx** — obsolete TLS (SSLv3/TLS 1.0/1.1) and HSTS (NGX-001/002).

@@ -1,6 +1,6 @@
 # AuditXS check catalogue
 
-Generated from the check registry by `auditxs list --markdown` (v0.9.0).
+Generated from the check registry by `auditxs list --markdown` (v0.9.1).
 
 Legend: checks with an **automatic fix** are only ever applied by
 `auditxs harden` after showing you exactly what will change, and every

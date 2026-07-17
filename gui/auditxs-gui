@@ -318,11 +318,12 @@ run_rollback_gui() {
 show_about() {
     local ver
     ver=$("$AUDITXS_BIN" version 2>/dev/null)
-    zenity --info --title "About AuditXS" --width 420 --text \
-"<b>${ver:-AuditXS}</b>\n
+    zenity --info --title "About AuditXS" --width 440 --text \
+"<b>🛡️ ${ver:-AuditXS}</b>\n
 Transparent, reversible Linux security auditing.\n
 • <b>Audit</b> is strictly read-only\n• Every fix explains exactly what it changes\n• Every change is recorded and reversible (Rollback)\n
-CLI: <tt>sudo auditxs help</tt>\nDocs: https://github.com/digitalxs/AuditXS" 2>/dev/null
+CLI: <tt>sudo auditxs help</tt>\nDocs: https://github.com/digitalxs/AuditXS\n
+<small>Made with ❤ from Canada 🍁</small>\n<small>© 2026 <b>DigitalXS</b> — Programming &amp; Development · https://digitalxs.ca</small>" 2>/dev/null
 }
 
 while true; do
