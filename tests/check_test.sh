@@ -107,6 +107,39 @@ printf '[DEFAULT]\nmaxretry = 4\n' > "$FIX/etc/fail2ban/jail.local"
 audit_F2B_003; ck "F2B-003 no recidive → FAIL" 1 $?
 rm -rf "$FIX/etc/fail2ban"
 
+echo "== WebApps (WP/LAR) against fixtures =="
+mkdir -p "$FIX/var/www/html/site"
+# WP-001 — world-readable wp-config.php → FAIL ; 640 → PASS
+printf "<?php define('DB_PASSWORD','x');\n" > "$FIX/var/www/html/site/wp-config.php"
+chmod 644 "$FIX/var/www/html/site/wp-config.php"
+audit_WP_001; ck "WP-001 world-readable wp-config → FAIL" 1 $?
+chmod 640 "$FIX/var/www/html/site/wp-config.php"
+audit_WP_001; ck "WP-001 wp-config 640 → PASS" 0 $?
+# WP-002 — WP_DEBUG true → FAIL
+printf "<?php define('WP_DEBUG', true);\n" > "$FIX/var/www/html/site/wp-config.php"
+audit_WP_002; ck "WP-002 WP_DEBUG true → FAIL" 1 $?
+# Laravel .env
+: > "$FIX/var/www/html/site/artisan"
+printf 'APP_ENV=production\nAPP_DEBUG=false\n' > "$FIX/var/www/html/site/.env"
+chmod 640 "$FIX/var/www/html/site/.env"
+audit_LAR_001; ck "LAR-001 .env 640 → PASS" 0 $?
+audit_LAR_002; ck "LAR-002 production/debug off → PASS" 0 $?
+printf 'APP_ENV=local\nAPP_DEBUG=true\n' > "$FIX/var/www/html/site/.env"
+audit_LAR_002; ck "LAR-002 APP_DEBUG=true → FAIL" 1 $?
+chmod 644 "$FIX/var/www/html/site/.env"
+audit_LAR_001; ck "LAR-001 world-readable .env → FAIL" 1 $?
+rm -rf "$FIX/var/www"
+
+echo "== BIND (BND-003/004) against fixtures =="
+mkdir -p "$FIX/etc/bind"
+printf 'options {\n allow-transfer { any; };\n dnssec-validation no;\n};\n' > "$FIX/etc/bind/named.conf.options"
+audit_BND_003; ck "BND-003 allow-transfer any → FAIL" 1 $?
+audit_BND_004; ck "BND-004 dnssec-validation no → FAIL" 1 $?
+printf 'options {\n allow-transfer { none; };\n dnssec-validation auto;\n};\n' > "$FIX/etc/bind/named.conf.options"
+audit_BND_003; ck "BND-003 allow-transfer none → PASS" 0 $?
+audit_BND_004; ck "BND-004 dnssec-validation auto → PASS" 0 $?
+rm -rf "$FIX/etc/bind"
+
 echo "== Debian release (DEB-002) via variables =="
 DISTRO_FAMILY=debian; DISTRO_ID=debian
 DISTRO_VERSION=13 DISTRO_CODENAME=trixie;   audit_DEB_002; ck "DEB-002 Debian 13 → PASS" 0 $?

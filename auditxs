@@ -91,6 +91,7 @@ ${BOLD}FLEET OPTIONS${RC} (auditxs fleet — read-only audit over SSH)
   --sudo                         Run the remote audit via sudo -n
   --timeout <sec>                Per-host timeout (default 120)
   --output <dir>                 Where to save per-host JSON reports
+  --remote-report                Also leave a full HTML report on each host
   --strict-host-key              Require a pre-known host key (most strict)
   --insecure-host-key            Disable host-key checking (trusted networks only)
 
@@ -172,7 +173,7 @@ main() {
             # fleet-mode options — passed through to 'auditxs fleet'
             --hosts|--inventory|--user|--key|--timeout|--output)
                          ARGS+=("$1" "${2:?"$1 needs a value"}"); shift ;;
-            --sudo|--ask-pass|--strict-host-key|--insecure-host-key)
+            --sudo|--ask-pass|--strict-host-key|--insecure-host-key|--remote-report)
                          ARGS+=("$1") ;;
             -*)          die "Unknown option: $1 (see 'auditxs help')" ;;
             *)           ARGS+=("$1") ;;

@@ -107,3 +107,48 @@ $bad"
     DETAIL="All $(echo "$listeners" | grep -c .) listening socket(s) are approved in $f"
     return 0
 }
+
+# ---------------------------------------------------------------- NET-005 ---
+register_check "NET-005" "Network" "medium" "server,workstation" \
+    "No network interface is in promiscuous mode"
+set_meta NET-005 desc "Checks for interfaces in promiscuous mode (capturing all traffic on the segment). This is expected for bridges, some virtualisation and packet sniffers, but on a plain host it can indicate a sniffer left running or a compromise. Report-only — verify each one is expected."
+set_meta NET-005 revert "No change is made (report-only)."
+
+audit_NET_005() {
+    have ip || { DETAIL="'ip' (iproute2) not available"; return 3; }
+    local promisc
+    promisc=$(ip -o link show 2>/dev/null | awk '/PROMISC/{sub(/@.*/,"",$2); printf "%s ", $2}')
+    if [ -n "$promisc" ]; then
+        DETAIL="Interface(s) in promiscuous mode: ${promisc% } — expected for bridges/sniffers, otherwise investigate"
+        return 2
+    fi
+    DETAIL="No interfaces are in promiscuous mode"
+    return 0
+}
+
+# ---------------------------------------------------------------- NET-006 ---
+register_check "NET-006" "Network" "medium" "server,workstation" \
+    "System time is kept in sync (NTP)"
+set_meta NET-006 desc "Checks that a time-synchronisation service is active (chrony, ntpd, systemd-timesyncd or openntpd). Accurate time underpins log correlation during incidents, TLS certificate validity, Kerberos/auth, and scheduled jobs. A drifting clock quietly breaks all of these."
+set_meta NET-006 fix "Enables an available time-sync service (systemd-timesyncd, chrony or ntp). If none is installed, AuditXS reports which to install rather than pulling in a package silently. The service enablement is recorded and reversible."
+set_meta NET-006 revert "'sudo auditxs rollback' disables the time-sync service again if it was disabled before."
+
+audit_NET_006() {
+    local s
+    for s in chrony.service chronyd.service ntp.service ntpd.service systemd-timesyncd.service openntpd.service; do
+        if svc_active "$s"; then DETAIL="Time synchronisation is active ($s)"; return 0; fi
+    done
+    if have timedatectl && timedatectl show -p NTPSynchronized 2>/dev/null | grep -q 'NTPSynchronized=yes'; then
+        DETAIL="Time is synchronised (timedatectl reports NTPSynchronized=yes)"; return 0
+    fi
+    DETAIL="No active time-synchronisation service — install chrony (or enable systemd-timesyncd) so logs, TLS and auth have accurate time"
+    return 1
+}
+fix_NET_006() {
+    local s
+    for s in systemd-timesyncd.service chrony.service chronyd.service ntp.service; do
+        if unit_exists "$s"; then enable_unit "$s" && return 0; fi
+    done
+    warn "No time-sync service is installed. Install one (e.g. 'chrony') and re-run harden."
+    return 1
+}

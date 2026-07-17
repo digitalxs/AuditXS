@@ -1,6 +1,6 @@
 # AuditXS check catalogue
 
-Generated from the check registry by `auditxs list --markdown` (v0.8.2).
+Generated from the check registry by `auditxs list --markdown` (v0.9.0).
 
 Legend: checks with an **automatic fix** are only ever applied by
 `auditxs harden` after showing you exactly what will change, and every
@@ -823,6 +823,50 @@ Checks that Apache emits baseline browser-security headers: X-Content-Type-Optio
 
 Checks that automatic directory listing is disabled. When a directory has no index file and listing is on, the web server exposes the full file tree — source, backups, configs — to anyone. Apache: the 'Indexes' option should not be enabled; nginx: 'autoindex' should be off (its default). Report-only: the correct place to disable it depends on your vhost/.htaccess layout, so AuditXS shows where it is enabled rather than guessing.
 
+### NGX-001 — nginx does not offer obsolete TLS (SSLv3/TLS 1.0/1.1)
+
+- **Severity:** high
+- **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01
+- **Fix:** manual (report-only)
+
+Checks the effective 'ssl_protocols' in the nginx configuration. SSLv3, TLS 1.0 and TLS 1.1 are deprecated and vulnerable (POODLE, BEAST) — a hardened server offers only TLS 1.2 and 1.3. Report-only: the correct TLS policy depends on the clients you must support.
+
+### NGX-002 — nginx sends HSTS on TLS sites
+
+- **Severity:** low
+- **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01
+- **Fix:** manual (report-only)
+
+Checks that an HTTPS-serving nginx sends a 'Strict-Transport-Security' (HSTS) header, which tells browsers to only ever connect over TLS and blunts SSL-stripping attacks. Report-only — enabling HSTS is a commitment (browsers will refuse plain HTTP for the max-age), so it must be a deliberate choice.
+
+### VRN-001 — Varnish admin interface is bound to localhost
+
+- **Severity:** high
+- **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01
+- **Fix:** manual (report-only)
+
+Checks the Varnish management interface (varnishd -T). It must listen on the loopback address only (127.0.0.1:6082); if it is bound to a public address, anyone who can reach it — combined with the secret — can reconfigure the cache. Report-only.
+
+### VRN-002 — Varnish admin secret file is not world-readable
+
+- **Severity:** medium
+- **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01
+- **Fix:** automatic (reversible)
+
+Checks the permissions of the Varnish admin secret (default /etc/varnish/secret). This file authenticates connections to the management interface; if it is world-readable, any local user can control the cache. It should be 0600/0640 and owned by root.
+
+**What the fix changes:** Tightens the secret file to mode 0640 (root:root/varnish). The previous mode is recorded and restored on rollback.
+
+**How it is reverted:** 'sudo auditxs rollback' restores the previous mode of the secret file.
+
 ## PHP — Application Hardening domain
 
 ### PHP-001 — PHP does not expose its version (expose_php Off)
@@ -877,6 +921,68 @@ Checks session.cookie_httponly (blocks JavaScript from reading the session cooki
 
 Checks whether high-risk functions that turn a PHP-code-execution bug into full command execution (exec, system, shell_exec, passthru, popen, proc_open, and the config-reading php_uname) are listed in 'disable_functions'. Report-only: many legitimate applications and control panels rely on some of these, so blindly disabling them can break the site — AuditXS shows you the recommended list to add after confirming your apps do not need them.
 
+## WebApps — Application Hardening domain
+
+### WP-001 — WordPress wp-config.php is not world-readable
+
+- **Severity:** high
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.DS-01
+- **Fix:** manual (report-only)
+
+wp-config.php holds the database credentials and secret keys. If it is readable by other local users (or served as text), those secrets leak. It should be owned by the web user and mode 0640 or stricter. Report-only — correct ownership is site-specific.
+
+### WP-002 — WordPress debug mode (WP_DEBUG) is off
+
+- **Severity:** medium
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.DS-01
+- **Fix:** manual (report-only)
+
+WP_DEBUG shows PHP errors, warnings and file paths to visitors — useful in development, dangerous in production where it leaks internals. This checks that WP_DEBUG is not defined as true. Report-only.
+
+### DRU-001 — Drupal settings.php is not world-readable
+
+- **Severity:** high
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.DS-01
+- **Fix:** manual (report-only)
+
+Drupal's settings.php contains the database credentials and the site's hash salt. It should never be world-readable; Drupal itself warns when it is. This checks the permissions of every settings.php found. Report-only — the correct owner/group depends on your web user.
+
+### LAR-001 — Laravel .env is not world-readable
+
+- **Severity:** critical
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.DS-01
+- **Fix:** manual (report-only)
+
+A Laravel .env file holds APP_KEY, database, mail and third-party credentials in plaintext. If it is world-readable (or served over HTTP), the whole application is compromised. It must be readable only by the web user (0640 or stricter) and never inside the public web root. Report-only.
+
+### LAR-002 — Laravel runs in production mode with debug off
+
+- **Severity:** high
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.DS-01
+- **Fix:** manual (report-only)
+
+Checks that Laravel's .env sets APP_ENV=production and APP_DEBUG=false. With APP_DEBUG=true, the Ignition error page renders full stack traces, environment variables and secrets to any visitor who triggers an error. Report-only.
+
+### RC-001 — Roundcube config is protected and the installer is disabled
+
+- **Severity:** high
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.DS-01
+- **Fix:** manual (report-only)
+
+Checks Roundcube webmail: its config.inc.php (IMAP/SMTP credentials, des_key) must not be world-readable, and 'enable_installer' must not be left true — the installer can read and rewrite the configuration and must be off in production. Report-only.
+
 ## Network — Network Security domain
 
 ### NET-001 — Listening network services inventory
@@ -922,6 +1028,30 @@ Detects Wi-Fi interfaces on machines using the server profile. Wireless links on
 - **Fix:** manual (report-only)
 
 Compares every listening TCP/UDP port against the administrator-approved allowlist in /etc/auditxs/allowed-ports.conf. This turns 'what is listening?' (NET-001) into drift detection: a service that appears without being approved — a forgotten debug port, a dropped implant, a misconfigured install — is flagged immediately. Report-only: YOU decide what belongs on the list; AuditXS never opens or closes ports. Pair with 'auditxs schedule' for continuous drift monitoring.
+
+### NET-005 — No network interface is in promiscuous mode
+
+- **Severity:** medium
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.IR-01, DE.CM-01
+- **Fix:** manual (report-only)
+
+Checks for interfaces in promiscuous mode (capturing all traffic on the segment). This is expected for bridges, some virtualisation and packet sniffers, but on a plain host it can indicate a sniffer left running or a compromise. Report-only — verify each one is expected.
+
+### NET-006 — System time is kept in sync (NTP)
+
+- **Severity:** medium
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.IR-01, DE.CM-01
+- **Fix:** automatic (reversible)
+
+Checks that a time-synchronisation service is active (chrony, ntpd, systemd-timesyncd or openntpd). Accurate time underpins log correlation during incidents, TLS certificate validity, Kerberos/auth, and scheduled jobs. A drifting clock quietly breaks all of these.
+
+**What the fix changes:** Enables an available time-sync service (systemd-timesyncd, chrony or ntp). If none is installed, AuditXS reports which to install rather than pulling in a package silently. The service enablement is recorded and reversible.
+
+**How it is reverted:** 'sudo auditxs rollback' disables the time-sync service again if it was disabled before.
 
 ## Mail — Application Hardening domain
 
@@ -996,6 +1126,26 @@ Checks that BIND restricts recursion (allow-recursion / allow-query) to trusted 
 - **Fix:** manual (report-only)
 
 Checks that BIND overrides the 'version' option (version "not disclosed";) so a 'dig chaos txt version.bind' query does not reveal the exact BIND version and its known CVEs. Report-only.
+
+### BND-003 — BIND restricts zone transfers (allow-transfer)
+
+- **Severity:** high
+- **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.IR-01, PR.PS-01
+- **Fix:** manual (report-only)
+
+Checks that BIND does not allow AXFR zone transfers to arbitrary hosts. An open 'allow-transfer' lets anyone download entire zones (every hostname/record you serve), a valuable reconnaissance leak. Best practice is 'allow-transfer { none; };' globally, overridden per zone for real secondaries. Report-only.
+
+### BND-004 — BIND resolver validates DNSSEC
+
+- **Severity:** medium
+- **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.IR-01, PR.PS-01
+- **Fix:** manual (report-only)
+
+Checks that a recursive BIND resolver has DNSSEC validation enabled (dnssec-validation auto|yes). Validation detects tampered DNS answers (cache poisoning / spoofing). 'dnssec-validation no' disables this protection. Report-only — authoritative-only servers may legitimately not validate.
 
 ### UNB-001 — Unbound restricts access and hides identity
 

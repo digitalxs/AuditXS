@@ -51,6 +51,59 @@ audit_BND_002() {
     return 2
 }
 
+# BIND config files resolved through axpath() (fixture-testable), whitespace
+# collapsed so brace blocks that span lines can be matched.
+_bind_present() {
+    have named || unit_exists named.service || unit_exists bind9.service \
+        || [ -d "$(axpath /etc/bind)" ] || [ -f "$(axpath /etc/named.conf)" ]
+}
+_bind_cfg_blob() {
+    local f blob=""
+    for f in /etc/bind/named.conf.options /etc/bind/named.conf /etc/named.conf /etc/named/named.conf; do
+        [ -f "$(axpath "$f")" ] && blob+=" $(cat "$(axpath "$f")" 2>/dev/null)"
+    done
+    printf '%s' "$blob" | tr '\n' ' ' | tr -s ' '
+}
+
+register_check "BND-003" "DNS" "high" "server" \
+    "BIND restricts zone transfers (allow-transfer)"
+set_meta BND-003 desc "Checks that BIND does not allow AXFR zone transfers to arbitrary hosts. An open 'allow-transfer' lets anyone download entire zones (every hostname/record you serve), a valuable reconnaissance leak. Best practice is 'allow-transfer { none; };' globally, overridden per zone for real secondaries. Report-only."
+set_meta BND-003 revert "No change is made (report-only)."
+
+audit_BND_003() {
+    _bind_present || { DETAIL="BIND (named) is not installed"; return 3; }
+    local cfg; cfg=$(_bind_cfg_blob)
+    [ -n "$cfg" ] || { DETAIL="Could not read the BIND configuration"; return 2; }
+    if printf '%s' "$cfg" | grep -qiE 'allow-transfer[[:space:]]*\{[^}]*\bany\b'; then
+        DETAIL="allow-transfer includes 'any' — zone transfers are open to the world. Restrict to 'none' or specific secondaries."
+        return 1
+    elif printf '%s' "$cfg" | grep -qiE 'allow-transfer[[:space:]]*\{[^}]*\bnone\b'; then
+        DETAIL="Zone transfers are restricted (allow-transfer none)"; return 0
+    elif printf '%s' "$cfg" | grep -qiE 'allow-transfer'; then
+        DETAIL="allow-transfer is restricted to specific hosts"; return 0
+    fi
+    DETAIL="No allow-transfer set — restrict AXFR globally: allow-transfer { none; }; (override per secondary zone)"
+    return 2
+}
+
+register_check "BND-004" "DNS" "medium" "server" \
+    "BIND resolver validates DNSSEC"
+set_meta BND-004 desc "Checks that a recursive BIND resolver has DNSSEC validation enabled (dnssec-validation auto|yes). Validation detects tampered DNS answers (cache poisoning / spoofing). 'dnssec-validation no' disables this protection. Report-only — authoritative-only servers may legitimately not validate."
+set_meta BND-004 revert "No change is made (report-only)."
+
+audit_BND_004() {
+    _bind_present || { DETAIL="BIND (named) is not installed"; return 3; }
+    local cfg; cfg=$(_bind_cfg_blob)
+    [ -n "$cfg" ] || { DETAIL="Could not read the BIND configuration"; return 2; }
+    if printf '%s' "$cfg" | grep -qiE 'dnssec-validation[[:space:]]+no[[:space:];]'; then
+        DETAIL="dnssec-validation is disabled ('no') — enable it with 'dnssec-validation auto;' on a recursive resolver"
+        return 1
+    elif printf '%s' "$cfg" | grep -qiE 'dnssec-validation[[:space:]]+(auto|yes)'; then
+        DETAIL="DNSSEC validation is enabled"; return 0
+    fi
+    DETAIL="dnssec-validation is not set explicitly (modern BIND defaults to 'auto')"; return 0
+}
+
 # ------------------------------------------------------------------- Unbound
 _unbound_installed() { have unbound || unit_exists unbound.service || [ -d /etc/unbound ]; }
 

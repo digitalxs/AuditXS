@@ -23,6 +23,23 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.9
+
+- **Web-stack & CMS coverage** (14 new checks, now 105 total across 23
+  categories):
+  - **nginx** — obsolete TLS (SSLv3/TLS 1.0/1.1) and HSTS (NGX-001/002).
+  - **Varnish** — admin-interface binding and secret-file permissions
+    (VRN-001/002).
+  - New **WebApps** category — **WordPress** (wp-config perms, WP_DEBUG),
+    **Drupal** (settings.php perms), **Laravel** (`.env` perms,
+    `APP_DEBUG`/`APP_ENV`), **Roundcube** (config perms, installer).
+  - **BIND** — zone-transfer (AXFR) restriction and DNSSEC validation
+    (BND-003/004).
+  - **Network** — promiscuous-mode interfaces and NTP time-sync
+    (NET-005/006).
+- **Fleet `--remote-report`**: leave a full HTML report on each audited host
+  (and fetch a copy to the controller).
+
 ## Shipped in v0.8
 
 - **Dedicated Fail2ban category** *(v0.8.2)*: four checks beyond the SSH-008

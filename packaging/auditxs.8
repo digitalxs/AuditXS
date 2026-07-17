@@ -82,9 +82,12 @@ never hardens over SSH. Key authentication is preferred; password auth uses
 .BR sshpass .
 Options include
 .BR --hosts ", " --inventory ", " --user ", " --key ", " --ask-pass ", "
-.BR --sudo ", " --port ", " --timeout ", " --output " and the host-key controls."
+.BR --sudo ", " --port ", " --timeout ", " --output ", " --remote-report
+"and the host-key controls."
 Per-host JSON reports are saved under
-.IR /var/lib/auditxs/reports/fleet/ .
+.IR /var/lib/auditxs/reports/fleet/ ;
+.B --remote-report
+additionally leaves a full HTML report on each audited host.
 .TP
 .B errors \fR[CODE|term|log]\fP
 Browse the error catalogue. With no argument, list every

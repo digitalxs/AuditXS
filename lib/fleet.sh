@@ -28,7 +28,7 @@ FLEET_REPORT_DIR_ROOT="/var/lib/auditxs/reports/fleet"
 cmd_fleet() {
     local -a hosts=() _h=()
     local inventory="" user="" key="" port=22 timeout=120
-    local use_sudo=0 ask_pass=0 shk="accept-new" outdir=""
+    local use_sudo=0 ask_pass=0 shk="accept-new" outdir="" remote_report=0
 
     while [ $# -gt 0 ]; do
         case $1 in
@@ -40,6 +40,7 @@ cmd_fleet() {
             --timeout)    timeout=${2:-120}; shift ;;
             --output)     outdir=${2:-}; shift ;;
             --sudo)       use_sudo=1 ;;
+            --remote-report) remote_report=1 ;;
             --ask-pass)   ask_pass=1 ;;
             --strict-host-key)   shk=yes ;;
             --insecure-host-key) shk=no ;;
@@ -178,6 +179,25 @@ _fleet_one() {
     local state="OK"
     if [ "$f" -gt 0 ] 2>/dev/null; then state="FINDINGS"; with_fails=$((with_fails+1)); fi
     _fleet_row "$host" "$state" "$p" "$f" "$w" "$sc"
+    [ "$remote_report" = 1 ] && _fleet_remote_report "$target" "$host" "$safe"
+}
+
+# Generate a full HTML report ON the audited host (kept in its own
+# /var/lib/auditxs/reports/) and fetch a copy to the controller's output dir.
+_fleet_remote_report() {
+    local target=$1 host=$2 safe=$3
+    local gen="auditxs report --format html --quiet"
+    local tee_cmd="tee /var/lib/auditxs/reports/auditxs-report.html"
+    if [ "$use_sudo" = 1 ]; then gen="sudo -n $gen"; tee_cmd="sudo -n $tee_cmd"; fi
+    local html
+    html=$(timeout "$timeout" "${sshpass_pre[@]}" ssh "${ssh_opts[@]}" "$target" \
+              "$gen | $tee_cmd" 2>/dev/null)
+    if printf '%s' "$html" | grep -q '<html'; then
+        printf '%s\n' "$html" > "$outdir/$safe.html"
+        say "    ${DIM}full report saved on $host at /var/lib/auditxs/reports/auditxs-report.html (copy: $outdir/$safe.html)${RC}"
+    else
+        warn "Could not generate the remote report on $host (needs root; try --sudo)."
+    fi
 }
 
 # Append a plain, aligned summary row (no colour, so column widths stay exact).

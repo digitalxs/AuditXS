@@ -8,10 +8,10 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.8.2-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.9.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
-[![Checks](https://img.shields.io/badge/checks-91-8957e5)](docs/CHECKS.md)
+[![Checks](https://img.shields.io/badge/checks-105-8957e5)](docs/CHECKS.md)
 [![Frameworks](https://img.shields.io/badge/NIST%20CSF%202.0%20·%20CIS%20·%20STIG-informational)](docs/COMPLIANCE.md)
 
 **Debian** · **Ubuntu** · **Pop!\_OS** · **Arch** · **Fedora** · **openSUSE** *(and derivatives)*
@@ -213,7 +213,7 @@ Full detail: [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
 
 ## 📋 What is covered
 
-**91 checks across 21 categories.** The full catalogue — with per-check
+**105 checks across 23 categories.** The full catalogue — with per-check
 documentation generated from the code itself — lives in
 [docs/CHECKS.md](docs/CHECKS.md) (or run `auditxs list --markdown`).
 
@@ -230,10 +230,11 @@ documentation generated from the code itself — lives in
 | **Kernel** | ASLR, kptr/dmesg restrictions, SYN cookies, ICMP redirects, source routing, rp_filter, martian logging, IP forwarding *(container/VM aware)*, suid_dumpable, Ctrl-Alt-Del |
 | **MAC** | SELinux / AppArmor status with per-distro guidance |
 | **Services** | legacy plaintext services, Avahi, CUPS, Bluetooth, systemd sandboxing overview |
-| **Network** | listening inventory, uncommon protocols (dccp/sctp/rds/tipc), wireless on servers |
+| **Network** | listening inventory, uncommon protocols (dccp/sctp/rds/tipc), wireless on servers, promiscuous-mode interfaces, NTP time sync |
 | **Logging** | persistent journal, auditd, baseline rules, log permissions |
-| **Applications / PHP** | nginx/Apache version disclosure, security headers, directory listing; `expose_php`, `display_errors`, session cookies, dangerous functions |
-| **Mail / DNS** | Postfix open-relay/TLS/banner, Dovecot plaintext-auth &amp; TLS; BIND recursion/version, Unbound access control |
+| **Applications / PHP** | nginx version disclosure, **obsolete TLS (SSLv3/TLS 1.0/1.1)**, **HSTS**; Apache version/signature, security headers, directory listing; **Varnish** admin-interface binding &amp; secret-file permissions; `expose_php`, `display_errors`, session cookies, dangerous functions |
+| **WebApps** | **WordPress** (wp-config perms, WP_DEBUG), **Drupal** (settings.php perms), **Laravel** (`.env` perms, `APP_DEBUG`/`APP_ENV`), **Roundcube** (config perms, installer disabled) |
+| **Mail / DNS** | Postfix open-relay/TLS/banner, Dovecot plaintext-auth &amp; TLS; BIND recursion/version, **zone-transfer (AXFR) restriction**, **DNSSEC validation**, Unbound access control |
 | **Database** | MySQL/MariaDB exposure, `local_infile`, anonymous accounts; PostgreSQL exposure &amp; authentication |
 | **SecurityTools / Vulnerabilities** | host auditor, rootkit detector, file-integrity monitor, IDS/IPS present; known-CVE packages from distribution security data |
 
@@ -271,12 +272,17 @@ rather than reinventing it — all through the same reversible interface:
 ```bash
 auditxs fleet web01 db01 --user admin --key ~/.ssh/id_ed25519 --sudo
 auditxs fleet --inventory hosts.txt --ask-pass          # password auth (via sshpass)
+auditxs fleet web01 db01 --sudo --remote-report         # also leave a full report on each host
 ```
 
 Run a **read-only** audit across a fleet from one machine and get an aggregated
 score table plus per-host JSON reports under `/var/lib/auditxs/reports/fleet/`.
 By design fleet mode never hardens over SSH — review each host's report, then
 harden that host locally.
+
+- **`--remote-report`** generates a full HTML report **on each audited machine**
+  (saved to that host's `/var/lib/auditxs/reports/`) and fetches a copy back to
+  the controller — so every host keeps its own complete report.
 
 - **Authentication** — key auth is preferred (`--key` or your SSH agent);
   password auth (`--ask-pass`) feeds the password to `sshpass` via the
@@ -319,7 +325,7 @@ AX6002`, or search with `auditxs errors ssh`. Full table:
 ```text
 auditxs             CLI entry point
 lib/                engine — core, distro, snapshot/rollback, registry, reports, fix helpers, maintenance
-checks/             21 self-registering, self-documenting check modules (91 checks)
+checks/             23 self-registering, self-documenting check modules (105 checks)
 gui/                terminal UI (ncurses), zenity GUI, web UI, Qt/QML app + desktop launcher
 setup.sh            installer (Server / Workstation selection)
 uninstall.sh        uninstaller (protects your snapshots)

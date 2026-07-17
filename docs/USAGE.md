@@ -198,6 +198,7 @@ AuditXS installed; fleet never pushes code.
 | `--ask-pass` | prompt once for a password, used for all hosts (via `sshpass`) |
 | `--port <n>` | SSH port (default 22) · `--sudo` runs the remote audit via `sudo -n` |
 | `--timeout <sec>` | per-host timeout (default 120) · `--output <dir>` where reports go |
+| `--remote-report` | also generate a full HTML report **on each audited host** (`/var/lib/auditxs/reports/`) and fetch a copy back |
 | `--strict-host-key` / `--insecure-host-key` | tighten or disable host-key checking |
 
 **Authentication** prefers keys; password auth passes the password to `sshpass`
