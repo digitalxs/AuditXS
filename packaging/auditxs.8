@@ -134,7 +134,10 @@ instead).
 .B qt
 Launch the native Qt/QML desktop app (requires the optional
 .B auditxs-gui-qt
-package).
+package). If PySide6 and its QtQuick modules are not installed, AuditXS offers
+to install the correct packages for this distribution (with a terminal or
+graphical prompt) before starting, and falls back to guidance for the web/tui
+interfaces if declined.
 .B "Workstation profile only"
 \(em on servers use
 .B tui

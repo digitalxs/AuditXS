@@ -153,7 +153,9 @@ def run_gui():
         sys.stderr.write(
             "AuditXS Qt GUI requires PySide6 (the 'auditxs-gui-qt' package installs it).\n"
             "  Debian/Ubuntu: sudo apt install python3-pyside6.qtquick "
-            "qml6-module-qtquick-controls qml6-module-qtquick-layouts\n"
+            "qml6-module-qtquick-controls qml6-module-qtquick-layouts "
+            "qml6-module-qtquick-window\n"
+            "  (or just run 'auditxs qt', which offers to install these)\n"
             "  Fedora:        sudo dnf install python3-pyside6\n"
             "  Arch:          sudo pacman -S pyside6\n"
             "Or use the web UI instead:  sudo auditxs web\n")

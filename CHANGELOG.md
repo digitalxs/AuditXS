@@ -7,6 +7,18 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.10.1]
+
+### Added
+- **Qt runtime preflight** — `auditxs qt` now detects when PySide6 and its
+  QtQuick QML modules (Controls, Layouts, Window) are missing and offers to
+  install the correct packages for the current distribution instead of failing
+  with a raw `ImportError`. The prompt is shown in the terminal when attached
+  to a tty, or as a zenity dialog when launched from the desktop; privileges
+  are elevated with `pkexec` (graphical) or `sudo` as appropriate, and a
+  declined prompt prints fall-back guidance for the web and terminal UIs.
+  Package-install failures report error `AX5001`.
+
 ## [0.10.0]
 
 Governance, integrations and a big coverage expansion — **122 checks across 26

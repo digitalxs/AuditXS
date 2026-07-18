@@ -25,6 +25,11 @@ they shipped first:
 
 ## Shipped in v0.10
 
+- **Qt runtime preflight** *(v0.10.1)*: `auditxs qt` detects a missing PySide6 /
+  QtQuick module set and offers to install the right packages for the running
+  distribution (terminal prompt or zenity dialog, elevating with pkexec/sudo),
+  falling back to web/tui guidance if declined — no more raw `ImportError` on a
+  fresh workstation.
 - **Accepted-risk waivers** (`auditxs waive/unwaive/waivers`): findings render
   as WAIVED with a justification + optional expiry; represented as SARIF
   suppressions and excluded from the score.

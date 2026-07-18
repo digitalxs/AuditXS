@@ -179,6 +179,21 @@ t "_fleet_field fail"                "3"  "$(_fleet_field "$fjson" fail)"
 t "_fleet_field warn"                "2"  "$(_fleet_field "$fjson" warn)"
 t "_fleet_score"                     "82" "$(_fleet_score "$fjson")"
 
+# ---- Qt runtime preflight (dispatcher helpers) ---------------------------
+# The helpers live in the `auditxs` dispatcher, not a lib; pull just that block.
+eval "$(awk '/^# -+ Qt runtime deps/{f=1} f; /^ensure_qt_runtime\(\)/{g=1} g&&/^}/{f=0}' auditxs)"
+t "_qt_packages debian"  "python3-pyside6.qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts qml6-module-qtquick-window" "$(DISTRO_FAMILY=debian _qt_packages)"
+t "_qt_packages redhat"  "python3-pyside6" "$(DISTRO_FAMILY=redhat _qt_packages)"
+t "_qt_packages arch"    "pyside6"         "$(DISTRO_FAMILY=arch _qt_packages)"
+t "_qt_packages suse"    "python3-pyside6" "$(DISTRO_FAMILY=suse _qt_packages)"
+t "_qt_packages unknown" ""               "$(DISTRO_FAMILY=unknown _qt_packages)"
+# _qt_has_runtime must reflect whether a PySide6 import actually succeeds.
+if python3 -c 'import PySide6.QtCore, PySide6.QtGui, PySide6.QtQml' >/dev/null 2>&1; then
+    tt "_qt_has_runtime (PySide6 present)" yes _qt_has_runtime
+else
+    tt "_qt_has_runtime (PySide6 absent)"  no  _qt_has_runtime
+fi
+
 echo
 echo "unit tests: $PASS passed, $FAILED failed"
 [ "$FAILED" -eq 0 ]

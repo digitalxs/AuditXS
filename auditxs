@@ -139,6 +139,129 @@ If this is actually a desktop, run with:  ${BOLD}--profile workstation${RC}"
     fi
 }
 
+# ------------------------------------------------------------ Qt runtime deps
+# The Qt/QML desktop app needs PySide6 + the QtQuick QML modules it imports
+# (Controls.Material, Layouts, Window). These are packaged separately from the
+# core .deb (the optional 'auditxs-gui-qt' package), so a user who runs
+# `auditxs qt` on a fresh install may not have them yet. Rather than fail with
+# a raw ImportError, we detect the gap and offer to install the right packages
+# for this distribution.
+
+# _qt_packages — echo the distro-specific package list the Qt GUI needs.
+_qt_packages() {
+    case $DISTRO_FAMILY in
+        debian) echo "python3-pyside6.qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts qml6-module-qtquick-window" ;;
+        redhat) echo "python3-pyside6" ;;
+        arch)   echo "pyside6" ;;
+        suse)   echo "python3-pyside6" ;;
+        *)      echo "" ;;
+    esac
+}
+
+# _qt_install_hint "<pkgs>" — echo a copy-pasteable manual install command
+# using the native package manager's real install syntax.
+_qt_install_hint() {
+    case $PKG in
+        apt)    echo "sudo apt install $1" ;;
+        pacman) echo "sudo pacman -S $1" ;;
+        dnf)    echo "sudo dnf install $1" ;;
+        zypper) echo "sudo zypper install $1" ;;
+        *)      echo "install these packages: $1" ;;
+    esac
+}
+
+# _qt_has_runtime — true when PySide6 and its QML view classes import.
+_qt_has_runtime() {
+    have python3 && python3 - <<'PY' >/dev/null 2>&1
+import importlib
+for m in ("PySide6.QtCore", "PySide6.QtGui", "PySide6.QtQml"):
+    importlib.import_module(m)
+PY
+}
+
+# _qt_desktop_session — true when we appear to be launched from a graphical
+# session with no controlling terminal (e.g. a .desktop launcher). Used to
+# decide between a terminal prompt and a graphical one.
+_qt_desktop_session() {
+    { [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; } && ! { [ -t 0 ] && [ -t 1 ]; }
+}
+
+# _qt_ask_install "<pkgs>" — ask the user whether to install the Qt packages.
+# Returns 0 for yes. Uses a terminal prompt when attached to a tty, otherwise
+# a zenity dialog when we have a display; if neither is possible, declines.
+_qt_ask_install() {
+    local pkgs=$1
+    if [ -t 0 ] || [ -t 1 ]; then
+        confirm "AuditXS Qt GUI needs additional packages:
+  ${BOLD}${pkgs}${RC}
+Install them now?"
+        return $?
+    fi
+    if _qt_desktop_session && have zenity; then
+        zenity --question --width=440 --title="AuditXS — install Qt support" \
+            --text="The AuditXS desktop app needs additional Qt packages:\n\n<tt>${pkgs}</tt>\n\nInstall them now? (You may be asked for your password.)" \
+            2>/dev/null
+        return $?
+    fi
+    return 1
+}
+
+# _qt_install_packages "<pkgs>" — install the given packages with the native
+# package manager, elevating privileges when we are not already root. Honours
+# a graphical session by using pkexec so the password prompt is on-screen.
+_qt_install_packages() {
+    local pkgs=$1 cmd=""
+    case $PKG in
+        apt)    cmd="env DEBIAN_FRONTEND=noninteractive apt-get install -y -q $pkgs" ;;
+        pacman) cmd="pacman -S --noconfirm --needed $pkgs" ;;
+        dnf)    cmd="dnf install -y -q $pkgs" ;;
+        zypper) cmd="zypper --non-interactive --quiet install $pkgs" ;;
+        *)      ax_error AX5001 "no supported package manager for this distribution ($DISTRO_FAMILY)"; return 1 ;;
+    esac
+
+    say "Installing Qt support packages: ${BOLD}${pkgs}${RC}"
+    if [ "$(id -u)" -eq 0 ]; then
+        sh -c "$cmd"
+    elif _qt_desktop_session && have pkexec; then
+        pkexec sh -c "$cmd"
+    elif have sudo; then
+        sudo sh -c "$cmd"
+    else
+        ax_error AX5001 "cannot elevate to install packages (need root, pkexec or sudo)"
+        return 1
+    fi
+}
+
+# ensure_qt_runtime — make sure the Qt GUI can start; offer to install the
+# missing packages when it cannot. Returns 0 when the runtime is ready, 1 when
+# the user should fall back to another interface.
+ensure_qt_runtime() {
+    _qt_has_runtime && return 0
+
+    local pkgs; pkgs=$(_qt_packages)
+    warn "The AuditXS Qt GUI needs PySide6 and its QtQuick modules, which are not installed."
+
+    if [ -z "$pkgs" ]; then
+        ax_error AX5001 "no known Qt package set for this distribution ($DISTRO_FAMILY)"
+        echo "Install PySide6 (with QtQuick Controls/Layouts) for python3, then re-run ${BOLD}auditxs qt${RC}, or use ${BOLD}sudo auditxs web${RC} instead." >&2
+        return 1
+    fi
+
+    if _qt_ask_install "$pkgs"; then
+        if _qt_install_packages "$pkgs" && _qt_has_runtime; then
+            ok "Qt support installed — starting the AuditXS desktop app."
+            return 0
+        fi
+        ax_error AX5001 "Qt support packages did not install cleanly"
+    fi
+
+    echo "The Qt GUI cannot start without those packages. You can:
+  • install them manually:  ${BOLD}$(_qt_install_hint "$pkgs")${RC}
+  • or use the web UI instead:  ${BOLD}sudo auditxs web${RC}
+  • or the terminal UI:  ${BOLD}sudo auditxs tui${RC}" >&2
+    return 1
+}
+
 main() {
     local cmd=${1:-help}
     [ $# -gt 0 ] && shift
@@ -298,6 +421,7 @@ main() {
             require_workstation_interface "the Qt GUI"
             have python3 || die "The Qt GUI requires python3 + PySide6 (install the 'auditxs-gui-qt' package)."
             [ -f "$AUDITXS_ROOT/gui/auditxs-qt.py" ] || die "Qt GUI not found at $AUDITXS_ROOT/gui/auditxs-qt.py"
+            ensure_qt_runtime || return 1
             log "qt GUI starting (profile=$PROFILE)"
             AUDITXS_BIN="$AUDITXS_SELF" AUDITXS_PROFILE="$PROFILE" \
                 exec python3 "$AUDITXS_ROOT/gui/auditxs-qt.py" "${ARGS[@]}" ;;
