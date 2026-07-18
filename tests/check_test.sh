@@ -105,7 +105,7 @@ audit_F2B_003; ck "F2B-003 recidive enabled → PASS" 0 $?
 rm -f "$FIX/etc/fail2ban/jail.d/recidive.conf"
 printf '[DEFAULT]\nmaxretry = 4\n' > "$FIX/etc/fail2ban/jail.local"
 audit_F2B_003; ck "F2B-003 no recidive → FAIL" 1 $?
-rm -rf "$FIX/etc/fail2ban"
+rm -rf "${FIX:?}/etc/fail2ban"
 
 echo "== WebApps (WP/LAR) against fixtures =="
 mkdir -p "$FIX/var/www/html/site"
@@ -128,7 +128,7 @@ printf 'APP_ENV=local\nAPP_DEBUG=true\n' > "$FIX/var/www/html/site/.env"
 audit_LAR_002; ck "LAR-002 APP_DEBUG=true → FAIL" 1 $?
 chmod 644 "$FIX/var/www/html/site/.env"
 audit_LAR_001; ck "LAR-001 world-readable .env → FAIL" 1 $?
-rm -rf "$FIX/var/www"
+rm -rf "${FIX:?}/var/www"
 
 echo "== BIND (BND-003/004) against fixtures =="
 mkdir -p "$FIX/etc/bind"
@@ -138,7 +138,39 @@ audit_BND_004; ck "BND-004 dnssec-validation no → FAIL" 1 $?
 printf 'options {\n allow-transfer { none; };\n dnssec-validation auto;\n};\n' > "$FIX/etc/bind/named.conf.options"
 audit_BND_003; ck "BND-003 allow-transfer none → PASS" 0 $?
 audit_BND_004; ck "BND-004 dnssec-validation auto → PASS" 0 $?
-rm -rf "$FIX/etc/bind"
+rm -rf "${FIX:?}/etc/bind"
+
+echo "== Containers (CON-*) against fixtures =="
+mkdir -p "$FIX/etc/docker"
+printf '{ "hosts": ["unix:///var/run/docker.sock", "tcp://0.0.0.0:2375"] }\n' > "$FIX/etc/docker/daemon.json"
+audit_CON_001; ck "CON-001 tcp without tls → FAIL" 1 $?
+printf '{ "userns-remap": "default", "live-restore": true }\n' > "$FIX/etc/docker/daemon.json"
+audit_CON_001; ck "CON-001 unix socket only → PASS" 0 $?
+audit_CON_002; ck "CON-002 userns-remap set → PASS" 0 $?
+audit_CON_005; ck "CON-005 live-restore true → PASS" 0 $?
+printf '{}\n' > "$FIX/etc/docker/daemon.json"
+audit_CON_002; ck "CON-002 no userns-remap → WARN" 2 $?
+rm -rf "${FIX:?}/etc/docker"
+
+echo "== Boot (BOOT-001) against fixtures =="
+mkdir -p "$FIX/boot/grub"
+printf 'set timeout=5\nmenuentry linux { linux /vmlinuz }\n' > "$FIX/boot/grub/grub.cfg"
+audit_BOOT_001; ck "BOOT-001 no password → FAIL" 1 $?
+printf 'set superusers="admin"\npassword_pbkdf2 admin grub.pbkdf2.sha512.x\n' > "$FIX/boot/grub/grub.cfg"
+audit_BOOT_001; ck "BOOT-001 password set → PASS" 0 $?
+rm -rf "${FIX:?}/boot"
+
+echo "== Database TLS (DB-005/006) against fixtures =="
+mkdir -p "$FIX/etc/postgresql/16/main" "$FIX/etc/mysql"
+printf "listen_addresses = 'localhost'\nssl = off\n" > "$FIX/etc/postgresql/16/main/postgresql.conf"
+audit_DB_005; ck "DB-005 ssl off → FAIL" 1 $?
+printf "ssl = on\n" > "$FIX/etc/postgresql/16/main/postgresql.conf"
+audit_DB_005; ck "DB-005 ssl on → PASS" 0 $?
+printf '[mysqld]\nrequire_secure_transport = ON\n' > "$FIX/etc/mysql/my.cnf"
+audit_DB_006; ck "DB-006 require_secure_transport ON → PASS" 0 $?
+printf '[mysqld]\nbind-address = 127.0.0.1\n' > "$FIX/etc/mysql/my.cnf"
+audit_DB_006; ck "DB-006 no TLS enforcement → WARN" 2 $?
+rm -rf "${FIX:?}/etc/postgresql" "$FIX/etc/mysql"
 
 echo "== Debian release (DEB-002) via variables =="
 DISTRO_FAMILY=debian; DISTRO_ID=debian

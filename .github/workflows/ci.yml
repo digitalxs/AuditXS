@@ -14,7 +14,7 @@ jobs:
       - name: Syntax check (bash -n)
         run: |
           set -e
-          for f in auditxs setup.sh uninstall.sh gui/auditxs-gui gui/auditxs-tui.sh scripts/updater.sh tests/*.sh lib/*.sh checks/*.sh; do
+          for f in auditxs setup.sh uninstall.sh gui/auditxs-gui gui/auditxs-tui.sh install-gui.sh scripts/updater.sh tests/*.sh lib/*.sh checks/*.sh; do
             bash -n "$f"
             echo "OK $f"
           done
@@ -23,7 +23,7 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y -q shellcheck
           shellcheck --version
-          shellcheck -S warning auditxs setup.sh uninstall.sh gui/auditxs-gui gui/auditxs-tui.sh scripts/updater.sh tests/*.sh lib/*.sh checks/*.sh
+          shellcheck -S warning auditxs setup.sh uninstall.sh gui/auditxs-gui gui/auditxs-tui.sh install-gui.sh scripts/updater.sh tests/*.sh lib/*.sh checks/*.sh
 
   unit:
     name: Unit & check tests

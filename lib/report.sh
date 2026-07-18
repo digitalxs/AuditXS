@@ -41,6 +41,61 @@ results_tsv() {
     done
 }
 
+# CSV — a spreadsheet-friendly flat export (RFC-4180-ish quoting).
+results_csv() {
+    local id fixable detail cell
+    _csv() { cell=${1//\"/\"\"}; printf '"%s"' "$cell"; }
+    printf 'status,id,severity,category,domain,level,cis,nist,fixable,title,detail\n'
+    for id in "${CHECK_IDS[@]}"; do
+        [ -n "${RESULT_STATUS[$id]:-}" ] || continue
+        if has_fix "$id"; then fixable=yes; else fixable=no; fi
+        detail=${RESULT_DETAIL[$id]//$'\n'/ }
+        _csv "${RESULT_STATUS[$id]}"; printf ,; _csv "$id"; printf ,
+        _csv "${CHECK_SEVERITY[$id]}"; printf ,; _csv "${CHECK_CATEGORY[$id]}"; printf ,
+        _csv "$(domain_of "${CHECK_CATEGORY[$id]}")"; printf ,; _csv "$(level_of "$id")"; printf ,
+        _csv "$(cis_of "$id")"; printf ,; _csv "$(nist_of "$id")"; printf ,
+        _csv "$fixable"; printf ,; _csv "${CHECK_TITLE[$id]}"; printf ,; _csv "$detail"
+        printf '\n'
+    done
+}
+
+# SARIF 2.1.0 — the standard static-analysis format consumed by GitHub code
+# scanning, Azure DevOps, and most security dashboards. FAIL→error,
+# WARN→warning; WAIVED findings are emitted with a SARIF suppression carrying
+# the justification (so accepted risks are represented, not hidden).
+results_sarif() {
+    local id st sev level first=1
+    _sec_sev() { case $1 in critical) echo 9.0 ;; high) echo 7.0 ;; medium) echo 5.0 ;; *) echo 3.0 ;; esac; }
+    printf '{\n  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",\n  "version": "2.1.0",\n  "runs": [\n    {\n'
+    printf '      "tool": { "driver": {\n        "name": "AuditXS",\n        "version": "%s",\n' "$AUDITXS_VERSION"
+    printf '        "informationUri": "https://github.com/digitalxs/AuditXS",\n        "rules": [\n'
+    # rules — one per check that produced a reportable result
+    for id in "${CHECK_IDS[@]}"; do
+        st=${RESULT_STATUS[$id]:-}; case $st in FAIL|WARN|WAIVE) : ;; *) continue ;; esac
+        [ "$first" = 1 ] || printf ',\n'; first=0
+        printf '          { "id": "%s", "name": "%s", "shortDescription": { "text": "%s" }, "fullDescription": { "text": "%s" }, "helpUri": "https://github.com/digitalxs/AuditXS", "properties": { "security-severity": "%s", "category": "%s", "cis": "%s", "nist": "%s" } }' \
+            "$id" "$(json_escape "${CHECK_CATEGORY[$id]}")" "$(json_escape "${CHECK_TITLE[$id]}")" \
+            "$(json_escape "${CHECK_META_DESC[$id]:-${CHECK_TITLE[$id]}}")" "$(_sec_sev "${CHECK_SEVERITY[$id]}")" \
+            "$(json_escape "${CHECK_CATEGORY[$id]}")" "$(json_escape "$(cis_of "$id")")" "$(json_escape "$(nist_of "$id")")"
+    done
+    printf '\n        ]\n      } },\n      "results": [\n'
+    first=1
+    for id in "${CHECK_IDS[@]}"; do
+        st=${RESULT_STATUS[$id]:-}
+        case $st in FAIL) level=error ;; WARN) level=warning ;; WAIVE) level=warning ;; *) continue ;; esac
+        [ "$first" = 1 ] || printf ',\n'; first=0
+        printf '        { "ruleId": "%s", "level": "%s", "message": { "text": "%s" }, "locations": [ { "logicalLocations": [ { "name": "%s", "fullyQualifiedName": "%s/%s", "kind": "resource" } ] } ], "partialFingerprints": { "auditxsCheckId": "%s" }' \
+            "$id" "$level" "$(json_escape "${CHECK_TITLE[$id]}: ${RESULT_DETAIL[$id]:-}")" \
+            "$(json_escape "$id")" "$(json_escape "${CHECK_CATEGORY[$id]}")" "$id" "$id"
+        if [ "$st" = WAIVE ]; then
+            printf ', "suppressions": [ { "kind": "external", "justification": "%s" } ]' \
+                "$(json_escape "$(waiver_reason "$id")")"
+        fi
+        printf ' }'
+    done
+    printf '\n      ]\n    }\n  ]\n}\n'
+}
+
 results_json() {
     local id first=1 fixable
     printf '{\n'
@@ -50,8 +105,8 @@ results_json() {
     printf '  "distro": "%s",\n' "$(json_escape "$DISTRO_NAME")"
     printf '  "profile": "%s",\n' "$(json_escape "$PROFILE")"
     printf '  "date": "%s",\n' "${AUDIT_DATE:-$(date -Is)}"
-    printf '  "summary": { "pass": %s, "fail": %s, "warn": %s, "skip": %s, "score": "%s" },\n' \
-        "$N_PASS" "$N_FAIL" "$N_WARN" "$N_SKIP" "$SCORE"
+    printf '  "summary": { "pass": %s, "fail": %s, "warn": %s, "skip": %s, "waive": %s, "score": "%s" },\n' \
+        "$N_PASS" "$N_FAIL" "$N_WARN" "$N_SKIP" "${N_WAIVE:-0}" "$SCORE"
     printf '  "results": [\n'
     for id in "${CHECK_IDS[@]}"; do
         [ -n "${RESULT_STATUS[$id]:-}" ] || continue
@@ -85,6 +140,8 @@ results_html() {
         ''|'?'|0) : ;;
         *) cve_banner="<div class=\"alert\"><span class=\"alert-ic\">⚠</span><div><strong>Vulnerability warning:</strong> ${CVE_COUNT} installed package(s) have a reported security issue with a fix available (source: ${CVE_SOURCE}). Apply security updates promptly — see check VULN-001 below.</div></div>" ;;
     esac
+    local waive_chip=""
+    [ "${N_WAIVE:-0}" -gt 0 ] && waive_chip="<span class=\"chip waive\">● $N_WAIVE waived</span>"
 
     cat <<HTMLHEAD
 <!DOCTYPE html>
@@ -135,6 +192,7 @@ results_html() {
   .chip.fail { background:var(--err-c); color:var(--err); }
   .chip.warn { background:var(--warn-c); color:var(--warn); }
   .chip.skip { background:var(--skip-c); color:var(--skip); }
+  .chip.waive { background:rgba(59,73,223,.14); color:#5b67e6; }
   .alert { display:flex; gap:.75rem; align-items:flex-start; background:var(--err-c);
     color:var(--err); border-radius:1rem; padding:1rem 1.2rem; margin:1rem 0; font-size:.9rem; }
   .alert-ic { font-size:1.3rem; line-height:1; }
@@ -155,6 +213,7 @@ results_html() {
   .badge.FAIL { background:var(--err-c); color:var(--err); }
   .badge.WARN { background:var(--warn-c); color:var(--warn); }
   .badge.SKIP { background:var(--skip-c); color:var(--skip); }
+  .badge.WAIVE { background:rgba(59,73,223,.14); color:#5b67e6; }
   .cid { font-family:ui-monospace,"Cascadia Code",monospace; font-size:.8rem; white-space:nowrap; }
   .detail { color:var(--on-surface-var); font-size:.82rem; white-space:pre-wrap; margin-top:.25rem; }
   .nist { font-size:.72rem; color:var(--on-surface-var); white-space:nowrap; }
@@ -190,6 +249,7 @@ $cve_banner
       <span class="chip fail">● $N_FAIL failed</span>
       <span class="chip warn">● $N_WARN warnings</span>
       <span class="chip skip">● $N_SKIP skipped</span>
+      $waive_chip
     </div>
   </div>
 </div>

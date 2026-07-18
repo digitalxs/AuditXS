@@ -15,6 +15,8 @@ Generated from the catalogue in `lib/errors.sh` by `auditxs errors --markdown`.
 | `AX2002` | Check raised an internal error | An audit_<ID> function returned an unexpected status or crashed while inspecting the system. | Re-run with --debug to see the failing check and its output; file an issue with that trace. |
 | `AX2003` | Report could not be written | The HTML/JSON/TSV report file could not be created under the reports directory. | Check that /var/lib/auditxs/reports is writable and the disk has free space. |
 | `AX2004` | Baseline report unreadable or malformed | The baseline file passed to --baseline / diff is missing or is not a valid AuditXS JSON report. | Point at a report produced by 'auditxs report --format json'; re-approve with 'auditxs baseline set'. |
+| `AX2005` | Unknown check ID | A check ID that does not exist was referenced (e.g. for a waiver or --check filter). | List valid IDs with 'auditxs list'; IDs look like SSH-001, FW-002, CON-001. |
+| `AX2006` | Invalid date | A date was not in the required YYYY-MM-DD format. | Use an ISO date, e.g. --until 2026-12-31. |
 | `AX3001` | Fix failed to apply | A fix_<ID> function could not complete; the change was not applied. | Re-run with --debug; review the specific check with 'auditxs explain <ID>'. Nothing was left half-applied. |
 | `AX3002` | sshd configuration validation failed | The proposed SSH change did not pass 'sshd -t', so AuditXS restored the previous configuration. | Inspect /etc/ssh/sshd_config.d/99-auditxs.conf and existing config for conflicts; fix and retry. |
 | `AX3003` | Firewall change blocked by lockout guard | Enabling the firewall would have dropped the SSH session because the SSH port was not allowed first. | Allow the SSH port (the guard normally does this automatically) or run from local console, then retry. |
@@ -35,6 +37,8 @@ Generated from the catalogue in `lib/errors.sh` by `auditxs errors --markdown`.
 | `AX6006` | Remote audit returned no result | The remote command produced no parseable JSON audit result. | Re-run with --debug to see the raw remote output; confirm the remote 'auditxs audit' works when run directly. |
 | `AX6007` | Remote command timed out | The remote host did not finish the audit within the timeout. | Raise --timeout, or check load/connectivity on that host. |
 | `AX6008` | Inventory unreadable or empty | The --inventory file could not be read or contained no hosts. | Provide a readable file with one host (user@host) per line, or pass hosts with --hosts. |
-| `AX7001` | Unknown output format | An unsupported value was passed to --format. | Use one of: text, json, tsv, html. |
+| `AX7001` | Unknown output format | An unsupported value was passed to --format. | Use one of: text, json, tsv, html, sarif, csv. |
+| `AX8001` | Alert delivery failed | AuditXS could not deliver a drift/CVE alert to the configured sink (webhook or email). | Check the sink URL/address and connectivity; test with 'auditxs alert test'. |
+| `AX8002` | No alert sink configured | An alert was requested but no webhook or email destination is configured. | Set ALERT_WEBHOOK and/or ALERT_EMAIL in /etc/auditxs/auditxs.conf (see 'auditxs alert'). |
 | `AX9000` | Unspecified error | An error occurred that does not yet have a dedicated code. | Re-run with --debug and include the trace when reporting the issue. |
 | `AX9001` | Unknown error code referenced | Code path reported an error number that is not defined in the catalogue (this is a bug). | Please report it at https://github.com/digitalxs/AuditXS/issues. |

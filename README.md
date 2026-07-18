@@ -8,10 +8,10 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.9.1-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.10.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
-[![Checks](https://img.shields.io/badge/checks-105-8957e5)](docs/CHECKS.md)
+[![Checks](https://img.shields.io/badge/checks-122-8957e5)](docs/CHECKS.md)
 [![Frameworks](https://img.shields.io/badge/NIST%20CSF%202.0%20·%20CIS%20·%20STIG-informational)](docs/COMPLIANCE.md)
 
 **Debian** · **Ubuntu** · **Pop!\_OS** · **Arch** · **Fedora** · **openSUSE** *(and derivatives)*
@@ -114,6 +114,9 @@ sudo auditxs tools install lynis       install a security tool (reversible)
 sudo auditxs tools scan                run installed scanners (Lynis, rkhunter, …)
 auditxs tools vpn                      review WireGuard / OpenVPN configuration
 auditxs fleet web01 db01 --sudo        audit many hosts over SSH (read-only), aggregate
+sudo auditxs report --format sarif     SARIF 2.1.0 for GitHub code scanning (also: csv)
+sudo auditxs waive SSH-005 "reason"    accept a finding as a documented risk (auditxs waivers)
+auditxs alert status                   configure webhook/email drift & CVE alerts
 auditxs errors AX6002                  explain an error number (auditxs errors = full catalogue)
 
 sudo auditxs tui                       terminal (ncurses) UI — works over SSH, any profile
@@ -213,7 +216,7 @@ Full detail: [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
 
 ## 📋 What is covered
 
-**105 checks across 23 categories.** The full catalogue — with per-check
+**122 checks across 26 categories.** The full catalogue — with per-check
 documentation generated from the code itself — lives in
 [docs/CHECKS.md](docs/CHECKS.md) (or run `auditxs list --markdown`).
 
@@ -231,12 +234,15 @@ documentation generated from the code itself — lives in
 | **MAC** | SELinux / AppArmor status with per-distro guidance |
 | **Services** | legacy plaintext services, Avahi, CUPS, Bluetooth, systemd sandboxing overview |
 | **Network** | listening inventory, uncommon protocols (dccp/sctp/rds/tipc), wireless on servers, promiscuous-mode interfaces, NTP time sync |
+| **Boot** | GRUB bootloader password, UEFI Secure Boot, kernel lockdown mode |
+| **Containers** | Docker TCP/TLS exposure, user-namespace remapping, no `--privileged`, `docker` group sprawl, live-restore |
 | **Logging** | persistent journal, auditd, baseline rules, log permissions |
 | **Applications / PHP** | nginx version disclosure, **obsolete TLS (SSLv3/TLS 1.0/1.1)**, **HSTS**; Apache version/signature, security headers, directory listing; **Varnish** admin-interface binding &amp; secret-file permissions; `expose_php`, `display_errors`, session cookies, dangerous functions |
 | **WebApps** | **WordPress** (wp-config perms, WP_DEBUG), **Drupal** (settings.php perms), **Laravel** (`.env` perms, `APP_DEBUG`/`APP_ENV`), **Roundcube** (config perms, installer disabled) |
-| **Mail / DNS** | Postfix open-relay/TLS/banner, Dovecot plaintext-auth &amp; TLS; BIND recursion/version, **zone-transfer (AXFR) restriction**, **DNSSEC validation**, Unbound access control |
-| **Database** | MySQL/MariaDB exposure, `local_infile`, anonymous accounts; PostgreSQL exposure &amp; authentication |
-| **SecurityTools / Vulnerabilities** | host auditor, rootkit detector, file-integrity monitor, IDS/IPS present; known-CVE packages from distribution security data |
+| **Mail / DNS / TLS** | Postfix open-relay/TLS/banner, Dovecot plaintext-auth &amp; TLS, **DKIM/DMARC milters**; BIND recursion/version, **zone-transfer (AXFR) restriction**, **DNSSEC**, Unbound; **server certificate expiry** |
+| **Database** | MySQL/MariaDB exposure, `local_infile`, anonymous accounts, **TLS enforcement**; PostgreSQL exposure, authentication, **TLS** |
+| **Accounts (PAM)** | UID-0/empty-password/aging/NOPASSWD, umask, pwquality, **account lockout (faillock)**, **password history** |
+| **SecurityTools / Vulnerabilities** | host auditor, rootkit detector, file-integrity monitor, IDS/IPS, **USBGuard**, **scheduled-scan presence**; known-CVE packages |
 
 > Checks marked **manual** (e.g. pending updates, NOPASSWD sudo entries, SUID
 > inventory) *never* change the system — irreversible or judgment-heavy actions
@@ -302,6 +308,38 @@ Browse the database with `auditxs errors`, explain one with `auditxs errors
 AX6002`, or search with `auditxs errors ssh`. Full table:
 [docs/ERRORS.md](docs/ERRORS.md).
 
+## ✋ Accepted-risk waivers
+
+Real assessments knowingly accept some findings. Record that decision so it
+renders as **WAIVED** (not FAIL) everywhere, with a justification and optional
+expiry — instead of re-flagging the same known items on every run:
+
+```bash
+sudo auditxs waive SSH-005 "keys rolling out, tracked in OPS-42" --until 2026-12-31
+auditxs waivers            # list active + expired waivers
+sudo auditxs unwaive SSH-005
+```
+
+The original result is preserved in the detail, expired waivers stop applying,
+and SARIF output represents a waiver as a proper `suppression`.
+
+## 🔌 Integrations &amp; alerting
+
+- **SARIF / CSV export** — `auditxs report --format sarif` emits **SARIF 2.1.0**
+  (with `security-severity`, CIS/NIST properties and waiver suppressions) for
+  **GitHub code scanning**, Azure DevOps and security dashboards; `--format csv`
+  for spreadsheets.
+- **Drift &amp; CVE alerts** — set `ALERT_WEBHOOK` (Slack-compatible) and/or
+  `ALERT_EMAIL` in `/etc/auditxs/auditxs.conf`; scheduled audits then actively
+  notify on baseline drift or newly-vulnerable packages. Test with
+  `sudo auditxs alert test`.
+
+## 🖥️ Graphical installer
+
+On a desktop, run `./install-gui.sh` for a branded step-by-step install wizard
+(welcome → profile → options → install → done). Headless servers use the text
+installer, `sudo ./setup.sh`.
+
 ---
 
 ## 📚 Documentation
@@ -325,7 +363,7 @@ AX6002`, or search with `auditxs errors ssh`. Full table:
 ```text
 auditxs             CLI entry point
 lib/                engine — core, distro, snapshot/rollback, registry, reports, fix helpers, maintenance
-checks/             23 self-registering, self-documenting check modules (105 checks)
+checks/             26 self-registering, self-documenting check modules (122 checks)
 gui/                terminal UI (ncurses), zenity GUI, web UI, Qt/QML app + desktop launcher
 setup.sh            installer (Server / Workstation selection)
 uninstall.sh        uninstaller (protects your snapshots)

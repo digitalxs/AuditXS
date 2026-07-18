@@ -218,3 +218,38 @@ minclass = 3" || return 1
     fi
     return 0
 }
+
+# ---- PAM authentication hardening (report-only: a bad PAM edit can lock out
+#      every account, so AuditXS never rewrites PAM automatically) -----------
+_pam_auth_files()   { local f; for f in /etc/pam.d/common-auth /etc/pam.d/system-auth /etc/pam.d/password-auth; do [ -f "$(axpath "$f")" ] && echo "$(axpath "$f")"; done; }
+_pam_passwd_files() { local f; for f in /etc/pam.d/common-password /etc/pam.d/system-auth /etc/pam.d/password-auth; do [ -f "$(axpath "$f")" ] && echo "$(axpath "$f")"; done; }
+
+register_check "ACC-008" "Accounts" "medium" "server,workstation" \
+    "Failed logins lock the account (pam_faillock)"
+set_meta ACC-008 desc "Checks that PAM locks an account after repeated failed logins (pam_faillock, or legacy pam_tally2). This slows password guessing at the console and for services that use PAM. Report-only — PAM changes are applied manually to avoid lockout risk."
+set_meta ACC-008 revert "No change is made (report-only)."
+audit_ACC_008() {
+    local files; files=$(_pam_auth_files)
+    [ -n "$files" ] || { DETAIL="No PAM auth stack found"; return 3; }
+    # shellcheck disable=SC2086
+    if grep -qsE 'pam_faillock\.so|pam_tally2\.so' $files; then
+        DETAIL="Account lockout on failed logins is configured (pam_faillock/pam_tally2)"; return 0
+    fi
+    DETAIL="No account-lockout module in the PAM auth stack. Enable pam_faillock (via authselect / pam-auth-update, or add pam_faillock.so deny=5)."
+    return 1
+}
+
+register_check "ACC-009" "Accounts" "low" "server,workstation" \
+    "Password reuse is limited (pam_pwhistory)"
+set_meta ACC-009 desc "Checks that PAM remembers previous passwords (pam_pwhistory 'remember=N') so users cannot immediately cycle back to an old password when forced to change. Report-only."
+set_meta ACC-009 revert "No change is made (report-only)."
+audit_ACC_009() {
+    local files; files=$(_pam_passwd_files)
+    [ -n "$files" ] || { DETAIL="No PAM password stack found"; return 3; }
+    if grep -qsE 'pam_pwhistory\.so.*remember=[1-9]' $files \
+       || { [ -f "$(axpath /etc/security/pwhistory.conf)" ] && grep -qsE '^[[:space:]]*remember[[:space:]]*=[[:space:]]*[1-9]' "$(axpath /etc/security/pwhistory.conf)"; }; then
+        DETAIL="Password history is enforced (pam_pwhistory remember=N)"; return 0
+    fi
+    DETAIL="Password reuse is not limited. Add 'pam_pwhistory.so remember=5' to the PAM password stack ($files)."
+    return 2
+}

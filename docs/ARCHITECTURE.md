@@ -160,7 +160,7 @@ New check categories (all mapped into the five domains): Debian, PHP, Mail
 (Postfix/Dovecot), DNS (BIND/Unbound), Fail2ban, WebApps (WordPress/Drupal/
 Laravel/Roundcube), SecurityTools, Vulnerabilities — plus firewall (ufw
 logging/gufw), web-server (nginx TLS/HSTS, Varnish), and MySQL
-(local_infile/accounts) additions. 105 checks total across 23 categories.
+(local_infile/accounts) additions. 122 checks total across 26 categories.
 
 Debian 13 "trixie": `lib/distro.sh` records `DISTRO_VERSION`/`DISTRO_CODENAME`;
 `DEB-002` treats Debian 12/13 as supported and flags EOL releases.

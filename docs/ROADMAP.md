@@ -23,6 +23,24 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.10
+
+- **Accepted-risk waivers** (`auditxs waive/unwaive/waivers`): findings render
+  as WAIVED with a justification + optional expiry; represented as SARIF
+  suppressions and excluded from the score.
+- **SARIF 2.1.0 + CSV export** (`report --format sarif|csv`) for GitHub code
+  scanning and dashboards.
+- **New coverage** (17 checks → 122 total across 26 categories): **Containers**
+  (Docker/Podman: TCP/TLS exposure, userns-remap, no `--privileged`, docker-group,
+  live-restore), **Boot** (GRUB password, Secure Boot, kernel lockdown),
+  **TLS** certificate expiry, **PAM** account lockout (faillock) + password
+  history, coredump restriction, USBGuard presence, scheduled-scan presence,
+  mail DKIM/DMARC, PostgreSQL/MySQL TLS enforcement.
+- **Drift & CVE alerting** (`auditxs alert`): webhook (Slack-compatible) and/or
+  email sinks fired from scheduled audits.
+- **Graphical installer** (`install-gui.sh`): a branded zenity install wizard.
+- New error codes AX2005/2006/7001/8001/8002, wired into the new subsystems.
+
 ## Shipped in v0.9
 
 - **GUI branding & polish** *(v0.9.1)*: gradient brand logo and "by DigitalXS"

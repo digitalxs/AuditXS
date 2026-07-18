@@ -157,3 +157,23 @@ fix_KRN_010() {
     xrun ln -sfn /dev/null /etc/systemd/system/ctrl-alt-del.target || return 1
     xrun_q systemctl daemon-reload
 }
+
+# ---------------------------------------------------------------- KRN-011 ---
+register_check "KRN-011" "Kernel" "low" "server,workstation" \
+    "Core dumps are restricted"
+set_meta KRN-011 desc "Checks that process core dumps are restricted. Core dumps can contain passwords, keys and other secrets from process memory; on a server they are rarely needed. Looks for a hard 'core 0' limit and, on systemd, Storage=none/ProcessSizeMax=0 in coredump.conf. (Kernel fs.suid_dumpable is covered by KRN-009.) Report-only."
+set_meta KRN-011 revert "No change is made (report-only)."
+audit_KRN_011() {
+    local lim=0 sysd=0 f
+    for f in /etc/security/limits.conf $(ls "$(axpath /etc/security/limits.d)"/*.conf 2>/dev/null); do
+        f=$(axpath "$f"); [ -f "$f" ] || continue
+        grep -qsE '^[[:space:]]*\*[[:space:]]+hard[[:space:]]+core[[:space:]]+0' "$f" && lim=1
+    done
+    f=$(axpath /etc/systemd/coredump.conf)
+    [ -f "$f" ] && grep -qsiE '^[[:space:]]*Storage[[:space:]]*=[[:space:]]*none|^[[:space:]]*ProcessSizeMax[[:space:]]*=[[:space:]]*0' "$f" && sysd=1
+    if [ "$lim" = 1 ] || [ "$sysd" = 1 ]; then
+        DETAIL="Core dumps are restricted (hard core limit and/or systemd coredump storage disabled)"; return 0
+    fi
+    DETAIL="Core dumps are not restricted — they can leak secrets from memory. Add '* hard core 0' to limits.conf and/or 'Storage=none' to /etc/systemd/coredump.conf."
+    return 2
+}

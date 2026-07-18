@@ -139,3 +139,44 @@ audit_DB_004() {
     DETAIL="Found ${anon:-0} anonymous and ${empty:-0} passwordless account(s). Remove them with 'sudo mysql_secure_installation' or DROP USER."
     return 1
 }
+
+# ---------------------------------------------------------------- DB-005 ---
+_pg_conf() { local f; while IFS= read -r f; do echo "$f"; done < <(find "$(axpath /etc/postgresql)" "$(axpath /var/lib/pgsql)" -maxdepth 3 -name postgresql.conf 2>/dev/null); }
+_pg_present() { have psql || have postgres || [ -d "$(axpath /etc/postgresql)" ] || [ -n "$(_pg_conf)" ]; }
+register_check "DB-005" "Database" "medium" "server" \
+    "PostgreSQL requires TLS for connections"
+set_meta DB-005 desc "Checks that PostgreSQL has TLS enabled ('ssl = on'). Without it, credentials and query data cross the network in clear text. Report-only — enabling TLS needs a server certificate and a service restart."
+set_meta DB-005 revert "No change is made (report-only)."
+audit_DB_005() {
+    _pg_present || { DETAIL="PostgreSQL is not installed"; return 3; }
+    local f found=0 on=0
+    while IFS= read -r f; do
+        [ -f "$f" ] || continue; found=1
+        grep -qiE '^[[:space:]]*ssl[[:space:]]*=[[:space:]]*on' "$f" && on=1
+    done < <(_pg_conf)
+    [ "$found" = 1 ] || { DETAIL="PostgreSQL config not found to inspect"; return 2; }
+    [ "$on" = 1 ] && { DETAIL="PostgreSQL TLS is enabled (ssl = on)"; return 0; }
+    DETAIL="PostgreSQL TLS is off — set 'ssl = on' (with a server certificate) so connections are encrypted."
+    return 1
+}
+
+# ---------------------------------------------------------------- DB-006 ---
+_mysql_conf() { local f; for f in /etc/mysql/my.cnf /etc/my.cnf; do [ -f "$(axpath "$f")" ] && echo "$(axpath "$f")"; done; while IFS= read -r f; do echo "$f"; done < <(find "$(axpath /etc/mysql)" -maxdepth 2 -name '*.cnf' 2>/dev/null); }
+_mysql_present() { have mysqld || have mariadbd || have mysql || [ -d "$(axpath /etc/mysql)" ]; }
+register_check "DB-006" "Database" "medium" "server" \
+    "MySQL/MariaDB enforces encrypted connections"
+set_meta DB-006 desc "Checks for 'require_secure_transport = ON' (or an ssl-cert/ssl-key) in the MySQL/MariaDB configuration, so clients must connect over TLS. Without it, credentials and data can be sent in clear text. Report-only."
+set_meta DB-006 revert "No change is made (report-only)."
+audit_DB_006() {
+    _mysql_present || { DETAIL="MySQL/MariaDB is not installed"; return 3; }
+    local f found=0
+    while IFS= read -r f; do
+        [ -f "$f" ] || continue; found=1
+        if grep -qiE '^[[:space:]]*require_secure_transport[[:space:]]*=[[:space:]]*(on|1)' "$f"; then
+            DETAIL="Encrypted connections are enforced (require_secure_transport = ON)"; return 0
+        fi
+    done < <(_mysql_conf)
+    [ "$found" = 1 ] || { DETAIL="MySQL/MariaDB config not found to inspect"; return 2; }
+    DETAIL="TLS is not enforced — set 'require_secure_transport = ON' (with ssl-cert/ssl-key) so clients must use TLS."
+    return 2
+}

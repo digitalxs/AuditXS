@@ -74,6 +74,8 @@ declare -A DOMAIN_OF_CATEGORY=(
     [Updates]="OS Hardening"
     [OS]="OS Hardening"
     [Debian]="OS Hardening"
+    [Boot]="OS Hardening"
+    [Containers]="OS Hardening"
     [Kernel]="OS Hardening"
     [Filesystem]="OS Hardening"
     [MAC]="OS Hardening"
@@ -87,6 +89,7 @@ declare -A DOMAIN_OF_CATEGORY=(
     [Fail2ban]="Network Security"
     [Network]="Network Security"
     [DNS]="Network Security"
+    [TLS]="Network Security"
     [Services]="Application Hardening"
     [Applications]="Application Hardening"
     [WebApps]="Application Hardening"
@@ -102,6 +105,8 @@ declare -A NIST_OF_CATEGORY=(
     [Updates]="ID.RA-01, PR.PS-02"
     [OS]="PR.PS-01"
     [Debian]="PR.PS-01, PR.PS-02"
+    [Boot]="PR.PS-01, PR.AA-05"
+    [Containers]="PR.PS-01, PR.AA-05"
     [Kernel]="PR.PS-01, PR.IR-01"
     [Filesystem]="PR.DS-01, PR.AA-05"
     [MAC]="PR.PS-01, PR.AA-05"
@@ -115,6 +120,7 @@ declare -A NIST_OF_CATEGORY=(
     [Fail2ban]="DE.CM-01, DE.CM-06"
     [Network]="PR.IR-01, DE.CM-01"
     [DNS]="PR.IR-01, PR.PS-01"
+    [TLS]="PR.DS-02, ID.AM-08"
     [Services]="PR.PS-01"
     [Applications]="PR.PS-01"
     [WebApps]="PR.PS-01, PR.DS-01"
@@ -127,7 +133,7 @@ nist_of() {
     echo "${CHECK_META_NIST[$id]:-${NIST_OF_CATEGORY[${CHECK_CATEGORY[$id]}]:-}}"
 }
 
-N_PASS=0 N_FAIL=0 N_WARN=0 N_SKIP=0
+N_PASS=0 N_FAIL=0 N_WARN=0 N_SKIP=0 N_WAIVE=0
 SCORE="-"
 DETAIL=""
 
@@ -206,6 +212,7 @@ print_result() { # <id>
         FAIL) col=$RED ;;
         WARN) col=$YELLOW ;;
         SKIP) col=$DIM ;;
+        WAIVE) col=$BLUE ;;
     esac
     printf '%b\n' "[${col}${st}${RC}] ${BOLD}$id${RC} ${DIM}(${CHECK_SEVERITY[$id]}, ${CHECK_CATEGORY[$id]})${RC} ${CHECK_TITLE[$id]}"
     if [ -n "${RESULT_DETAIL[$id]}" ] && [ "$st" != "PASS" ]; then
@@ -225,7 +232,7 @@ print_audit_header() {
 
 run_audit() {
     local id fn rc st _prev_cat=""
-    N_PASS=0 N_FAIL=0 N_WARN=0 N_SKIP=0
+    N_PASS=0 N_FAIL=0 N_WARN=0 N_SKIP=0 N_WAIVE=0
     AUDIT_DATE=$(date -Is)
     for id in "${CHECK_IDS[@]}"; do
         selected "$id" || continue
@@ -252,6 +259,13 @@ run_audit() {
         fi
         t1=$(date +%s%3N 2>/dev/null || date +%s)
         st=$(status_str "$rc")
+        # Accepted-risk waiver: a FAIL/WARN the operator has formally accepted
+        # renders as WAIVED (the original result is preserved in the detail).
+        if { [ "$st" = FAIL ] || [ "$st" = WARN ]; } && is_waived "$id"; then
+            local _wr; _wr=$(waiver_reason "$id")
+            DETAIL="WAIVED ($st): ${_wr}${DETAIL:+ · original: $DETAIL}"
+            st=WAIVE
+        fi
         debug "$id → $st (rc=$rc, $((t1 - t0))ms) ${DETAIL:0:120}"
         RESULT_STATUS[$id]=$st
         RESULT_DETAIL[$id]=$DETAIL
@@ -260,6 +274,7 @@ run_audit() {
             FAIL) N_FAIL=$((N_FAIL + 1)) ;;
             WARN) N_WARN=$((N_WARN + 1)) ;;
             SKIP) N_SKIP=$((N_SKIP + 1)) ;;
+            WAIVE) N_WAIVE=$((N_WAIVE + 1)) ;;
         esac
         print_result "$id"
     done
@@ -284,7 +299,7 @@ compute_score() {
 print_summary() {
     [ "$QUIET" = 1 ] && return 0
     nala_box "Summary"
-    nala_row "Results: ${GREEN}$N_PASS passed${RC} · ${RED}$N_FAIL failed${RC} · ${YELLOW}$N_WARN warnings${RC} · ${DIM}$N_SKIP skipped${RC}"
+    nala_row "Results: ${GREEN}$N_PASS passed${RC} · ${RED}$N_FAIL failed${RC} · ${YELLOW}$N_WARN warnings${RC} · ${DIM}$N_SKIP skipped${RC}$( [ "${N_WAIVE:-0}" -gt 0 ] && printf ' · %b%s waived%b' "$BLUE" "$N_WAIVE" "$RC")"
     nala_row "Hardening score: ${BOLD}$SCORE/100${RC} ${DIM}(severity-weighted, PASS vs FAIL)${RC}"
     if [ "$N_FAIL" -gt 0 ]; then
         nala_row "Next step: ${BOLD}sudo auditxs harden${RC} reviews each failed check with you before changing anything."

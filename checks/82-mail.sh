@@ -114,3 +114,21 @@ Fix in /etc/dovecot/conf.d/10-ssl.conf: 'ssl = required' and 'ssl_min_protocol =
     DETAIL="ssl = required, ssl_min_protocol = $minp"
     return 0
 }
+
+# ---------------------------------------------------------------- MTA-001 ---
+_mta_present() { have postfix || [ -d "$(axpath /etc/postfix)" ] || svc_active postfix; }
+register_check "MTA-001" "Mail" "low" "server" \
+    "Outbound mail is authenticated (DKIM / DMARC)"
+set_meta MTA-001 desc "Checks that a mail server signs and validates mail with DKIM/DMARC milters (OpenDKIM / OpenDMARC). Unsigned mail is trivial to spoof and is widely rejected or junked by recipients. (SPF and DMARC policy records live in DNS and are verified from the receiving side.) Report-only."
+set_meta MTA-001 revert "No change is made (report-only)."
+audit_MTA_001() {
+    _mta_present || { DETAIL="No SMTP server (Postfix) detected"; return 3; }
+    local have_dkim=0 have_dmarc=0
+    { svc_active opendkim || svc_active opendkim.service || pkg_installed opendkim 2>/dev/null || have opendkim; } && have_dkim=1
+    { svc_active opendmarc || svc_active opendmarc.service || pkg_installed opendmarc 2>/dev/null || have opendmarc; } && have_dmarc=1
+    if [ "$have_dkim" = 1 ] && [ "$have_dmarc" = 1 ]; then
+        DETAIL="DKIM and DMARC milters are present (OpenDKIM + OpenDMARC)"; return 0
+    fi
+    DETAIL="Missing mail authentication: $([ "$have_dkim" = 0 ] && echo -n 'DKIM ')$([ "$have_dmarc" = 0 ] && echo -n 'DMARC ')— install/enable OpenDKIM and OpenDMARC, and publish SPF/DKIM/DMARC DNS records."
+    return 2
+}

@@ -74,3 +74,38 @@ audit_SEC_004() {
     DETAIL="No IDS/IPS engine detected (CrowdSec, Suricata or fail2ban). Install one with 'auditxs tools install crowdsec' (or suricata)."
     return 2
 }
+
+# ---------------------------------------------------------------- SEC-005 ---
+register_check "SEC-005" "SecurityTools" "low" "server,workstation" \
+    "USB device control (USBGuard) is active"
+set_meta SEC-005 desc "Checks whether USBGuard is installed and running to allow-list USB devices — a defence against BadUSB / rogue-device attacks at physical ports. Report-only: enable it only after generating a policy from your known-good devices ('auditxs tools install usbguard'), or you can lock out your own keyboard."
+set_meta SEC-005 revert "No change is made (report-only)."
+audit_SEC_005() {
+    if svc_active usbguard.service || svc_active usbguard; then
+        DETAIL="USBGuard is active (USB devices are allow-listed)"; return 0
+    fi
+    if pkg_installed usbguard 2>/dev/null || have usbguard; then
+        DETAIL="USBGuard is installed but not active — generate a policy then enable it (see 'auditxs tools install usbguard')"; return 2
+    fi
+    DETAIL="No USB device control. Optional defence-in-depth for exposed/physical machines: 'auditxs tools install usbguard'."
+    return 2
+}
+
+# ---------------------------------------------------------------- SEC-006 ---
+register_check "SEC-006" "SecurityTools" "low" "server" \
+    "A security scan runs on a schedule"
+set_meta SEC-006 desc "Checks that a recurring security scan is scheduled (a cron entry or systemd timer for rkhunter, lynis, aide, chkrootkit or 'auditxs schedule'). Installing a scanner is only useful if it actually runs regularly. Report-only."
+set_meta SEC-006 revert "No change is made (report-only)."
+audit_SEC_006() {
+    local found=""
+    svc_enabled auditxs-audit.timer 2>/dev/null && found+="auditxs "
+    if has_systemd; then
+        systemctl list-timers --all 2>/dev/null | grep -qiE 'rkhunter|lynis|aide|chkrootkit|auditxs' && found+="timer "
+    fi
+    grep -rqsiE 'rkhunter|lynis|aidecheck|aide --check|chkrootkit' "$(axpath /etc/cron.d)" "$(axpath /etc/cron.daily)" "$(axpath /etc/cron.weekly)" 2>/dev/null && found+="cron "
+    if [ -n "$found" ]; then
+        DETAIL="A scheduled security scan is present ($found)"; return 0
+    fi
+    DETAIL="No scheduled security scan found. Schedule one: 'auditxs schedule enable', or a cron/timer for rkhunter/lynis/aide."
+    return 2
+}

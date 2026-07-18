@@ -1,6 +1,6 @@
 # AuditXS check catalogue
 
-Generated from the check registry by `auditxs list --markdown` (v0.9.1).
+Generated from the check registry by `auditxs list --markdown` (v0.10.0).
 
 Legend: checks with an **automatic fix** are only ever applied by
 `auditxs harden` after showing you exactly what will change, and every
@@ -223,6 +223,58 @@ Checks that an intrusion-prevention service (fail2ban with an sshd jail, or sshg
 
 **How it is reverted:** 'sudo auditxs rollback' removes the jail drop-in, restores the previous service state and offers to remove packages AuditXS installed.
 
+## Containers — OS Hardening domain
+
+### CON-001 — Docker daemon is not exposed over unencrypted TCP
+
+- **Severity:** high
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Checks that the Docker daemon is not listening on a TCP socket without TLS. An unauthenticated 'tcp://…:2375' socket grants full root-equivalent control of the host to anyone who can reach it — a frequent cause of server compromise. The default unix socket is fine. Report-only.
+
+### CON-002 — Docker uses user-namespace remapping
+
+- **Severity:** low
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Checks for 'userns-remap' in daemon.json. Without it, UID 0 inside a container is UID 0 on the host, so a container breakout is immediate root. User-namespace remapping maps container root to an unprivileged host user — strong defence in depth. Report-only (enabling it changes volume ownership semantics, so it is a deliberate choice).
+
+### CON-003 — No container is running with --privileged
+
+- **Severity:** high
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Checks the running containers for '--privileged' (Privileged=true). A privileged container disables almost all isolation and can trivially take over the host. Report-only — stopping a workload is the operator's call.
+
+### CON-004 — Membership of the 'docker' group is limited
+
+- **Severity:** medium
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Lists members of the 'docker' group. Being in it is equivalent to root (you can mount the host filesystem into a container), so it should contain only trusted administrators. Report-only — verify each member should have that power.
+
+### CON-005 — Docker live-restore is enabled
+
+- **Severity:** low
+- **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Checks for 'live-restore' in daemon.json, which keeps containers running across a daemon restart/upgrade. Without it, a daemon restart (e.g. for a security update) stops every workload — encouraging admins to defer updates. Report-only.
+
 ## Fail2ban — Network Security domain
 
 ### F2B-001 — fail2ban is enabled to start at boot
@@ -432,6 +484,26 @@ Checks that pam_pwquality is part of the PAM password stack and that the effecti
 **What the fix changes:** Debian family: installs 'libpam-pwquality' (Debian wires it into the PAM stack automatically via pam-auth-update). openSUSE: enables the module with 'pam-config -a --pwquality' (the distribution's supported tool). Then writes /etc/security/pwquality.conf.d/99-auditxs.conf with 'minlen = 12' and 'minclass = 3'. PAM files are never edited directly. On Fedora/Arch with the module missing, AuditXS only reports (PAM stacks there should be changed via authselect / by hand).
 
 **How it is reverted:** 'sudo auditxs rollback' removes the pwquality drop-in, reverts the pam-config change on openSUSE, and offers to remove the package if AuditXS installed it.
+
+### ACC-008 — Failed logins lock the account (pam_faillock)
+
+- **Severity:** medium
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.AA-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Checks that PAM locks an account after repeated failed logins (pam_faillock, or legacy pam_tally2). This slows password guessing at the console and for services that use PAM. Report-only — PAM changes are applied manually to avoid lockout risk.
+
+### ACC-009 — Password reuse is limited (pam_pwhistory)
+
+- **Severity:** low
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.AA-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Checks that PAM remembers previous passwords (pam_pwhistory 'remember=N') so users cannot immediately cycle back to an old password when forced to change. Report-only.
 
 ## Privileged — Server Hardening domain
 
@@ -688,6 +760,48 @@ Checks that the ctrl-alt-del systemd target is masked. On servers, anyone with (
 **What the fix changes:** Masks the target by linking /etc/systemd/system/ctrl-alt-del.target to /dev/null and runs 'systemctl daemon-reload'. No other keyboard behaviour changes.
 
 **How it is reverted:** 'sudo auditxs rollback' removes the mask link (restoring the saved file if one existed) and reloads systemd.
+
+### KRN-011 — Core dumps are restricted
+
+- **Severity:** low
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.IR-01
+- **Fix:** manual (report-only)
+
+Checks that process core dumps are restricted. Core dumps can contain passwords, keys and other secrets from process memory; on a server they are rarely needed. Looks for a hard 'core 0' limit and, on systemd, Storage=none/ProcessSizeMax=0 in coredump.conf. (Kernel fs.suid_dumpable is covered by KRN-009.) Report-only.
+
+## Boot — OS Hardening domain
+
+### BOOT-001 — GRUB bootloader is password-protected
+
+- **Severity:** medium
+- **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Checks whether GRUB requires a password to edit boot entries or use the command line. Without it, anyone with console access can add 'init=/bin/bash' to get a root shell, bypassing every OS control. Set a GRUB superuser + password_pbkdf2. Report-only — a wrong GRUB password change can lock you out of booting.
+
+### BOOT-002 — UEFI Secure Boot is enabled
+
+- **Severity:** low
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Checks whether UEFI Secure Boot is active, so only signed bootloaders/kernels run — blocking bootkits and unsigned kernel modules. Not applicable to legacy BIOS/VMs. Report-only (it is a firmware setting).
+
+### BOOT-003 — Kernel lockdown mode is active
+
+- **Severity:** low
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.PS-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Checks the kernel lockdown state. Lockdown ('integrity' or 'confidentiality') stops even root from modifying the running kernel (e.g. loading unsigned modules, /dev/mem), which hardens against kernel-level persistence. Report-only — enabling it can break some legitimate tools.
 
 ## MAC — OS Hardening domain
 
@@ -1105,6 +1219,16 @@ Checks that Dovecot's 'disable_plaintext_auth' is yes, so IMAP/POP passwords are
 
 Checks that Dovecot requires SSL/TLS (ssl = required) and disables obsolete protocols (ssl_min_protocol = TLSv1.2 or higher). Old TLS/SSL versions have exploitable weaknesses. Report-only.
 
+### MTA-001 — Outbound mail is authenticated (DKIM / DMARC)
+
+- **Severity:** low
+- **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.DS-02, PR.AA-05
+- **Fix:** manual (report-only)
+
+Checks that a mail server signs and validates mail with DKIM/DMARC milters (OpenDKIM / OpenDMARC). Unsigned mail is trivial to spoof and is widely rejected or junked by recipients. (SPF and DMARC policy records live in DNS and are verified from the receiving side.) Report-only.
+
 ## DNS — Network Security domain
 
 ### BND-001 — BIND does not allow open recursion
@@ -1198,6 +1322,38 @@ When MySQL/MariaDB is installed, checks that 'local_infile' is OFF. LOAD DATA LO
 - **Fix:** manual (report-only)
 
 When MySQL/MariaDB is installed, checks for anonymous accounts (empty User) and accounts with an empty authentication string — both allow login without credentials. These are exactly what 'mysql_secure_installation' removes. Report-only: account changes require DBA judgement; the finding lists what to run.
+
+### DB-005 — PostgreSQL requires TLS for connections
+
+- **Severity:** medium
+- **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.DS-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Checks that PostgreSQL has TLS enabled ('ssl = on'). Without it, credentials and query data cross the network in clear text. Report-only — enabling TLS needs a server certificate and a service restart.
+
+### DB-006 — MySQL/MariaDB enforces encrypted connections
+
+- **Severity:** medium
+- **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.DS-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Checks for 'require_secure_transport = ON' (or an ssl-cert/ssl-key) in the MySQL/MariaDB configuration, so clients must connect over TLS. Without it, credentials and data can be sent in clear text. Report-only.
+
+## TLS — Network Security domain
+
+### TLS-001 — No server TLS certificate is expired or expiring soon
+
+- **Severity:** high
+- **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.DS-02, ID.AM-08
+- **Fix:** manual (report-only)
+
+Scans common certificate locations (Let's Encrypt and standard service directories) and checks each server certificate's expiry with openssl. Expired certificates cause outages and security warnings; certificates within 30 days of expiry need renewal now. Report-only — renewal is service-specific (certbot, ACME, manual).
 
 ## Logging — OS Hardening domain
 
@@ -1310,6 +1466,26 @@ Checks for AIDE (Advanced Intrusion Detection Environment). AIDE records cryptog
 - **Fix:** manual (report-only)
 
 Checks whether at least one active-defence engine is present: CrowdSec (collaborative IPS), Suricata (network IDS/IPS) or fail2ban (log-based banning). At least one is expected on an internet-facing server to detect and block attacks in progress. Use 'auditxs tools install crowdsec|suricata' for a guided setup.
+
+### SEC-005 — USB device control (USBGuard) is active
+
+- **Severity:** low
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** DE.CM-08, ID.RA-01
+- **Fix:** manual (report-only)
+
+Checks whether USBGuard is installed and running to allow-list USB devices — a defence against BadUSB / rogue-device attacks at physical ports. Report-only: enable it only after generating a policy from your known-good devices ('auditxs tools install usbguard'), or you can lock out your own keyboard.
+
+### SEC-006 — A security scan runs on a schedule
+
+- **Severity:** low
+- **Profiles:** server
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** DE.CM-08, ID.RA-01
+- **Fix:** manual (report-only)
+
+Checks that a recurring security scan is scheduled (a cron entry or systemd timer for rkhunter, lynis, aide, chkrootkit or 'auditxs schedule'). Installing a scanner is only useful if it actually runs regularly. Report-only.
 
 ## Vulnerabilities — OS Hardening domain
 

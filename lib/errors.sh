@@ -60,6 +60,12 @@ _ax_def AX2003 "Report could not be written" \
 _ax_def AX2004 "Baseline report unreadable or malformed" \
     "The baseline file passed to --baseline / diff is missing or is not a valid AuditXS JSON report." \
     "Point at a report produced by 'auditxs report --format json'; re-approve with 'auditxs baseline set'."
+_ax_def AX2005 "Unknown check ID" \
+    "A check ID that does not exist was referenced (e.g. for a waiver or --check filter)." \
+    "List valid IDs with 'auditxs list'; IDs look like SSH-001, FW-002, CON-001."
+_ax_def AX2006 "Invalid date" \
+    "A date was not in the required YYYY-MM-DD format." \
+    "Use an ISO date, e.g. --until 2026-12-31."
 
 # ---- AX3xxx — harden / fixes ---------------------------------------------
 _ax_def AX3001 "Fix failed to apply" \
@@ -132,7 +138,15 @@ _ax_def AX6008 "Inventory unreadable or empty" \
 # ---- AX7xxx — reporting ---------------------------------------------------
 _ax_def AX7001 "Unknown output format" \
     "An unsupported value was passed to --format." \
-    "Use one of: text, json, tsv, html."
+    "Use one of: text, json, tsv, html, sarif, csv."
+
+# ---- AX8xxx — alerting ----------------------------------------------------
+_ax_def AX8001 "Alert delivery failed" \
+    "AuditXS could not deliver a drift/CVE alert to the configured sink (webhook or email)." \
+    "Check the sink URL/address and connectivity; test with 'auditxs alert test'."
+_ax_def AX8002 "No alert sink configured" \
+    "An alert was requested but no webhook or email destination is configured." \
+    "Set ALERT_WEBHOOK and/or ALERT_EMAIL in /etc/auditxs/auditxs.conf (see 'auditxs alert')."
 
 # ---- AX9xxx — internal ----------------------------------------------------
 _ax_def AX9000 "Unspecified error" \

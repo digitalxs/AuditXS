@@ -52,8 +52,10 @@ Show the check catalogue (or full documentation).
 .B explain \fR<ID>...\fP
 Show full documentation for checks, including CIS id, level and NIST mapping.
 .TP
-.B report \fR--format html|json|tsv\fP
-Print a report of a fresh audit to stdout.
+.B report \fR--format html|json|tsv|sarif|csv\fP
+Print a report of a fresh audit to stdout. SARIF 2.1.0 is suitable for GitHub
+code scanning and security dashboards (waivers become SARIF suppressions); CSV
+for spreadsheets.
 .TP
 .B diff \fR<baseline.json> [current.json]\fP
 Compare two saved reports; exits non-zero on regressions.
@@ -88,6 +90,22 @@ Per-host JSON reports are saved under
 .IR /var/lib/auditxs/reports/fleet/ ;
 .B --remote-report
 additionally leaves a full HTML report on each audited host.
+.TP
+.B waive \fR<CHECK-ID> "reason" [--until YYYY-MM-DD]\fP
+Accept a finding as a documented risk. It renders as WAIVED (not FAIL/WARN) in
+audits, reports and drift alerts, with the justification preserved.
+.B waivers
+lists them;
+.B "unwaive <ID>"
+removes one. Expired waivers stop applying.
+.TP
+.B alert \fRstatus|test\fP
+Show or test the drift/CVE alert sinks. Configure
+.B ALERT_WEBHOOK
+(Slack-compatible) and/or
+.B ALERT_EMAIL
+in /etc/auditxs/auditxs.conf; scheduled audits then notify on baseline drift or
+newly-vulnerable packages.
 .TP
 .B errors \fR[CODE|term|log]\fP
 Browse the error catalogue. With no argument, list every

@@ -18,7 +18,7 @@
 AUDITXS_SELF=$(readlink -f "${BASH_SOURCE[0]}")
 AUDITXS_ROOT=$(dirname "$AUDITXS_SELF")
 
-for _lib in core errors distro backup registry report fixlib maintenance cve tools fleet; do
+for _lib in core errors distro backup registry waivers report fixlib maintenance cve tools fleet alerts; do
     # shellcheck disable=SC1090
     . "$AUDITXS_ROOT/lib/$_lib.sh" || { echo "auditxs: missing library lib/$_lib.sh" >&2; exit 1; }
 done
@@ -52,6 +52,9 @@ ${BOLD}COMMANDS${RC}
   cve         Warn about installed packages with a known vulnerability / CVE
   tools       Security tooling:  auditxs tools status | install <name> | scan | vpn
   fleet       Audit many hosts over SSH (read-only):  auditxs fleet <host...> [options]
+  waive       Accept a finding as a documented risk:  auditxs waive <ID> "reason" [--until DATE]
+  waivers     List accepted-risk waivers   ·   unwaive <ID> removes one
+  alert       Configure/test drift & CVE alert sinks:  auditxs alert status | test
   errors      Browse the error-code catalogue:  auditxs errors [CODE|term|log]
   tui         Launch the terminal (ncurses) interface — works over SSH; server-friendly
   web         Launch the local web UI (Material Design 3) — workstation profile only
@@ -73,7 +76,7 @@ ${BOLD}OPTIONS${RC}
   --level 1|2                    Only CIS Level ≤ N checks (2 includes 1)
   --framework cis                Only checks carrying a CIS Benchmark reference
   --check <ID>                   Only this check (repeatable)
-  --format text|tsv|json|html    Output format (audit/report)
+  --format text|tsv|json|html|sarif|csv   Output format (audit/report; SARIF for code-scanning)
   --baseline <report.json>       audit: compare results against a saved report
   --dry-run                      harden: show every intended change, change nothing
   --yes, -y                      Assume "yes" to confirmations (automation)
@@ -171,7 +174,7 @@ main() {
             --port)      ARGS+=("--port" "${2:?--port needs a value}"); shift ;;   # passthrough to web/tui/fleet
             --no-open)   ARGS+=("--no-open") ;;                                     # passthrough to web
             # fleet-mode options — passed through to 'auditxs fleet'
-            --hosts|--inventory|--user|--key|--timeout|--output)
+            --hosts|--inventory|--user|--key|--timeout|--output|--until)
                          ARGS+=("$1" "${2:?"$1 needs a value"}"); shift ;;
             --sudo|--ask-pass|--strict-host-key|--insecure-host-key|--remote-report)
                          ARGS+=("$1") ;;
@@ -214,10 +217,12 @@ main() {
                     cve_scan; cve_banner
                     save_reports
                     [ -n "$BASELINE_FILE" ] && diff_current_against "$BASELINE_FILE" ;;
-                tsv)  QUIET=1; run_audit; results_tsv ;;
-                json) QUIET=1; run_audit; results_json ;;
-                html) QUIET=1; run_audit; results_html ;;
-                *) die "Unknown format: $FORMAT" ;;
+                tsv)   QUIET=1; run_audit; results_tsv ;;
+                json)  QUIET=1; run_audit; results_json ;;
+                html)  QUIET=1; run_audit; results_html ;;
+                csv)   QUIET=1; run_audit; results_csv ;;
+                sarif) QUIET=1; run_audit; results_sarif ;;
+                *) ax_die AX7001 "format=$FORMAT" ;;
             esac
             return 0 ;;
         report)
@@ -229,7 +234,9 @@ main() {
                 html|text) results_html ;;
                 json)      results_json ;;
                 tsv)       results_tsv ;;
-                *) die "Unknown format: $FORMAT" ;;
+                csv)       results_csv ;;
+                sarif)     results_sarif ;;
+                *) ax_die AX7001 "format=$FORMAT" ;;
             esac
             return 0 ;;
         harden)
@@ -301,6 +308,14 @@ main() {
         errors|error)
             if [ "$MARKDOWN" = 1 ]; then cmd_errors --markdown; else cmd_errors "${ARGS[@]}"; fi
             return $? ;;
+        waive)
+            resolve_profile; cmd_waive "${ARGS[@]}"; return $? ;;
+        unwaive)
+            resolve_profile; cmd_unwaive "${ARGS[@]}"; return $? ;;
+        waivers)
+            resolve_profile; cmd_waivers; return $? ;;
+        alert|alerts)
+            cmd_alert "${ARGS[@]}"; return $? ;;
         fleet)
             resolve_profile
             cmd_fleet "${ARGS[@]}"

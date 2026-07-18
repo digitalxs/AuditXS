@@ -32,6 +32,7 @@ tt() { # tt <description> <expected yes|no> <command...> — test exit status
 QUIET=1
 . lib/core.sh
 . lib/errors.sh
+. lib/waivers.sh
 . lib/distro.sh
 . lib/backup.sh
 . lib/registry.sh
@@ -161,6 +162,15 @@ tt "ax_error returns non-zero"       no  ax_error AX9000 2>/dev/null
 mdrows=$(cmd_errors --markdown | grep -c '| `AX')
 t "errors --markdown emits rows"     yes "$([ "$mdrows" -ge 20 ] && echo yes || echo no)"
 tt "ax_error wrote to the ledger"    yes test -s "$TMPD/errors.log"
+
+# ---- waivers (lib/waivers.sh) --------------------------------------------
+AX_WAIVERS_FILE="$TMPD/waivers.conf"
+printf 'SSH-001 | - | accepted, compensating control\nFW-002 | 2000-01-01 | expired waiver\n' > "$AX_WAIVERS_FILE"
+WAIVERS_LOADED=0; unset WAIVER_REASON WAIVER_EXPIRY; declare -A WAIVER_REASON WAIVER_EXPIRY
+tt "is_waived active (no expiry)"    yes is_waived SSH-001
+tt "is_waived expired waiver"        no  is_waived FW-002
+tt "is_waived unwaived check"        no  is_waived ACC-001
+t  "waiver_reason text"              "accepted, compensating control" "$(waiver_reason SSH-001)"
 
 # ---- fleet JSON summary parsing (lib/fleet.sh) ---------------------------
 fjson='{"summary": { "pass": 12, "fail": 3, "warn": 2, "skip": 5, "score": "82" }, "results": []}'

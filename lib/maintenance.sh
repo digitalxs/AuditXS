@@ -235,14 +235,27 @@ WantedBy=timers.target"
             QUIET=1
             run_audit
             save_reports
+            cve_scan
             log "scheduled audit complete: score=$SCORE pass=$N_PASS fail=$N_FAIL"
+            local _drift=0
             if [ -f "$BASELINE_PATH" ]; then
                 QUIET=0
                 if ! diff_current_against "$BASELINE_PATH"; then
                     err "Security configuration regressed against the approved baseline."
-                    return 1
+                    _drift=1
                 fi
             fi
+            # Active alerting (best-effort) when a sink is configured.
+            if alerts_configured; then
+                if [ "$_drift" = 1 ]; then
+                    send_alert "Configuration drift detected" \
+                        "The scheduled audit regressed against the approved baseline (score $SCORE/100, $N_FAIL failing). Review with: sudo auditxs diff $BASELINE_PATH" || true
+                elif [ -n "${CVE_COUNT:-}" ] && [ "${CVE_COUNT:-0}" != 0 ] && [ "${CVE_COUNT:-0}" != "?" ]; then
+                    send_alert "Vulnerable packages need updates" \
+                        "$CVE_COUNT installed package(s) have a known vulnerability with a fix available (source: ${CVE_SOURCE:-distro}). Run: sudo auditxs cve" || true
+                fi
+            fi
+            [ "$_drift" = 1 ] && return 1
             return 0
             ;;
         *) die "Usage: auditxs schedule enable | disable | status | run" ;;
