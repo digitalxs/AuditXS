@@ -354,6 +354,7 @@ installer, `sudo ./setup.sh`.
 | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Domains, NIST CSF 2.0, CIS/STIG alignment, assessor evidence |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Engine, snapshot format, check API, testing |
 | [**digitalxs-dev-doc.MD**](digitalxs-dev-doc.MD) | **Developer & maintainer guide** — architecture, code map, debugging, testing, releases, GitHub workflow |
+| [CHANGELOG.md](CHANGELOG.md) | Release notes — what changed in each version |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Must-have feature rationale and deliberate non-goals |
 
 ---
