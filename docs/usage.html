@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.13.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.14.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg active" href="usage.html">User manual</a>
@@ -296,6 +296,14 @@ AUDITXS_GUI=zenity  auditxs-gui      # use the classic zenity dialogs</code></pr
 <li><strong>Doctor / Catalogue / About</strong>.</li>
 </ul>
 <p>The console output uses a clean <strong>nala-style</strong> boxed layout; the HTML report uses <strong>Material Design 3</strong> (theme-aware light/dark, score ring, status chips). The zenity GUI itself follows your desktop's GTK theme.</p>
+<h3 id="the-guis-do-everything-the-cli-does-v014">The GUIs do everything the CLI does (v0.14)</h3>
+<ul>
+<li><strong>Fix it on every finding.</strong> Each FAIL/WARN row (Qt dashboard, web dashboard, and the zenity results list via <em>Fix / Details</em>) carries a button: <strong>Fix it</strong> runs the review → consent → reversible-fix → verify flow for that one check; <strong>How to fix</strong> shows detailed manual guidance (the exact change to make, and how it would be reverted) when no automatic fix exists.</li>
+<li><strong>Fleet from the GUI.</strong> The Fleet tab (Qt, web) / submenu (zenity) manages hosts (<code>user@host</code>), the SSH key and remote sudo, and runs the fleet audit with live percentage progress, ending at the aggregated overview dashboard. Qt and zenity share <code>~/.config/auditxs/fleet-hosts</code>; the web UI (running as root) manages <code>/var/lib/auditxs/fleet-hosts</code>.</li>
+<li><strong>Embedded console.</strong> A collapsible panel at the bottom (status bar → <em>Console</em>): in the Qt app it runs any command with your user's own privileges (line-based — interactive TUI programs still need a real terminal); in the web UI it accepts <strong>auditxs subcommands only</strong>, executed argv-only with no shell, matching the web UI's strict security model. The zenity menu's <em>Terminal</em> entry opens your system terminal instead.</li>
+<li><strong>Ops everywhere.</strong> CVE scan, doctor, schedule, baseline, waivers, alerts, the error catalogue and the check catalogue are one click away (Qt <em>Ops</em> tab, zenity menu entries, web console).</li>
+<li><strong>Status bar.</strong> Qt and the web UI show the version, profile and host plus the live operation percentage at the bottom of the window at all times.</li>
+</ul>
 <h2 id="privileges--credential-caching">Privileges &amp; credential caching</h2>
 <p>You should only have to authenticate <strong>once per working session</strong>, not once per action:</p>
 <ul>

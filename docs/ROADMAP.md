@@ -23,6 +23,17 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.14
+
+- **GUI feature parity**: Fix it / How to fix buttons on every finding in
+  the Qt, web and zenity interfaces (with detailed manual guidance where no
+  automatic fix exists); a Fleet tab/submenu (hosts + credentials + one-click
+  fleet audit with progress and the overview dashboard); an embedded
+  collapsible console (full shell in Qt, argv-whitelisted auditxs commands in
+  the web UI, system terminal launcher in zenity); an Ops tab / menu entries
+  covering every remaining CLI operation; and a status bar with version,
+  profile, host and live progress.
+
 ## Shipped in v0.13
 
 - **Progress bars with percentage everywhere**: in-terminal bar for the CLI

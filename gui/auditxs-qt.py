@@ -21,6 +21,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 
 _ID = re.compile(r"[A-Za-z0-9-]+")
 
@@ -40,6 +41,62 @@ def read_progress():
                 "total": int(parts[2]), "id": parts[3] if len(parts) > 3 else ""}
     except (OSError, ValueError, IndexError):
         return {"pct": 0, "done": 0, "total": 0, "id": ""}
+
+
+# Any CLI operation the GUI may run (argv only, never a shell). First token
+# must be one of these auditxs subcommands; every argument must match _OPARG.
+_OP_CMDS = {"audit", "report", "harden", "rollback", "snapshots", "tools",
+            "cve", "baseline", "doctor", "schedule", "errors", "waive",
+            "unwaive", "waivers", "alert", "fleet", "list", "explain",
+            "diff", "version", "profile"}
+_OPARG = re.compile(r"[A-Za-z0-9@.,:%/_=+~ -]+")
+
+
+def op_allowed(args):
+    return (args and args[0] in _OP_CMDS
+            and all(a and _OPARG.fullmatch(a) for a in args))
+
+
+# ---- fleet configuration (user-level; fleet mode is read-only over SSH and
+# runs unprivileged with the user's own keys/agent) ------------------------
+_CFG_DIR = os.path.join(os.environ.get("XDG_CONFIG_HOME",
+                        os.path.expanduser("~/.config")), "auditxs")
+FLEET_HOSTS = os.path.join(_CFG_DIR, "fleet-hosts")
+FLEET_OUT_ROOT = os.path.join(os.environ.get("XDG_DATA_HOME",
+                              os.path.expanduser("~/.local/share")),
+                              "auditxs", "fleet")
+
+
+def fleet_config():
+    hosts, key, sudo = [], "", True
+    try:
+        with open(FLEET_HOSTS) as f:
+            for ln in f:
+                ln = ln.strip()
+                if ln.startswith("#key="):
+                    key = ln[5:]
+                elif ln.startswith("#sudo="):
+                    sudo = ln[6:] == "1"
+                elif ln and not ln.startswith("#"):
+                    hosts.append(ln)
+    except OSError:
+        pass
+    return {"hosts": hosts, "key": key, "sudo": sudo}
+
+
+def fleet_save(cfg):
+    os.makedirs(_CFG_DIR, mode=0o700, exist_ok=True)
+    with open(FLEET_HOSTS, "w") as f:
+        f.write("# AuditXS fleet inventory (managed by the GUI)\n")
+        if cfg.get("key"):
+            f.write("#key=%s\n" % cfg["key"])
+        f.write("#sudo=%s\n" % ("1" if cfg.get("sudo", True) else "0"))
+        for h in cfg.get("hosts", []):
+            h = h.strip()
+            if h and _OPARG.fullmatch(h):
+                f.write(h + "\n")
+    os.chmod(FLEET_HOSTS, 0o600)
+    return fleet_config()
 
 # Subcommands that need root. When the GUI runs unprivileged (e.g. launched
 # from the desktop), each of these is elevated per-operation via pkexec — the
@@ -227,6 +284,129 @@ def run_gui():
         @Slot(result=str)
         def auditResult(self):
             return self._audit_result or ""
+
+        # Generic async CLI operation (whitelisted subcommands, argv only).
+        # opStart → poll opState until running=false; output is in the state.
+        @Slot(str, result=bool)
+        def opStart(self, args_json):
+            if getattr(self, "_op_thread", None) and self._op_thread.is_alive():
+                return False
+            try:
+                args = json.loads(args_json)
+            except ValueError:
+                return False
+            if not op_allowed(args):
+                return False
+            try:
+                open(PROGRESS_FILE, "w").close()
+            except OSError:
+                pass
+            self._op_output = None
+
+            def _worker():
+                rc, out, err = run_auditxs(
+                    args + ["--progress-file", PROGRESS_FILE], timeout=1800)
+                text = strip_ansi(out)
+                if rc != 0 and err:
+                    text += "\n[exit %d] %s" % (rc, strip_ansi(err)[-800:])
+                self._op_output = text
+
+            self._op_thread = threading.Thread(target=_worker, daemon=True)
+            self._op_thread.start()
+            return True
+
+        @Slot(result=str)
+        def opState(self):
+            running = bool(getattr(self, "_op_thread", None)
+                           and self._op_thread.is_alive())
+            st = read_progress()
+            st["running"] = running
+            st["output"] = "" if running else (getattr(self, "_op_output", "") or "")
+            return json.dumps(st)
+
+        # Console: line-based command runner (the user's own shell, the
+        # window's own unprivileged rights — like typing in a terminal).
+        @Slot(str, result=bool)
+        def consoleRun(self, cmd):
+            if getattr(self, "_con_thread", None) and self._con_thread.is_alive():
+                return False
+            cmd = (cmd or "").strip()
+            if not cmd:
+                return False
+
+            def _worker():
+                try:
+                    p = subprocess.run(["bash", "-c", cmd], capture_output=True,
+                                       text=True, timeout=600)
+                    out = (p.stdout or "") + (p.stderr or "")
+                    if p.returncode != 0:
+                        out += "\n[exit %d]" % p.returncode
+                except subprocess.TimeoutExpired:
+                    out = "[timed out after 600s]"
+                self._con_lines.append("$ %s\n%s" % (cmd, strip_ansi(out).rstrip()))
+
+            self._con_lines = getattr(self, "_con_lines", [])
+            self._con_thread = threading.Thread(target=_worker, daemon=True)
+            self._con_thread.start()
+            return True
+
+        @Slot(result=str)
+        def consolePoll(self):
+            running = bool(getattr(self, "_con_thread", None)
+                           and self._con_thread.is_alive())
+            return json.dumps({"running": running,
+                               "log": "\n\n".join(getattr(self, "_con_lines", []))})
+
+        # Fleet management (user-level inventory; read-only over SSH).
+        @Slot(result=str)
+        def fleetConfig(self):
+            return json.dumps(fleet_config())
+
+        @Slot(str, result=str)
+        def fleetSave(self, cfg_json):
+            try:
+                return json.dumps(fleet_save(json.loads(cfg_json)))
+            except (ValueError, OSError):
+                return json.dumps(fleet_config())
+
+        @Slot(result=bool)
+        def fleetAudit(self):
+            cfg = fleet_config()
+            if not cfg["hosts"]:
+                return False
+            ts = str(int(time.time()))
+            outdir = os.path.join(FLEET_OUT_ROOT, ts)
+            os.makedirs(outdir, exist_ok=True)
+            self._fleet_outdir = outdir
+            args = ["fleet", "--inventory", FLEET_HOSTS, "--output", outdir]
+            if cfg["key"]:
+                args += ["--key", cfg["key"]]
+            if cfg["sudo"]:
+                args += ["--sudo"]
+            return self.opStart(json.dumps(args))
+
+        @Slot(result=str)
+        def fleetOverview(self):
+            d = getattr(self, "_fleet_outdir", "")
+            p = os.path.join(d, "index.html") if d else ""
+            return p if p and os.path.exists(p) else ""
+
+        @Slot(str)
+        def openPath(self, path):
+            if path and os.path.exists(path):
+                subprocess.Popen(["xdg-open", path],
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        @Slot(result=str)
+        def openReport(self):
+            rc, out, _ = run_auditxs(["report", "--format", "html", "--quiet"])
+            if "<html" not in out:
+                return "The report could not be generated (authentication cancelled?)."
+            path = os.path.join(_PROGRESS_DIR, "report.html")
+            with open(path, "w") as f:
+                f.write(out)
+            self.openPath(path)
+            return ""
 
         @Slot(str, result=str)
         def explain(self, cid):

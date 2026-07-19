@@ -75,6 +75,19 @@ ssh -L 9000:127.0.0.1:9000 user@server
 - **Snapshots** — every hardening run, with a one-click **Roll back**.
 - **Tools** — which defensive tools are installed. Install/scan is done from
   the CLI (`sudo auditxs tools install lynis`, `sudo auditxs tools scan`).
+- **Fix it buttons** *(v0.14)* — every FAIL row with an automatic fix carries
+  **Fix it** (review → consent → reversible fix → re-audit); WARN and
+  manual-fix rows carry **How to fix** with the full remediation guidance.
+- **Fleet** *(v0.14)* — manage the host inventory (`user@host` per line),
+  SSH key and remote sudo, run a read-only fleet audit with live percentage
+  progress, and open the aggregated overview dashboard.
+- **Console** *(v0.14)* — a collapsible panel (status bar → *Console*)
+  accepting **auditxs subcommands only**: `cve`, `waivers`, `errors AX6002`,
+  `schedule status`, … Commands are executed argv-only (never a shell) and
+  the subcommand and every argument are validated server-side, keeping the
+  injection posture identical to every other route.
+- **Status bar** *(v0.14)* — version, profile and live operation progress,
+  always visible at the bottom.
 - **Open report** — the full Material HTML report in a new tab.
 
 ## Security model

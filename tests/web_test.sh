@@ -41,6 +41,10 @@ ck "api with bad token → 403"           403 "$(code -H "X-Auth-Token: nope" "$
 ck "api meta with token → 200"          200 "$(code -H "X-Auth-Token: $TOKEN" "$base/api/meta")"
 ck "api progress without token → 403"   403 "$(code "$base/api/progress")"
 ck "api progress with token → 200"      200 "$(code -H "X-Auth-Token: $TOKEN" "$base/api/progress")"
+ck "cli console without token → 403"    403 "$(code -X POST -H 'Content-Type: application/json' -d '{"args":["version"]}' "$base/api/cli")"
+ck "cli console runs auditxs cmds"      200 "$(code -X POST -H "X-Auth-Token: $TOKEN" -H 'Content-Type: application/json' -d '{"args":["version"]}' "$base/api/cli")"
+ck "cli console rejects non-auditxs"    400 "$(code -X POST -H "X-Auth-Token: $TOKEN" -H 'Content-Type: application/json' -d '{"args":["rm","-rf","/"]}' "$base/api/cli")"
+ck "cli console rejects shell chars"    400 "$(code -X POST -H "X-Auth-Token: $TOKEN" -H 'Content-Type: application/json' -d '{"args":["audit",";id"]}' "$base/api/cli")"
 ck "POST harden without token → 403"    403 "$(code -X POST -H 'Content-Type: application/json' -d '{"checks":["ACC-003"]}' "$base/api/harden")"
 
 # page carries the SPA and the audit endpoint returns valid JSON with a summary

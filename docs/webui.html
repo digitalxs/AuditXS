@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.13.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.14.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -137,6 +137,10 @@ ssh -L 9000:127.0.0.1:9000 user@server
 <li><strong>Features</strong> — real Material toggle switches, one per fixable control. Flipping an <em>off</em> control <em>on</em> shows the exact <code>explain</code> text first (what will change / how it reverts), then applies it; the change is recorded in a snapshot. Controls already on are locked here — turn them off from Snapshots (a rollback), preserving the reversibility model.</li>
 <li><strong>Snapshots</strong> — every hardening run, with a one-click <strong>Roll back</strong>.</li>
 <li><strong>Tools</strong> — which defensive tools are installed. Install/scan is done from the CLI (<code>sudo auditxs tools install lynis</code>, <code>sudo auditxs tools scan</code>).</li>
+<li><strong>Fix it buttons</strong> <em>(v0.14)</em> — every FAIL row with an automatic fix carries <strong>Fix it</strong> (review → consent → reversible fix → re-audit); WARN and manual-fix rows carry <strong>How to fix</strong> with the full remediation guidance.</li>
+<li><strong>Fleet</strong> <em>(v0.14)</em> — manage the host inventory (<code>user@host</code> per line), SSH key and remote sudo, run a read-only fleet audit with live percentage progress, and open the aggregated overview dashboard.</li>
+<li><strong>Console</strong> <em>(v0.14)</em> — a collapsible panel (status bar → <em>Console</em>) accepting <strong>auditxs subcommands only</strong>: <code>cve</code>, <code>waivers</code>, <code>errors AX6002</code>, <code>schedule status</code>, … Commands are executed argv-only (never a shell) and the subcommand and every argument are validated server-side, keeping the injection posture identical to every other route.</li>
+<li><strong>Status bar</strong> <em>(v0.14)</em> — version, profile and live operation progress, always visible at the bottom.</li>
 <li><strong>Open report</strong> — the full Material HTML report in a new tab.</li>
 </ul>
 <h2 id="security-model">Security model</h2>

@@ -7,6 +7,40 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.14.0]
+
+A major GUI release — the graphical interfaces reach feature parity with the
+CLI.
+
+### Added
+- **"Fix it" everywhere** — every FAIL/WARN row in the Qt app, the web UI and
+  the zenity results list now carries a button: *Fix it* (review → consent →
+  reversible fix → verify) when an automatic fix exists, *How to fix* with
+  detailed, explicit manual guidance when it does not.
+- **Fleet management from the GUI** — a Fleet tab (Qt, web) / submenu
+  (zenity): add and remove `user@host` entries, choose the SSH key, toggle
+  remote sudo, and one **Audit fleet** button with live percentage progress,
+  finishing with the aggregated overview dashboard. Qt and zenity share the
+  same user-level inventory (`~/.config/auditxs/fleet-hosts`); the web UI
+  (root) manages `/var/lib/auditxs/fleet-hosts`.
+- **Embedded console** — a collapsible terminal panel at the bottom of the
+  Qt app (full shell, the user's own privileges, line-based) and the web UI
+  (auditxs subcommands only — argv, never a shell — enforced server-side);
+  zenity gains a *Terminal* menu entry that opens the system terminal.
+- **Full CLI parity** — new Ops tab (Qt) and menu entries (zenity) for every
+  remaining operation: CVE scan, doctor, schedule (status/enable/disable/run),
+  baseline, waivers (list/add/remove), alerts (status/test), the error
+  catalogue and the check catalogue; the web console covers the same surface.
+- **Status bar** — Qt and the web UI show a permanent bottom bar with the
+  AuditXS version, profile and host, the live operation progress (percentage)
+  and the console toggle; the zenity menu header shows version and host.
+
+### Changed
+- The Qt app's long operations all run in a worker thread with progress in
+  the status bar (the window never freezes). New `/api/cli`,
+  `/api/fleet/*` web routes are token-authenticated and argv-whitelisted like
+  every other route. Web tests grown to 14 (console auth + whitelist).
+
 ## [0.13.0]
 
 ### Added

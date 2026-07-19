@@ -70,6 +70,47 @@ class StubBackend(QObject):
     def rollback(self, sid):
         return '{"rc":0,"log":"ok"}'
 
+    # v0.14 contract: generic ops, console, fleet, report/open helpers.
+    @Slot(str, result=bool)
+    def opStart(self, args_json):
+        return True
+
+    @Slot(result=str)
+    def opState(self):
+        return '{"pct":100,"done":1,"total":1,"id":"done","running":false,"output":"ok"}'
+
+    @Slot(str, result=bool)
+    def consoleRun(self, cmd):
+        return True
+
+    @Slot(result=str)
+    def consolePoll(self):
+        return '{"running":false,"log":"$ true\\n"}'
+
+    @Slot(result=str)
+    def fleetConfig(self):
+        return '{"hosts":["admin@web01"],"key":"","sudo":true}'
+
+    @Slot(str, result=str)
+    def fleetSave(self, cfg):
+        return self.fleetConfig()
+
+    @Slot(result=bool)
+    def fleetAudit(self):
+        return True
+
+    @Slot(result=str)
+    def fleetOverview(self):
+        return ""
+
+    @Slot(str)
+    def openPath(self, path):
+        pass
+
+    @Slot(result=str)
+    def openReport(self):
+        return ""
+
 
 def main():
     app = QGuiApplication(sys.argv)

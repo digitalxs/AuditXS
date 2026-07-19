@@ -105,10 +105,19 @@ run_audit_gui() {
         rows+=("$status" "$id" "$sev" "$cat" "$title" "$detail")
     done < "$out"
 
-    zenity --list --title "AuditXS — audit results" \
-        --text "Read-only audit results. Use <b>Harden</b> to fix failed checks — each fix is explained and reversible." \
+    # Actionable results: pick a row → Fix / Details. FAIL rows with an
+    # automatic fix get the consent + apply flow; everything else gets the
+    # detailed manual-fix guidance. Close returns to the menu.
+    local sel
+    while sel=$(zenity --list --title "AuditXS — audit results" \
+        --text "Select a row and press <b>Fix / Details</b> — failing checks with an automatic fix can be applied (reversible); others show detailed manual guidance." \
         --column "Status" --column "ID" --column "Severity" --column "Category" --column "Check" --column "Detail" \
-        --width 1000 --height 620 "${rows[@]}" 2>/dev/null
+        --print-column 2 --ok-label "Fix / Details" --cancel-label "Close" \
+        --width 1000 --height 620 "${rows[@]}" 2>/dev/null); do
+        [ -n "$sel" ] || break
+        check_action_gui "$sel"
+    done
+    return 0
 }
 
 run_harden_gui() {
@@ -354,29 +363,242 @@ CLI: <tt>sudo auditxs help</tt>\nDocs: https://github.com/digitalxs/AuditXS\n
 <small>Made with ❤ from Canada 🍁</small>\n<small>© 2026 <b>DigitalXS</b> — Programming &amp; Development · https://digitalxs.ca</small>" 2>/dev/null
 }
 
+# ---- per-check action: Fix it (reversible) or manual how-to-fix ----------
+# Called with a check ID selected from the audit results list.
+check_action_gui() {
+    local id=$1 out="$WORK_DIR/audit.tsv"
+    [ -n "$id" ] || return 0
+    local row status fixable
+    row=$(grep -P "^[A-Z]+\t${id}\t" "$out" 2>/dev/null | head -1)
+    status=$(printf '%s' "$row" | cut -f1)
+    fixable=$(printf '%s' "$row" | cut -f5)
+    "$AUDITXS_BIN" explain "$id" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' > "$WORK_DIR/explain.txt"
+    if [ "$status" = FAIL ] && [ "$fixable" = yes ]; then
+        zenity --text-info --title "AuditXS — Fix $id? (reversible, snapshotted)" \
+            --filename "$WORK_DIR/explain.txt" \
+            --checkbox "I reviewed this change and want to apply the fix now." \
+            --width 860 --height 600 2>/dev/null || return 0
+        local prog="$WORK_DIR/harden.progress" log="$WORK_DIR/harden.log"
+        : > "$prog"
+        ( elevate "$AUDITXS_BIN" harden --yes --quiet --check "$id" --progress-file "$prog" > "$log" 2>&1 ) &
+        local pid=$!
+        progress_feed "$pid" "$prog" | zenity --progress --title "AuditXS" \
+            --text "Applying the fix for $id…" --percentage=0 --no-cancel --auto-close 2>/dev/null
+        wait "$pid" 2>/dev/null
+        sed 's/\x1b\[[0-9;]*m//g' "$log" > "$log.c" 2>/dev/null && mv "$log.c" "$log"
+        zenity --text-info --title "AuditXS — result for $id" \
+            --filename "$log" --width 860 --height 560 2>/dev/null
+    else
+        {
+            cat "$WORK_DIR/explain.txt"
+            printf '\n────────────────────────────────────\n'
+            printf 'MANUAL FIX — this finding has no automatic fix.\n\n'
+            printf 'Follow the remediation guidance above (the "fix" section\n'
+            printf 'describes exactly what to change). Make the change yourself —\n'
+            printf 'the Terminal menu entry opens a shell — then run the Audit\n'
+            printf 'again to verify the new state.\n'
+        } > "$WORK_DIR/manual.txt"
+        zenity --text-info --title "AuditXS — how to fix $id (manual)" \
+            --filename "$WORK_DIR/manual.txt" --width 860 --height 600 2>/dev/null
+    fi
+}
+
+# ---- fleet management (shared config with the Qt app) --------------------
+CFG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/auditxs"
+FLEET_HOSTS_FILE="$CFG_DIR/fleet-hosts"
+FLEET_OUT_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/auditxs/fleet"
+
+_fleet_cfg_hosts() { grep -v '^#' "$FLEET_HOSTS_FILE" 2>/dev/null | sed '/^$/d'; }
+_fleet_cfg_key()   { sed -n 's/^#key=//p'  "$FLEET_HOSTS_FILE" 2>/dev/null | head -1; }
+_fleet_cfg_sudo()  { grep -q '^#sudo=0' "$FLEET_HOSTS_FILE" 2>/dev/null && echo 0 || echo 1; }
+_fleet_cfg_write() { # <key> <sudo> <hosts…>
+    mkdir -p "$CFG_DIR" && chmod 700 "$CFG_DIR"
+    { echo "# AuditXS fleet inventory (managed by the GUI)"
+      [ -n "$1" ] && echo "#key=$1"
+      echo "#sudo=$2"
+      shift 2; printf '%s\n' "$@"; } > "$FLEET_HOSTS_FILE"
+    chmod 600 "$FLEET_HOSTS_FILE"
+}
+
+run_fleet_gui() {
+    while true; do
+        local hosts key sudo_on
+        mapfile -t hosts < <(_fleet_cfg_hosts)
+        key=$(_fleet_cfg_key); sudo_on=$(_fleet_cfg_sudo)
+        local sel
+        sel=$(zenity --list --title "AuditXS — Fleet (read-only over SSH)" \
+            --text "Hosts: <b>${#hosts[@]}</b> · key: <b>${key:-agent/default}</b> · sudo: <b>$([ "$sudo_on" = 1 ] && echo on || echo off)</b>\nFleet audits are read-only — hardening stays per-host. Every host needs AuditXS installed." \
+            --column "Action" --column "Description" \
+            "Audit now"   "Audit every host and open the overview dashboard" \
+            "Add host"    "Add a host (user@host)" \
+            "Remove host" "Remove a host from the inventory" \
+            "SSH key"     "Choose the SSH private key (empty = agent/default)" \
+            "Toggle sudo" "Run the remote audit with sudo -n (full results)" \
+            --width 640 --height 420 2>/dev/null) || return 0
+        case $sel in
+            "Add host")
+                local h
+                h=$(zenity --entry --title "AuditXS — add fleet host" \
+                    --text "Host to audit (user@host):" 2>/dev/null) || continue
+                h=${h// /}
+                [ -n "$h" ] && _fleet_cfg_write "$key" "$sudo_on" "${hosts[@]}" "$h" ;;
+            "Remove host")
+                [ ${#hosts[@]} -gt 0 ] || continue
+                local r
+                r=$(zenity --list --title "AuditXS — remove host" --text "Select the host to remove:" \
+                    --column "Host" "${hosts[@]}" --width 480 --height 380 2>/dev/null) || continue
+                local -a keep=()
+                local x; for x in "${hosts[@]}"; do [ "$x" = "$r" ] || keep+=("$x"); done
+                _fleet_cfg_write "$key" "$sudo_on" ${keep[@]+"${keep[@]}"} ;;
+            "SSH key")
+                local k
+                k=$(zenity --file-selection --title "Select the SSH private key (Cancel = agent/default)" 2>/dev/null) || k=""
+                _fleet_cfg_write "$k" "$sudo_on" ${hosts[@]+"${hosts[@]}"} ;;
+            "Toggle sudo")
+                _fleet_cfg_write "$key" "$([ "$sudo_on" = 1 ] && echo 0 || echo 1)" ${hosts[@]+"${hosts[@]}"} ;;
+            "Audit now")
+                if [ ${#hosts[@]} -eq 0 ]; then
+                    zenity --info --title "AuditXS" --text "Add at least one host first." 2>/dev/null; continue
+                fi
+                local outdir prog="$WORK_DIR/fleet.progress" flog="$WORK_DIR/fleet.log"
+                outdir="$FLEET_OUT_ROOT/$(date +%Y%m%d-%H%M%S)"; mkdir -p "$outdir"
+                local -a fcmd=("$AUDITXS_BIN" fleet --inventory "$FLEET_HOSTS_FILE" --output "$outdir" --progress-file "$prog")
+                [ -n "$key" ] && fcmd+=(--key "$key")
+                [ "$sudo_on" = 1 ] && fcmd+=(--sudo)
+                : > "$prog"
+                ( "${fcmd[@]}" > "$flog" 2>&1 ) &
+                local fpid=$!
+                progress_feed "$fpid" "$prog" | zenity --progress --title "AuditXS — fleet audit" \
+                    --text "Auditing ${#hosts[@]} host(s) over SSH (read-only)…" \
+                    --percentage=0 --no-cancel --auto-close 2>/dev/null
+                wait "$fpid" 2>/dev/null
+                sed 's/\x1b\[[0-9;]*m//g' "$flog" > "$flog.c" 2>/dev/null && mv "$flog.c" "$flog"
+                zenity --text-info --title "AuditXS — fleet results" \
+                    --filename "$flog" --width 860 --height 560 2>/dev/null
+                if [ -f "$outdir/index.html" ] && zenity --question --title "AuditXS" \
+                    --text "Open the fleet overview dashboard?" 2>/dev/null; then
+                    xdg-open "$outdir/index.html" >/dev/null 2>&1 &
+                fi ;;
+        esac
+    done
+}
+
+# ---- misc CLI operations shown as text views ------------------------------
+show_cli_gui() { # <title> <cmd...> — run (elevated) and show the output
+    local title=$1; shift
+    elevate "$@" 2>&1 | sed 's/\x1b\[[0-9;]*m//g' > "$WORK_DIR/cli-out.txt"
+    zenity --text-info --title "AuditXS — $title" \
+        --filename "$WORK_DIR/cli-out.txt" --width 820 --height 580 2>/dev/null
+}
+
+run_waivers_gui() {
+    while true; do
+        local sel
+        sel=$(zenity --list --title "AuditXS — accepted-risk waivers" \
+            --text "A waived finding renders as WAIVED (not FAIL/WARN), with the reason preserved." \
+            --column "Action" --column "Description" \
+            "List"   "Show all current waivers" \
+            "Add"    "Waive a check with a documented reason" \
+            "Remove" "Remove a waiver (finding counts again)" \
+            --width 560 --height 320 2>/dev/null) || return 0
+        case $sel in
+            List) show_cli_gui "waivers" "$AUDITXS_BIN" waivers ;;
+            Add)
+                local form
+                form=$(zenity --forms --title "AuditXS — add waiver" \
+                    --text "Waive a finding (documented, reversible)" \
+                    --add-entry "Check ID (e.g. SSH-004)" \
+                    --add-entry "Reason (required)" \
+                    --add-entry "Expiry YYYY-MM-DD (optional)" 2>/dev/null) || continue
+                local wid wreason wuntil
+                wid=$(cut -d'|' -f1 <<<"$form" | tr -d ' '); wid=${wid^^}
+                wreason=$(cut -d'|' -f2 <<<"$form")
+                wuntil=$(cut -d'|' -f3 <<<"$form" | tr -d ' ')
+                [ -n "$wid" ] && [ -n "$wreason" ] || continue
+                if [ -n "$wuntil" ]; then
+                    show_cli_gui "waive $wid" "$AUDITXS_BIN" waive "$wid" "$wreason" --until "$wuntil"
+                else
+                    show_cli_gui "waive $wid" "$AUDITXS_BIN" waive "$wid" "$wreason"
+                fi ;;
+            Remove)
+                local rid
+                rid=$(zenity --entry --title "AuditXS — remove waiver" \
+                    --text "Check ID to unwaive:" 2>/dev/null) || continue
+                rid=${rid// /}; rid=${rid^^}
+                [ -n "$rid" ] && show_cli_gui "unwaive $rid" "$AUDITXS_BIN" unwaive "$rid" ;;
+        esac
+    done
+}
+
+run_schedule_gui() {
+    local sel
+    sel=$(zenity --list --title "AuditXS — scheduled audits" \
+        --text "A daily audit (systemd timer) that alerts on baseline drift." \
+        --column "Action" --column "Description" \
+        "Status"  "Show the schedule and last run" \
+        "Enable"  "Enable the daily audit timer" \
+        "Disable" "Disable the daily audit timer" \
+        "Run now" "Run the scheduled audit immediately" \
+        --width 560 --height 350 2>/dev/null) || return 0
+    case $sel in
+        Status)  show_cli_gui "schedule status" "$AUDITXS_BIN" schedule status ;;
+        Enable)  show_cli_gui "schedule enable" "$AUDITXS_BIN" schedule enable ;;
+        Disable) show_cli_gui "schedule disable" "$AUDITXS_BIN" schedule disable ;;
+        "Run now") show_cli_gui "schedule run" "$AUDITXS_BIN" schedule run ;;
+    esac
+}
+
+run_terminal_gui() {
+    local t
+    for t in x-terminal-emulator gnome-terminal konsole xfce4-terminal kgx tilix xterm; do
+        if command -v "$t" >/dev/null 2>&1; then
+            ( "$t" >/dev/null 2>&1 & ) ; return 0
+        fi
+    done
+    zenity --info --title "AuditXS" \
+        --text "No terminal emulator found. The full CLI is available as:\n<tt>sudo auditxs …</tt>" 2>/dev/null
+}
+
+AXVER=$("$AUDITXS_BIN" version 2>/dev/null | sed 's/^AuditXS //')
+AXHOST=$(hostname 2>/dev/null)
+
 while true; do
-    choice=$(zenity --list --title "AuditXS — Security Audit" \
-        --text "Transparent, reversible security auditing.\n<b>Audit</b> never changes anything; <b>Harden</b> asks before every fix; <b>Rollback</b> undoes it." \
+    choice=$(zenity --list --title "AuditXS ${AXVER:-} — Security Audit" \
+        --text "🛡️ <b>AuditXS ${AXVER:-}</b> · $AXHOST\nTransparent, reversible security auditing.\n<b>Audit</b> never changes anything; <b>Harden</b> asks before every fix; <b>Rollback</b> undoes it." \
         --column "Action" --column "Description" \
         "Audit"     "Run a read-only security audit of this system" \
         "Features"  "Turn security controls on/off (reversible)" \
         "Harden"    "Review and apply fixes for failed checks (reversible)" \
+        "Fleet"     "Audit remote hosts over SSH (read-only, aggregated dashboard)" \
         "Tools"     "Install and run security tools (Lynis, CrowdSec, Suricata…)" \
         "Report"    "Generate and open a Material-style HTML report" \
         "Rollback"  "Undo the changes of a previous hardening run" \
         "Baseline"  "Save the latest audit as the approved baseline (drift alerts)" \
+        "Schedule"  "Daily audits with drift alerting (status / enable / disable)" \
+        "Waivers"   "Accepted-risk waivers (list / add / remove)" \
+        "CVE"       "Known-vulnerability warnings for installed packages" \
+        "Alerts"    "Drift & CVE alert sinks (status / test)" \
+        "Errors"    "Browse the AXnnnn error catalogue" \
         "Doctor"    "Diagnose the AuditXS installation and system tooling" \
         "Catalogue" "Browse all checks and what they do" \
+        "Terminal"  "Open a terminal for the full CLI" \
         "About"     "About AuditXS" \
-        --width 660 --height 540 2>/dev/null) || exit 0
+        --width 680 --height 640 2>/dev/null) || exit 0
 
     case $choice in
         Audit)     run_audit_gui; cve_warn_gui ;;
         Features)  run_features_gui ;;
         Harden)    run_harden_gui ;;
+        Fleet)     run_fleet_gui ;;
         Tools)     run_tools_gui ;;
         Report)    run_report_gui ;;
         Rollback)  run_rollback_gui ;;
+        Schedule)  run_schedule_gui ;;
+        Waivers)   run_waivers_gui ;;
+        CVE)       show_cli_gui "CVE warnings" "$AUDITXS_BIN" cve ;;
+        Alerts)    show_cli_gui "alert status" "$AUDITXS_BIN" alert status ;;
+        Errors)    show_cli_gui "error catalogue" "$AUDITXS_BIN" errors ;;
+        Terminal)  run_terminal_gui ;;
         Baseline)
             if zenity --question --title "AuditXS" \
                 --text "Save the <b>latest audit report</b> as the approved baseline?\nScheduled audits will then alert when the configuration regresses from it." 2>/dev/null; then

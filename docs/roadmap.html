@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.13.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.14.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -102,7 +102,7 @@
 <a class="pg" href="../index.html">AuditXS home</a>
 <a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
 <main>
-<h1 id="auditxs-roadmap--must-have-features-and-professional-practice">AuditXS roadmap — must-have features and professional practice</h1><div class="onpage"><b>On this page</b><a href="#already-implemented-the-non-negotiables">Already implemented (the non-negotiables)</a><a href="#shipped-in-v013">Shipped in v0.13</a><a href="#shipped-in-v012">Shipped in v0.12</a><a href="#shipped-in-v011">Shipped in v0.11</a><a href="#shipped-in-v010">Shipped in v0.10</a><a href="#shipped-in-v09">Shipped in v0.9</a><a href="#shipped-in-v08">Shipped in v0.8</a><a href="#shipped-in-v07">Shipped in v0.7</a><a href="#shipped-in-v06">Shipped in v0.6</a><a href="#shipped-in-v05">Shipped in v0.5</a><a href="#shipped-in-v04">Shipped in v0.4</a><a href="#next-high-value-in-order">Next (high value, in order)</a><a href="#deliberate-non-goals">Deliberate non-goals</a><a href="#complementary-tooling-defence-in-depth">Complementary tooling (defence in depth)</a></div>
+<h1 id="auditxs-roadmap--must-have-features-and-professional-practice">AuditXS roadmap — must-have features and professional practice</h1><div class="onpage"><b>On this page</b><a href="#already-implemented-the-non-negotiables">Already implemented (the non-negotiables)</a><a href="#shipped-in-v014">Shipped in v0.14</a><a href="#shipped-in-v013">Shipped in v0.13</a><a href="#shipped-in-v012">Shipped in v0.12</a><a href="#shipped-in-v011">Shipped in v0.11</a><a href="#shipped-in-v010">Shipped in v0.10</a><a href="#shipped-in-v09">Shipped in v0.9</a><a href="#shipped-in-v08">Shipped in v0.8</a><a href="#shipped-in-v07">Shipped in v0.7</a><a href="#shipped-in-v06">Shipped in v0.6</a><a href="#shipped-in-v05">Shipped in v0.5</a><a href="#shipped-in-v04">Shipped in v0.4</a><a href="#next-high-value-in-order">Next (high value, in order)</a><a href="#deliberate-non-goals">Deliberate non-goals</a><a href="#complementary-tooling-defence-in-depth">Complementary tooling (defence in depth)</a></div>
 <p>This is the considered feature advice behind AuditXS's direction: what a professional baseline-hardening tool must have (and why), what it should gain next, and what it should deliberately <em>never</em> do. Ordered by value.</p>
 <h2 id="already-implemented-the-non-negotiables">Already implemented (the non-negotiables)</h2>
 <p>These are the table stakes for trustworthy hardening tooling — the reason they shipped first:</p>
@@ -115,6 +115,10 @@
 <li><strong>Drift detection</strong> — approved baseline + <code>diff</code> with CI-friendly exit codes, port allowlist (NET-004), scheduled audits alerting via systemd.</li>
 <li><strong>Framework mapping</strong> (NIST CSF 2.0, CIS/STIG alignment), <strong>unit + end-to-end tests in CI</strong>, <strong>debug mode</strong>, <strong>doctor</strong> self-diagnostics.</li>
 </ol>
+<h2 id="shipped-in-v014">Shipped in v0.14</h2>
+<ul>
+<li><strong>GUI feature parity</strong>: Fix it / How to fix buttons on every finding in the Qt, web and zenity interfaces (with detailed manual guidance where no automatic fix exists); a Fleet tab/submenu (hosts + credentials + one-click fleet audit with progress and the overview dashboard); an embedded collapsible console (full shell in Qt, argv-whitelisted auditxs commands in the web UI, system terminal launcher in zenity); an Ops tab / menu entries covering every remaining CLI operation; and a status bar with version, profile, host and live progress.</li>
+</ul>
 <h2 id="shipped-in-v013">Shipped in v0.13</h2>
 <ul>
 <li><strong>Progress bars with percentage everywhere</strong>: in-terminal bar for the CLI (auto-off when piped), a real gauge in the TUI, true percentages in the zenity dialogs, an async worker + Material bar in the Qt app, and an authenticated <code>/api/progress</code> endpoint driving a linear bar in the web UI — all fed by the engine via the new <code>--progress-file</code> option.</li>

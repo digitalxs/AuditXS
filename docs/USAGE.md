@@ -439,6 +439,31 @@ The console output uses a clean **nala-style** boxed layout; the HTML report
 uses **Material Design 3** (theme-aware light/dark, score ring, status
 chips). The zenity GUI itself follows your desktop's GTK theme.
 
+### The GUIs do everything the CLI does (v0.14)
+
+- **Fix it on every finding.** Each FAIL/WARN row (Qt dashboard, web
+  dashboard, and the zenity results list via *Fix / Details*) carries a
+  button: **Fix it** runs the review → consent → reversible-fix → verify flow
+  for that one check; **How to fix** shows detailed manual guidance (the
+  exact change to make, and how it would be reverted) when no automatic fix
+  exists.
+- **Fleet from the GUI.** The Fleet tab (Qt, web) / submenu (zenity) manages
+  hosts (`user@host`), the SSH key and remote sudo, and runs the fleet audit
+  with live percentage progress, ending at the aggregated overview
+  dashboard. Qt and zenity share `~/.config/auditxs/fleet-hosts`; the web UI
+  (running as root) manages `/var/lib/auditxs/fleet-hosts`.
+- **Embedded console.** A collapsible panel at the bottom (status bar →
+  *Console*): in the Qt app it runs any command with your user's own
+  privileges (line-based — interactive TUI programs still need a real
+  terminal); in the web UI it accepts **auditxs subcommands only**, executed
+  argv-only with no shell, matching the web UI's strict security model.
+  The zenity menu's *Terminal* entry opens your system terminal instead.
+- **Ops everywhere.** CVE scan, doctor, schedule, baseline, waivers, alerts,
+  the error catalogue and the check catalogue are one click away (Qt *Ops*
+  tab, zenity menu entries, web console).
+- **Status bar.** Qt and the web UI show the version, profile and host plus
+  the live operation percentage at the bottom of the window at all times.
+
 ## Privileges & credential caching
 
 You should only have to authenticate **once per working session**, not once

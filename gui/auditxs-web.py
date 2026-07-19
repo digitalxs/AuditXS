@@ -53,6 +53,20 @@ def read_progress():
     except (OSError, ValueError, IndexError):
         return {"pct": 0, "done": 0, "total": 0, "id": ""}
 
+
+# Console/CLI bridge: only auditxs subcommands, argv-only (never a shell),
+# arguments restricted to a safe charset — same policy as every route here.
+import re as _re
+OP_CMDS = {"audit", "report", "harden", "rollback", "snapshots", "tools",
+           "cve", "baseline", "doctor", "schedule", "errors", "waive",
+           "unwaive", "waivers", "alert", "fleet", "list", "explain",
+           "diff", "version", "profile"}
+OP_ARG = _re.compile(r"[A-Za-z0-9@.,:%/_=+~ -]+")
+
+# Fleet inventory managed by the web UI (the server runs as root).
+FLEET_HOSTS_PATH = "/var/lib/auditxs/fleet-hosts"
+FLEET_LAST_DIR = {"path": ""}
+
 # --------------------------------------------------------------- CLI bridge
 def run_auditxs(args, timeout=180):
     """Run `auditxs <args>` with no shell; return (rc, stdout, stderr)."""
@@ -176,6 +190,25 @@ footer.brand .links{margin-top:.15rem;font-size:.76rem}
 .pbar{height:.4rem;border-radius:.3rem;background:var(--surface2);overflow:hidden}
 .pbar>div{height:100%;width:0%;border-radius:.3rem;background:var(--primary);transition:width .25s}
 .ptext{font-size:.75rem;color:var(--onv);margin-top:.25rem}
+.console{position:fixed;left:0;right:0;bottom:2.4rem;background:var(--surface);
+ border-top:1px solid var(--outline);box-shadow:0 -2px 10px rgba(0,0,0,.12);display:none;z-index:5}
+.console.open{display:block}
+.console .out{height:11rem;overflow:auto;font-family:ui-monospace,monospace;font-size:.78rem;
+ white-space:pre-wrap;padding:.6rem .9rem;color:var(--on)}
+.console .inrow{display:flex;gap:.5rem;border-top:1px solid var(--outline);padding:.45rem .9rem}
+.console .inrow span{font-family:ui-monospace,monospace;color:var(--onv);align-self:center}
+.console input{flex:1;background:var(--surface2);border:1px solid var(--outline);border-radius:.5rem;
+ color:var(--on);font-family:ui-monospace,monospace;font-size:.82rem;padding:.4rem .6rem;outline:none}
+.statusbar{position:fixed;left:0;right:0;bottom:0;height:2.4rem;background:var(--surface);
+ border-top:1px solid var(--outline);display:flex;align-items:center;gap:1rem;
+ padding:0 1rem;font-size:.75rem;color:var(--onv);z-index:6}
+.statusbar b{color:var(--on)}
+.statusbar .sp{flex:1}
+.statusbar button{background:none;border:1px solid var(--outline);border-radius:.5rem;
+ color:var(--primary);font-weight:700;font-size:.72rem;padding:.2rem .7rem;cursor:pointer}
+body{padding-bottom:3rem}
+.fleethosts{width:100%;min-height:9rem;background:var(--surface2);border:1px solid var(--outline);
+ border-radius:.6rem;color:var(--on);font-family:ui-monospace,monospace;font-size:.85rem;padding:.6rem}
 </style></head><body>
 <div class="appbar">
   <div class="logo" aria-hidden="true">A</div>
@@ -190,6 +223,7 @@ footer.brand .links{margin-top:.15rem;font-size:.76rem}
     <div class="tab" data-tab="features">Features</div>
     <div class="tab" data-tab="snapshots">Snapshots</div>
     <div class="tab" data-tab="tools">Tools</div>
+    <div class="tab" data-tab="fleet">Fleet</div>
   </div>
   <div class="pwrap" id="pwrap">
     <div class="pbar"><div id="pfill"></div></div>
@@ -204,6 +238,19 @@ footer.brand .links{margin-top:.15rem;font-size:.76rem}
   <div class="copy">© 2026 <b>DigitalXS</b> — Programming &amp; Development</div>
   <div class="links"><a href="https://digitalxs.ca" target="_blank" rel="noopener noreferrer">digitalxs.ca</a> · <a href="https://github.com/digitalxs/AuditXS" target="_blank" rel="noopener noreferrer">github.com/digitalxs/AuditXS</a></div>
 </footer>
+
+<div class="console" id="console">
+  <div class="out" id="conOut">AuditXS console — runs auditxs subcommands only (argv, never a shell).
+Try:  cve   ·   waivers   ·   errors AX6002   ·   schedule status   ·   list --framework cis</div>
+  <div class="inrow"><span>auditxs&nbsp;$</span><input id="conIn" placeholder="type an auditxs command and press Enter (e.g. cve)" autocomplete="off"></div>
+</div>
+<div class="statusbar">
+  <span>🛡️ <b>AuditXS</b> <span id="sbVer"></span></span>
+  <span id="sbState"></span>
+  <span class="sp"></span>
+  <span>Made with ❤ from Canada 🍁 · © 2026 <b>DigitalXS</b></span>
+  <button id="conToggle">Console ▴</button>
+</div>
 <div class="modal" id="modal"><div class="sheet">
   <h3 id="mTitle">Review</h3><div id="mBody"></div>
   <div class="actions">
@@ -261,6 +308,7 @@ function render(){
  else if(TAB==="features")renderFeatures();
  else if(TAB==="snapshots")renderSnaps();
  else if(TAB==="tools")renderTools();
+ else if(TAB==="fleet")renderFleet();
 }
 function groupByCat(list){const g={};list.forEach(r=>{(g[r.category]=g[r.category]||[]).push(r);});return g;}
 
@@ -273,10 +321,13 @@ function renderDash(){
  <span class="chip warn">● ${s.warn} warnings</span><span class="chip skip">● ${s.skip} skipped</span></div></div></div>`;
  const g=groupByCat(RESULTS);
  for(const cat in g){h+=`<div class="sect">${cat} <small>— ${g[cat][0].domain} domain</small></div><div class="card">`;
-  g[cat].forEach(r=>{h+=`<div class="row"><span class="badge ${r.status}">${r.status}</span><div class="rowmain">
+  g[cat].forEach(r=>{const fixBtn=(r.status==="FAIL"||r.status==="WARN")
+   ?`<button class="btn ${r.status==="FAIL"&&r.fixable?"primary":""}" style="align-self:center;white-space:nowrap"
+      onclick="onFix('${r.id}',${r.status==="FAIL"&&r.fixable})">${r.status==="FAIL"&&r.fixable?"Fix it":"How to fix"}</button>`:"";
+   h+=`<div class="row"><span class="badge ${r.status}">${r.status}</span><div class="rowmain">
    <div class="rowtitle"><span class="cid">${r.id}</span> ${esc(r.title)}</div>
    ${r.detail?`<div class="rowdetail">${esc(r.detail)}</div>`:""}
-   <div class="meta">${r.severity} · Level ${r.level}${r.cis?" · CIS "+r.cis:""}${r.nist?" · "+r.nist:""}</div></div></div>`;});
+   <div class="meta">${r.severity} · Level ${r.level}${r.cis?" · CIS "+r.cis:""}${r.nist?" · "+r.nist:""}</div></div>${fixBtn}</div>`;});
   h+="</div>";}
  $("#view").innerHTML=h;
 }
@@ -300,6 +351,24 @@ async function onToggle(el){
  try{const ex=await api("/api/explain?id="+encodeURIComponent(id));
   PENDING=id;$("#mTitle").textContent="Turn on "+id+"?";
   $("#mBody").innerHTML=`<p>Review exactly what this will change. It is recorded in a snapshot and reversible.</p><pre>${esc(ex.text)}</pre>`;
+  $("#mConfirm").style.display="";
+  $("#modal").classList.add("open");}catch(e){toast("Could not load details");}
+}
+// Fix it (reversible, consented) / How to fix (detailed manual guidance).
+async function onFix(id,canApply){
+ try{const ex=await api("/api/explain?id="+encodeURIComponent(id));
+  if(canApply){
+   PENDING=id;$("#mTitle").textContent="Fix "+id+"? (reversible — snapshotted)";
+   $("#mBody").innerHTML=`<p>Review exactly what this fix will change before applying it.</p><pre>${esc(ex.text)}</pre>`;
+   $("#mConfirm").style.display="";
+  }else{
+   PENDING=null;$("#mTitle").textContent="How to fix "+id+" (manual)";
+   $("#mBody").innerHTML=`<pre>${esc(ex.text)}</pre>
+    <div class="note"><b>Manual fix</b> — this finding has no automatic fix. The "fix" section above
+    describes exactly what to change; make the change (the Console below runs auditxs commands,
+    e.g. <span class="mono">explain ${esc(id)}</span>), then run the audit again to verify.</div>`;
+   $("#mConfirm").style.display="none";
+  }
   $("#modal").classList.add("open");}catch(e){toast("Could not load details");}
 }
 $("#mCancel").onclick=()=>{$("#modal").classList.remove("open");PENDING=null;};
@@ -329,10 +398,54 @@ async function renderTools(){
   h+=`</div><div class="note">Install and run scanners from the command line: <span class="mono">sudo auditxs tools install lynis</span> · <span class="mono">sudo auditxs tools scan</span>. VPN review: <span class="mono">auditxs tools vpn</span>.</div>`;
   $("#view").innerHTML=h;}catch(e){$("#view").innerHTML='<div class="empty">Failed to load tools.</div>';}
 }
+async function renderFleet(){
+ $("#view").innerHTML='<div class="empty"><span class="spin"></span> loading…</div>';
+ let hosts="";try{const d=await api("/api/fleet/hosts");hosts=d.hosts||"";}catch(e){}
+ $("#view").innerHTML=`<div class="card">
+  <div class="sect" style="margin-top:0">Fleet — audit remote hosts over SSH (read-only)</div>
+  <div class="note">Fleet mode never hardens over SSH; every host needs AuditXS installed.
+   One <span class="mono">user@host</span> per line, <span class="mono">#</span> comments allowed.
+   Key authentication uses the server's own SSH keys.</div>
+  <textarea class="fleethosts" id="fleetHosts" placeholder="admin@web01\nadmin@db01   # database">${esc(hosts)}</textarea>
+  <div style="display:flex;gap:.6rem;margin-top:.7rem;flex-wrap:wrap;align-items:center">
+   <input id="fleetKey" class="mono" style="flex:1;min-width:14rem;background:var(--surface2);border:1px solid var(--outline);border-radius:.5rem;color:var(--on);padding:.45rem .6rem" placeholder="SSH key path (empty = default keys)">
+   <label style="font-size:.85rem"><input type="checkbox" id="fleetSudo" checked> sudo on hosts</label>
+   <button class="btn" id="fleetSave">Save hosts</button>
+   <button class="btn primary" id="fleetRun">Audit fleet</button>
+   <a class="btn" id="fleetOverview" style="display:none" target="_blank" rel="noopener">Open overview</a>
+  </div>
+  <pre id="fleetOut" style="display:none;white-space:pre-wrap;font-size:.78rem;background:var(--surface2);padding:.8rem;border-radius:.6rem;margin-top:.8rem;max-height:20rem;overflow:auto"></pre>
+ </div>`;
+ $("#fleetSave").onclick=async()=>{try{await api("/api/fleet/hosts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({hosts:$("#fleetHosts").value})});toast("Fleet hosts saved");}catch(e){toast("Save failed: "+e.message);}};
+ $("#fleetRun").onclick=async()=>{
+  try{await api("/api/fleet/hosts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({hosts:$("#fleetHosts").value})});}catch(e){}
+  $("#fleetRun").innerHTML='<span class="spin"></span>';progressStart();
+  try{const d=await api("/api/fleet/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:$("#fleetKey").value.trim(),sudo:$("#fleetSudo").checked})});
+   const o=$("#fleetOut");o.style.display="block";o.textContent=d.output||"(no output)";
+   if(d.overview){const a=$("#fleetOverview");a.style.display="";a.href="/api/fleet/overview?t="+encodeURIComponent(TOKEN);}
+   toast(d.rc===0?"Fleet audit complete — all clean":"Fleet audit finished (rc "+d.rc+") — see output");}
+  catch(e){toast("Fleet audit failed: "+e.message);}
+  progressStop();$("#fleetRun").textContent="Audit fleet";};
+}
 function esc(s){const d=document.createElement("div");d.textContent=s||"";return d.innerHTML;}
 $("#auditBtn").onclick=runAudit;
 $("#reportBtn").onclick=()=>window.open("/api/report?t="+encodeURIComponent(TOKEN),"_blank");
-loadMeta().then(runAudit);
+// ---- console (auditxs subcommands only; argv, never a shell) ----
+$("#conToggle").onclick=()=>{const c=$("#console");c.classList.toggle("open");
+ $("#conToggle").textContent=c.classList.contains("open")?"Console ▾":"Console ▴";
+ if(c.classList.contains("open"))$("#conIn").focus();};
+$("#conIn").addEventListener("keydown",async ev=>{
+ if(ev.key!=="Enter")return;
+ const line=$("#conIn").value.trim();if(!line)return;
+ $("#conIn").value="";
+ const out=$("#conOut");out.textContent+=`\n\nauditxs $ ${line}\n…`;out.scrollTop=out.scrollHeight;
+ const args=line.replace(/^auditxs\s+/,"").split(/\s+/);
+ progressStart();
+ try{const d=await api("/api/cli",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({args})});
+  out.textContent=out.textContent.slice(0,-1)+(d.output||d.error||"(no output)")+(d.rc?`\n[exit ${d.rc}]`:"");}
+ catch(e){out.textContent=out.textContent.slice(0,-1)+"error: "+e.message;}
+ progressStop();out.scrollTop=out.scrollHeight;});
+loadMeta().then(()=>{ $("#sbVer").textContent="v"+(META.version||"?")+" · "+(META.profile||"");return runAudit();});
 </script></body></html>"""
 
 
@@ -397,6 +510,19 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == "/api/report":
             rc, out, _ = run_auditxs(["report", "--format", "html"] + profile_args() + ["--quiet"])
             return self._send(200, out, "text/html; charset=utf-8")
+        if u.path == "/api/fleet/hosts":
+            try:
+                with open(FLEET_HOSTS_PATH) as f:
+                    text = f.read()
+            except OSError:
+                text = ""
+            return self._json({"hosts": text})
+        if u.path == "/api/fleet/overview":
+            p = os.path.join(FLEET_LAST_DIR["path"], "index.html") if FLEET_LAST_DIR["path"] else ""
+            if not (p and os.path.exists(p)):
+                return self._send(404, "no fleet overview yet — run a fleet audit first", "text/plain")
+            with open(p) as f:
+                return self._send(200, f.read(), "text/html; charset=utf-8")
         return self._json({"error": "not found"}, 404)
 
     def do_POST(self):
@@ -426,6 +552,57 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"error": "bad id"}, 400)
             rc, out, err = run_auditxs(["rollback", sid, "--yes"], timeout=300)
             return self._json({"rc": rc, "log": strip_ansi(out + err)})
+        if u.path == "/api/cli":
+            args = body.get("args", [])
+            if (not isinstance(args, list) or not args
+                    or not all(isinstance(a, str) and a and OP_ARG.fullmatch(a) for a in args)
+                    or args[0] not in OP_CMDS):
+                return self._json({"error": "only auditxs subcommands are allowed here"}, 400)
+            try:
+                open(PROGRESS_PATH, "w").close()
+            except OSError:
+                pass
+            rc, out, err = run_auditxs(args + ["--progress-file", PROGRESS_PATH],
+                                       timeout=1800)
+            return self._json({"rc": rc, "output": strip_ansi(out + ("\n" + err if err else ""))})
+        if u.path == "/api/fleet/hosts":
+            text = body.get("hosts", "")
+            if not isinstance(text, str) or len(text) > 20000:
+                return self._json({"error": "bad hosts"}, 400)
+            lines = []
+            for ln in text.splitlines():
+                ln = ln.strip()
+                if ln and (ln.startswith("#") or OP_ARG.fullmatch(ln)):
+                    lines.append(ln)
+            try:
+                with open(FLEET_HOSTS_PATH, "w") as f:
+                    f.write("\n".join(lines) + "\n")
+                os.chmod(FLEET_HOSTS_PATH, 0o600)
+            except OSError as e:
+                return self._json({"error": str(e)}, 500)
+            return self._json({"ok": True, "hosts": "\n".join(lines)})
+        if u.path == "/api/fleet/run":
+            key = body.get("key", "")
+            sudo = bool(body.get("sudo", True))
+            if key and not OP_ARG.fullmatch(key):
+                return self._json({"error": "bad key path"}, 400)
+            if not os.path.exists(FLEET_HOSTS_PATH):
+                return self._json({"error": "no hosts saved yet"}, 400)
+            try:
+                open(PROGRESS_PATH, "w").close()
+            except OSError:
+                pass
+            outdir = "/var/lib/auditxs/reports/fleet/web-%d" % int(time.time())
+            args = ["fleet", "--inventory", FLEET_HOSTS_PATH, "--output", outdir,
+                    "--progress-file", PROGRESS_PATH]
+            if key:
+                args += ["--key", key]
+            if sudo:
+                args += ["--sudo"]
+            rc, out, err = run_auditxs(args, timeout=1800)
+            FLEET_LAST_DIR["path"] = outdir
+            return self._json({"rc": rc, "output": strip_ansi(out + ("\n" + err if err else "")),
+                               "overview": os.path.exists(os.path.join(outdir, "index.html"))})
         return self._json({"error": "not found"}, 404)
 
     # ---- data helpers ----

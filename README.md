@@ -8,13 +8,13 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.13.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.14.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![Checks](https://img.shields.io/badge/checks-122-8957e5)](docs/CHECKS.md)
 [![Frameworks](https://img.shields.io/badge/NIST%20CSF%202.0%20·%20CIS%20·%20STIG-informational)](docs/COMPLIANCE.md)
 
-**Current version: v0.13.0** — see the [changelog](CHANGELOG.md)
+**Current version: v0.14.0** — see the [changelog](CHANGELOG.md)
 
 **Debian** · **Ubuntu** · **Pop!\_OS** · **Arch** · **Fedora** · **openSUSE** *(and derivatives)*
 
@@ -200,6 +200,13 @@ nothing runs a browser or a root web server on a headless box:
 via pkexec, and an installed polkit policy (`auth_admin_keep`) remembers the
 authentication for a few minutes, so consecutive GUI actions prompt for your
 password only once. The CLI relies on sudo's own credential cache.
+
+**The GUIs do everything the CLI does** — every finding carries a
+**Fix it** button (or **How to fix** with detailed manual guidance), fleet
+audits are managed from a Fleet tab (hosts, credentials, one-click audit,
+overview dashboard), an embedded collapsible **console** sits at the bottom
+(full shell in Qt; auditxs commands in the web UI), and a status bar shows
+the version and live operation progress with percentage.
 
 > On a server, `web` / `qt` / `auditxs-gui` refuse to start and point you at
 > `sudo auditxs tui`. If a machine is really a desktop installed with the
