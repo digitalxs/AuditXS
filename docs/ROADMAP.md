@@ -23,6 +23,18 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.11
+
+- **Fleet overview dashboard**: every fleet run writes an aggregated,
+  self-contained `index.html` next to the per-host reports — fleet-average
+  score dial, clean/findings/errored chips, per-host score bars, relative
+  links to each host's JSON/HTML. This completes the "aggregating JSON
+  reports into one HTML overview" half of the multi-host roadmap item.
+- **Fleet walkthrough & docs**: end-to-end setup guide in USAGE.md
+  (audit user, sudoers, inventory, drift-diff, troubleshooting table),
+  fleet section in ARCHITECTURE.md, and the dashboard coding workflow in
+  the developer guide.
+
 ## Shipped in v0.10
 
 - **Qt runtime preflight** *(v0.10.1)*: `auditxs qt` detects a missing PySide6 /
@@ -150,29 +162,23 @@ they shipped first:
 
 ## Next (high value, in order)
 
-1. **Notification channels for drift** — `schedule run` currently fails
-   the systemd unit on regression; add native mail/webhook (Slack/Matrix)
-   notifiers so small setups get alerts without a monitoring stack.
-2. **Multi-host operation** — `auditxs fleet` running audits over SSH
-   against an inventory file, aggregating JSON reports into one HTML
-   overview. The JSON format is already stable for this.
-3. **Scheduled AIDE verification** — a timer that runs `aide --check` and
+1. **Scheduled AIDE verification** — a timer that runs `aide --check` and
    feeds tampering findings back into the audit (install/presence already
    covered by SEC-003).
-4. **PDF/signed reports** — assessors want tamper-evident evidence;
+2. **PDF/signed reports** — assessors want tamper-evident evidence;
    render the HTML report to PDF and sign report archives (minisign).
-5. **MFA enrolment helper** — guided, opt-in `auditxs mfa enrol` wizard
+3. **MFA enrolment helper** — guided, opt-in `auditxs mfa enrol` wizard
    (google-authenticator/pam_u2f) that configures PAM+sshd only after a
    verified second-factor login in a parallel session.
-6. **Package-manager hook** — post-transaction hook re-running the port
+4. **Package-manager hook** — post-transaction hook re-running the port
    allowlist and services checks, catching drift the moment software is
    installed rather than at the next scheduled audit.
-7. **Shell completion** — bash/zsh/fish completions for operator ergonomics
+5. **Shell completion** — bash/zsh/fish completions for operator ergonomics
    (the `auditxs(8)` man page ships with the .deb as of v0.5).
-8. **Broaden `AX_ROOT` coverage** — convert the remaining file-reading
+6. **Broaden `AX_ROOT` coverage** — convert the remaining file-reading
    checks (SSH drop-ins, sysctl readers, service configs) to `axpath` so
    the fixture test suite can cover every module.
-9. **Localization** of check explanations (the metadata layer already
+7. **Localization** of check explanations (the metadata layer already
    separates text from logic).
 
 ## Deliberate non-goals

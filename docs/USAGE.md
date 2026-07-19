@@ -184,7 +184,8 @@ auditxs fleet --inventory hosts.txt --ask-pass   # one password for all hosts (n
 ```
 
 Fleet mode runs a **read-only** `auditxs audit` on each host and prints an
-aggregated score table, saving each host's JSON under
+aggregated score table, saving each host's JSON — plus an **aggregated HTML
+overview dashboard** (`index.html`) — under
 `/var/lib/auditxs/reports/fleet/<timestamp>/`. It **never** hardens over SSH —
 review each report and harden that host locally. Each remote host must have
 AuditXS installed; fleet never pushes code.
@@ -206,6 +207,93 @@ through the environment, never the command line. **Host keys** are verified
 (trust-on-first-use, refusing changed keys). **Exit codes**: `2` if any host
 could not be audited, `1` if some host has failing checks, `0` if all clean.
 Any failure prints a stable error number (see below).
+
+### A complete walkthrough
+
+This sets up a small fleet (three servers) for recurring audits from one
+controller machine.
+
+**1. Install AuditXS on every target.** Fleet never pushes code — each host
+runs its own installed copy:
+
+```bash
+ssh admin@web01 'git clone https://github.com/digitalxs/AuditXS && sudo AuditXS/setup.sh'
+# or install the .deb on Debian/Ubuntu targets
+```
+
+**2. Create an audit user and key.** A dedicated user keeps the access
+auditable and the key non-interactive:
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/auditxs_fleet -C "auditxs fleet"
+for h in web01 db01 mail01; do ssh-copy-id -i ~/.ssh/auditxs_fleet admin@$h; done
+```
+
+**3. Allow the remote audit to run as root** (full results need root — without
+it, privileged checks come back SKIP/WARN and scores read lower than reality).
+On each target add a narrow sudoers rule:
+
+```
+# /etc/sudoers.d/auditxs-fleet  (visudo -f)
+admin ALL=(root) NOPASSWD: /usr/local/bin/auditxs
+```
+
+**4. Write an inventory** — one `user@host` per line, `#` comments allowed:
+
+```
+# fleet.txt — production
+admin@web01
+admin@db01
+admin@mail01     # mail relay
+```
+
+**5. Run the fleet audit:**
+
+```bash
+auditxs fleet --inventory fleet.txt --key ~/.ssh/auditxs_fleet --sudo --remote-report
+```
+
+Each host is audited read-only in turn; you get a per-host result line, then
+the aggregated summary table, and the reports listed below. Re-run any time —
+each run gets its own timestamped directory, so history is preserved.
+
+**6. Review and act.** Open the overview dashboard (next section), drill into
+a host's report, then fix findings *on that host* with `sudo auditxs harden`.
+For drift detection between runs, compare a host's JSON from two runs:
+
+```bash
+auditxs diff /var/lib/auditxs/reports/fleet/<old>/web01.json \
+             /var/lib/auditxs/reports/fleet/<new>/web01.json
+```
+
+### The fleet overview dashboard
+
+Every run writes an aggregated **HTML overview** to
+`/var/lib/auditxs/reports/fleet/<timestamp>/index.html` (also printed at the
+end of the run). It is a single self-contained page — no external assets, safe
+to archive or email — showing:
+
+- the **fleet-average hardening score** as a dial, and chips counting hosts
+  that are clean / have findings / could not be audited;
+- a **per-host table**: state, pass/fail/warn counts, a score bar, and links
+  to that host's saved `JSON` (and `HTML` with `--remote-report`) reports —
+  the links are relative, so the directory can be copied elsewhere intact;
+- the standing reminder that fleet mode changed nothing, and that hardening
+  happens per-host after review.
+
+### Troubleshooting a fleet run
+
+Every per-host failure is classified to a stable error number shown in the
+summary; `auditxs errors <code>` explains any of them.
+
+| State in table | Code | Typical cause |
+|---|---|---|
+| `UNREACHABLE` | AX6001 | host down, wrong name/port, firewall |
+| `AUTHFAIL` | AX6002 | wrong user, key not installed, password wrong |
+| `HOSTKEY` | AX6003 | host key changed (reinstall — or MITM; verify!) |
+| `NO-AUDITXS` | AX6005 | AuditXS not installed on the target |
+| `NO-RESULT` | AX6006 | remote audit produced no JSON (try `--sudo`) |
+| `TIMEOUT` | AX6007 | slow host/link — raise `--timeout` |
 
 ## Error numbers
 

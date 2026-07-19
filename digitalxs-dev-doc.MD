@@ -326,6 +326,43 @@ SSH. Apply fixes on each host after reviewing its report.
 Remote hosts must have AuditXS installed; fleet never pushes code. The summary
 JSON is parsed with `grep` (no hard Python dependency in the core path).
 
+### The aggregated overview dashboard (v0.11)
+
+Every fleet run also writes `<outdir>/index.html`, an aggregated Material
+dashboard for the whole run. The moving parts:
+
+- **`ov[]` records.** `_fleet_row` has a dual role: it appends the aligned
+  console table row *and* a TAB-separated structured record to `ov[]` —
+  `host \t state \t pass \t fail \t warn \t score \t filename-stem` (the stem
+  is the host sanitized `[^A-Za-z0-9._-] → _`, same as the saved report
+  files). Both `rows[]` and `ov[]` are `local` to `cmd_fleet` and mutated from
+  `_fleet_one`/`_fleet_row` via bash dynamic scoping. Error outcomes
+  (UNREACHABLE, AUTHFAIL, …) are records too — the dashboard shows them, it
+  does not hide them.
+- **`_fleet_overview_html`** is a *pure* generator: it reads `ov[]` and
+  `$outdir` from the caller's scope and writes HTML to stdout. It computes the
+  clean/findings/errored host counts and the fleet-average score (numeric
+  scores only), then renders one table row per record. Links to
+  `<stem>.json`/`<stem>.html` are **relative** and only emitted when the file
+  actually exists, so the run directory is self-contained and can be archived
+  or copied whole. All host-derived text goes through `html_escape`.
+
+**Coding workflow when you touch the dashboard:**
+
+1. Change the record format only in `_fleet_row`, and update every consumer
+   (`_fleet_overview_html` is currently the only one). Keep the record
+   TAB-separated — host names can contain almost anything else.
+2. The generator must stay pure (no SSH, no globals written) — that is what
+   lets `tests/unit.sh` cover it by fabricating `ov[]` + a temp `$outdir` and
+   grepping the output ("fleet HTML overview" test block). Extend those tests
+   with every new column or aggregate you add.
+3. Keep the page self-contained (inline CSS, no external assets, relative
+   links) and theme-aware (the `prefers-color-scheme: dark` block), matching
+   `results_html` in `lib/report.sh` — the two share the visual language and
+   the branded footer.
+4. Run the gate: `bash -n lib/fleet.sh && shellcheck -S warning lib/fleet.sh
+   && bash tests/unit.sh`.
+
 ---
 
 ## 10. Debugging

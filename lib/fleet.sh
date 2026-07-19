@@ -90,7 +90,7 @@ Example: ${BOLD}auditxs fleet web01 db01 --user admin --key ~/.ssh/id_ed25519 --
     say ""
 
     # Per-host loop.
-    local -a rows=()
+    local -a rows=() ov=()
     local errored=0 with_fails=0 target
     for target in "${hosts[@]}"; do
         _fleet_one "$target"
@@ -106,7 +106,11 @@ Example: ${BOLD}auditxs fleet web01 db01 --user admin --key ~/.ssh/id_ed25519 --
     local r
     for r in "${rows[@]}"; do printf '  %s\n' "$r"; done
     hr
+    # Aggregated HTML overview — one dashboard for the whole run, linking each
+    # host's saved reports. Always generated, even when some hosts errored.
+    _fleet_overview_html > "$outdir/index.html"
     printf '%b\n' "Per-host JSON reports saved under: ${BOLD}$outdir${RC}"
+    printf '%b\n' "Fleet overview dashboard:          ${BOLD}$outdir/index.html${RC}"
     if [ "$errored" -gt 0 ]; then
         printf '%b\n' "${RED}$errored host(s) could not be audited${RC} — see the error numbers above (${BOLD}auditxs errors <code>${RC})."
     fi
@@ -200,9 +204,180 @@ _fleet_remote_report() {
     fi
 }
 
-# Append a plain, aligned summary row (no colour, so column widths stay exact).
+# Append a plain, aligned summary row (no colour, so column widths stay exact)
+# and a structured record for the HTML overview (TAB-separated:
+# host, state, pass, fail, warn, score, sanitized-filename-stem).
 _fleet_row() {
     rows+=("$(printf '%-28s %-11s %8s %8s %8s %7s' "$1" "$2" "$3" "$4" "$5" "$6")")
+    ov+=("$(printf '%s\t%s\t%s\t%s\t%s\t%s\t%s' "$1" "$2" "$3" "$4" "$5" "$6" "${1//[^A-Za-z0-9._-]/_}")")
+}
+
+# _fleet_overview_html — self-contained Material dashboard aggregating every
+# host in this run. Reads the ov[] records and $outdir from the caller's scope
+# and prints HTML; relative links point at the sibling per-host report files.
+_fleet_overview_html() {
+    local rec host state p f w sc safe
+    local total=${#ov[@]} okc=0 findc=0 errc=0 sum=0 scored=0
+    for rec in "${ov[@]}"; do
+        IFS=$'\t' read -r host state p f w sc safe <<<"$rec"
+        case $state in
+            OK)       okc=$((okc+1)) ;;
+            FINDINGS) findc=$((findc+1)) ;;
+            *)        errc=$((errc+1)) ;;
+        esac
+        case $sc in ''|*[!0-9]*) : ;; *) sum=$((sum+sc)); scored=$((scored+1)) ;; esac
+    done
+    local avg="?" avg_pct=0 avg_color="var(--skip)"
+    if [ "$scored" -gt 0 ]; then
+        avg=$((sum / scored)); avg_pct=$avg
+        if   [ "$avg" -lt 50 ]; then avg_color="var(--err)"
+        elif [ "$avg" -lt 75 ]; then avg_color="var(--warn)"
+        else                         avg_color="var(--ok)"; fi
+    fi
+    local err_chip=""
+    [ "$errc" -gt 0 ] && err_chip="<span class=\"chip fail\">● $errc unreachable/errored</span>"
+
+    cat <<OVHEAD
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AuditXS fleet overview — $(html_escape "$(hostname 2>/dev/null)")</title>
+<style>
+  :root {
+    --bg:#f6f6fa; --surface:#ffffff; --surface-2:#eef0f6; --on-surface:#1b1b21;
+    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#4b56d2; --primary-c:#fff;
+    --ok:#1e7d46; --err:#ba1a1a; --warn:#a25b00; --skip:#6b7280;
+    --ok-c:#e6f4ea; --err-c:#ffe9e7; --warn-c:#fff3e0; --skip-c:#eceef2;
+    --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121318; --surface:#1c1d24; --surface-2:#23252e; --on-surface:#e4e2e9;
+      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#bcc2ff; --primary-c:#1a2277;
+      --ok:#7fd99b; --err:#ffb4ab; --warn:#f5bd6e; --skip:#a8abb4;
+      --ok-c:#12331f; --err-c:#3d1512; --warn-c:#3a2a12; --skip-c:#282a32; }
+  }
+  * { box-sizing:border-box; }
+  body { font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif; margin:0;
+    background:var(--bg); color:var(--on-surface); line-height:1.5; }
+  .wrap { max-width:64rem; margin:0 auto; padding:1.5rem 1.25rem 4rem; }
+  header.top { display:flex; align-items:center; gap:.75rem; padding:.5rem 0 1.25rem; }
+  .logo { width:2.5rem; height:2.5rem; border-radius:.9rem; background:var(--primary);
+    color:var(--primary-c); display:grid; place-items:center; font-weight:700; font-size:1.1rem; }
+  h1 { font-size:1.4rem; font-weight:600; margin:0; }
+  .sub { color:var(--on-surface-var); font-size:.85rem; }
+  .card { background:var(--surface); border:1px solid var(--outline); border-radius:1.25rem;
+    box-shadow:var(--shadow); padding:1.25rem 1.4rem; margin:1rem 0; }
+  .hero { display:flex; flex-wrap:wrap; gap:1.5rem; align-items:center; }
+  .score { --v:$avg_pct; width:8rem; height:8rem; border-radius:50%; flex:0 0 auto;
+    background:conic-gradient($avg_color calc(var(--v)*1%), var(--surface-2) 0);
+    display:grid; place-items:center; }
+  .score > div { width:6.2rem; height:6.2rem; border-radius:50%; background:var(--surface);
+    display:grid; place-items:center; text-align:center; }
+  .score b { font-size:1.8rem; } .score span { font-size:.7rem; color:var(--on-surface-var); }
+  .chips { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.25rem; }
+  .chip { display:inline-flex; align-items:center; gap:.35rem; padding:.35rem .75rem;
+    border-radius:2rem; font-size:.82rem; font-weight:600; }
+  .chip.pass { background:var(--ok-c); color:var(--ok); }
+  .chip.fail { background:var(--err-c); color:var(--err); }
+  .chip.warn { background:var(--warn-c); color:var(--warn); }
+  .note { background:var(--warn-c); color:var(--warn); border-radius:1rem; padding:.9rem 1.2rem;
+    margin:1rem 0; font-size:.85rem; }
+  .tablewrap { overflow-x:auto; }
+  table { border-collapse:collapse; width:100%; min-width:44rem; }
+  th,td { text-align:left; padding:.6rem .75rem; border-bottom:1px solid var(--outline);
+    vertical-align:middle; font-size:.88rem; }
+  th { color:var(--on-surface-var); font-weight:600; font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.04em; }
+  tr:last-child td { border-bottom:none; }
+  .state { display:inline-block; min-width:3.2rem; text-align:center; padding:.2rem .55rem;
+    border-radius:.6rem; font-weight:700; font-size:.72rem; }
+  .state.ok   { background:var(--ok-c);   color:var(--ok); }
+  .state.warn { background:var(--warn-c); color:var(--warn); }
+  .state.err  { background:var(--err-c);  color:var(--err); }
+  .hostname { font-family:ui-monospace,"Cascadia Code",monospace; font-size:.85rem; }
+  .scorebar { display:inline-block; width:7rem; height:.5rem; border-radius:.3rem;
+    background:var(--surface-2); vertical-align:middle; margin-right:.5rem; overflow:hidden; }
+  .scorebar > span { display:block; height:100%; border-radius:.3rem; }
+  .scnum { font-weight:700; font-size:.85rem; }
+  .links a { color:var(--primary); text-decoration:none; font-weight:600; font-size:.82rem;
+    margin-right:.5rem; }
+  code { background:var(--surface-2); padding:.1rem .35rem; border-radius:.35rem; font-size:.82em; }
+  footer { color:var(--on-surface-var); font-size:.78rem; margin-top:2.5rem;
+    border-top:1px solid var(--outline); padding-top:1rem; text-align:center; line-height:1.7; }
+  footer .brand { font-weight:700; font-size:.92rem; color:var(--on-surface); letter-spacing:.02em; }
+  footer .heart { color:#e0245e; }
+  footer .copy strong { color:var(--on-surface); }
+  footer a { color:var(--primary); text-decoration:none; font-weight:600; }
+  @media (max-width:640px){ .hero{gap:1rem} .score{width:6.5rem;height:6.5rem}
+    .score>div{width:5rem;height:5rem} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <div class="logo">A</div>
+  <div>
+    <h1>AuditXS fleet overview</h1>
+    <div class="sub">controller $(html_escape "$(hostname 2>/dev/null)") · $(date -Is 2>/dev/null) · v$AUDITXS_VERSION</div>
+  </div>
+</header>
+
+<div class="card hero">
+  <div class="score"><div><div><b>$avg</b><br><span>avg / 100</span></div></div></div>
+  <div style="flex:1 1 15rem">
+    <div style="font-weight:600;margin-bottom:.4rem">$total host(s) audited <span class="sub">(read-only, over SSH)</span></div>
+    <div class="chips">
+      <span class="chip pass">● $okc clean</span>
+      <span class="chip warn">● $findc with findings</span>
+      $err_chip
+    </div>
+  </div>
+</div>
+
+<div class="note">Fleet mode is <strong>read-only</strong>: nothing on any host was changed.
+To fix findings, review a host's report below, then run <code>sudo auditxs harden</code>
+<em>on that host</em> — hardening is deliberately never performed over SSH.</div>
+
+<div class="card" style="padding:.5rem .5rem"><div class="tablewrap"><table>
+<tr><th>Host</th><th>State</th><th>Pass</th><th>Fail</th><th>Warn</th><th>Score</th><th>Reports</th></tr>
+OVHEAD
+
+    local cls links bar barc
+    for rec in "${ov[@]}"; do
+        IFS=$'\t' read -r host state p f w sc safe <<<"$rec"
+        case $state in
+            OK)       cls=ok ;;
+            FINDINGS) cls=warn ;;
+            *)        cls=err ;;
+        esac
+        links=""
+        [ -f "$outdir/$safe.json" ] && links="<a href=\"$safe.json\">JSON</a>"
+        [ -f "$outdir/$safe.html" ] && links="$links<a href=\"$safe.html\">HTML</a>"
+        [ -z "$links" ] && links="—"
+        case $sc in ''|*[!0-9]*) bar=0; sc="—" ;; *) bar=$sc ;; esac
+        if   [ "$bar" -lt 50 ]; then barc="var(--err)"
+        elif [ "$bar" -lt 75 ]; then barc="var(--warn)"
+        else                         barc="var(--ok)"; fi
+        printf '<tr><td class="hostname">%s</td><td><span class="state %s">%s</span></td><td>%s</td><td>%s</td><td>%s</td><td><span class="scorebar"><span style="width:%s%%;background:%s"></span></span><span class="scnum">%s</span></td><td class="links">%s</td></tr>\n' \
+            "$(html_escape "$host")" "$cls" "$(html_escape "$state")" "$p" "$f" "$w" \
+            "$bar" "$barc" "$sc" "$links"
+    done
+
+    cat <<'OVFOOT'
+</table></div></div>
+<footer>
+<div>Generated by <strong>AuditXS</strong> fleet mode — transparent, reversible Linux security auditing.</div>
+<div>Error numbers: <code>auditxs errors &lt;code&gt;</code> · Compare runs: <code>auditxs diff &lt;old.json&gt; &lt;new.json&gt;</code></div>
+<div class="brand" style="margin-top:1rem">🛡️ AuditXS</div>
+<div class="made">Made with <span class="heart">&#10084;</span> from Canada &#127809;</div>
+<div class="copy">&copy; 2026 <strong>DigitalXS</strong> — Programming &amp; Development · <a href="https://digitalxs.ca">digitalxs.ca</a></div>
+</footer>
+</div>
+</body>
+</html>
+OVFOOT
 }
 
 # Extract a numeric summary field ("pass"/"fail"/"warn"/"skip") from JSON.

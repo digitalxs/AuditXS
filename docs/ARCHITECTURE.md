@@ -213,3 +213,55 @@ Security-critical properties, tested by `tests/web_test.sh` (in CI):
 
 Reach a headless server over an SSH tunnel; see docs/WEBUI.md. The zenity GUI
 remains the zero-dependency desktop fallback.
+
+## Fleet mode (v0.8 → v0.11)
+
+`lib/fleet.sh` turns one machine into a read-only audit controller for many
+hosts. The data flow is deliberately simple — no agent, no daemon, no custom
+protocol, just SSH and the stable JSON report format:
+
+```
+controller                                target host
+──────────                                ───────────
+cmd_fleet
+  ├─ parse hosts/--inventory
+  ├─ per host: _fleet_one ── ssh ───────▶ auditxs audit --format json --quiet
+  │       ▲                                (sudo -n … with --sudo)
+  │       └── JSON summary ◀──────────────┘
+  │       ├─ classify failures → AX6001–AX6007
+  │       ├─ save <host>.json  (name sanitized: [^A-Za-z0-9._-] → _)
+  │       ├─ _fleet_row  → console table row + structured ov[] record
+  │       └─ --remote-report: auditxs report --format html | tee (on host),
+  │                           copy fetched back as <host>.html
+  ├─ _fleet_overview_html → index.html   (aggregated dashboard)
+  └─ exit code: 2 any host errored · 1 any host has FAILs · 0 all clean
+```
+
+Key invariants:
+
+- **Read-only over the wire.** The only remote commands fleet ever runs are
+  `auditxs audit` and (with `--remote-report`) `auditxs report`. Hardening
+  over SSH is a deliberate non-feature.
+- **Credentials hygiene.** Password auth goes through `sshpass -e` (environment,
+  never argv, never visible in `ps`), and `SSHPASS` is unset right after the
+  loop. Key/agent auth runs `BatchMode=yes` so it can never hang on a prompt.
+- **Host-key policy.** `accept-new` by default (pin on first use, refuse
+  changes); `--strict-host-key` / `--insecure-host-key` tighten or disable.
+- **Every outcome is a record.** `_fleet_row` appends both the aligned console
+  row and a TAB-separated `ov[]` record (`host, state, pass, fail, warn,
+  score, filename-stem`) — the single source the HTML overview renders from,
+  so the console table and the dashboard can never disagree.
+
+### The overview dashboard
+
+`_fleet_overview_html` renders `ov[]` into a self-contained Material page,
+`<outdir>/index.html`: a fleet-average score dial, clean/findings/errored
+chips, and a per-host table with score bars and **relative** links to the
+sibling `<host>.json` / `<host>.html` files (link emitted only when the file
+exists). Because links are relative and there are no external assets, the
+whole run directory can be archived, copied or served as-is. Host names are
+HTML-escaped; report filenames come from the sanitized stem, so hostile host
+strings can neither break markup nor traverse paths. The dashboard is covered
+by unit tests (`tests/unit.sh`, "fleet HTML overview" section) using a
+fabricated `ov[]` — the generator is pure (reads `ov[]`/`$outdir`, writes
+stdout), which is what makes it testable without SSH.

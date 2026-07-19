@@ -7,6 +7,25 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.11.0]
+
+### Added
+- **Fleet overview dashboard** — every `auditxs fleet` run now writes an
+  aggregated, self-contained HTML dashboard (`index.html`) next to the
+  per-host reports: fleet-average score dial, clean/findings/errored host
+  chips, and a per-host table with score bars and relative links to each
+  host's saved JSON/HTML reports. Unreachable and errored hosts are shown,
+  not hidden. Covered by unit tests.
+- **Fleet walkthrough** in `docs/USAGE.md` — end-to-end setup (install on
+  targets, dedicated audit user + key, narrow sudoers rule, inventory file,
+  run, review, drift-diff) plus a troubleshooting table mapping fleet states
+  to their `AX6xxx` error numbers.
+
+### Changed
+- `docs/ARCHITECTURE.md` gained a fleet-mode section (data flow, invariants,
+  dashboard design); `digitalxs-dev-doc.MD` §9 documents the `ov[]` record
+  format and the coding workflow for extending the dashboard.
+
 ## [0.10.1]
 
 ### Added

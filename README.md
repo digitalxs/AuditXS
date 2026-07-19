@@ -8,7 +8,7 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.10.1-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.11.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![Checks](https://img.shields.io/badge/checks-122-8957e5)](docs/CHECKS.md)
@@ -282,7 +282,11 @@ auditxs fleet web01 db01 --sudo --remote-report         # also leave a full repo
 ```
 
 Run a **read-only** audit across a fleet from one machine and get an aggregated
-score table plus per-host JSON reports under `/var/lib/auditxs/reports/fleet/`.
+score table, per-host JSON reports **and an aggregated HTML overview dashboard**
+(`index.html` — fleet-average score, per-host score bars, links to every
+host's report) under `/var/lib/auditxs/reports/fleet/`. A full walkthrough
+(audit user, sudoers, inventory, troubleshooting) is in
+[docs/USAGE.md](docs/USAGE.md#fleet-mode--auditing-many-hosts-over-ssh).
 By design fleet mode never hardens over SSH — review each host's report, then
 harden that host locally.
 

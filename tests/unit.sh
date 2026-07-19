@@ -179,6 +179,23 @@ t "_fleet_field fail"                "3"  "$(_fleet_field "$fjson" fail)"
 t "_fleet_field warn"                "2"  "$(_fleet_field "$fjson" warn)"
 t "_fleet_score"                     "82" "$(_fleet_score "$fjson")"
 
+# ---- fleet HTML overview (lib/fleet.sh) ----------------------------------
+outdir="$TMPD/fleet"; mkdir -p "$outdir"
+printf '{}' > "$outdir/web01.json"; printf '<html></html>' > "$outdir/web01.html"
+ov=(
+    "$(printf 'web01\tOK\t41\t0\t3\t96\tweb01')"
+    "$(printf 'db01\tFINDINGS\t35\t6\t4\t78\tdb01')"
+    "$(printf 'bad<host>\tUNREACHABLE\t-\t-\t-\t-\tbad_host_')"
+)
+fov=$(_fleet_overview_html)
+tt "overview counts hosts"      yes grep -q '3 host(s) audited'      <<<"$fov"
+tt "overview avg score"         yes grep -q '<b>87</b>'              <<<"$fov"
+tt "overview errored chip"      yes grep -q '1 unreachable/errored'  <<<"$fov"
+tt "overview links saved html"  yes grep -q 'href="web01.html"'      <<<"$fov"
+tt "overview no link when absent" no grep -q 'href="db01.html"'      <<<"$fov"
+tt "overview escapes hostnames" yes grep -q 'bad&lt;host&gt;'        <<<"$fov"
+unset outdir ov fov
+
 # ---- Qt runtime preflight (dispatcher helpers) ---------------------------
 # The helpers live in the `auditxs` dispatcher, not a lib; pull just that block.
 eval "$(awk '/^# -+ Qt runtime deps/{f=1} f; /^ensure_qt_runtime\(\)/{g=1} g&&/^}/{f=0}' auditxs)"
