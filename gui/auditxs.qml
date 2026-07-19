@@ -27,8 +27,21 @@ ApplicationWindow {
     property var summary: ({ pass: 0, fail: 0, warn: 0, skip: 0, score: "-" })
     property bool isMax: win.visibility === Window.Maximized || win.visibility === Window.FullScreen
 
+    // Audit runs asynchronously (backend worker thread) so the window stays
+    // live; auditTimer polls the percentage for the progress bar.
+    property bool auditRunning: false
+    property int auditPct: 0
+    property string auditCheck: ""
+
     function refreshAudit() {
-        var d = JSON.parse(backend.audit());
+        if (auditRunning) return;
+        auditRunning = true; auditPct = 0; auditCheck = "";
+        chips.text = "Auditing (read-only — nothing is changed)…";
+        backend.auditStart();
+        auditTimer.start();
+    }
+
+    function applyAudit(d) {
         summary = d.summary ? d.summary : summary;
         scoreLabel.text = "Score " + summary.score + "/100";
         chips.text = summary.pass + " passed · " + summary.fail + " failed · "
@@ -40,6 +53,22 @@ ApplicationWindow {
             dashModel.append(rs[i]);
             if (rs[i].fixable)
                 featModel.append(rs[i]);
+        }
+    }
+
+    Timer {
+        id: auditTimer
+        interval: 300; repeat: true
+        onTriggered: {
+            var p = JSON.parse(backend.auditProgress());
+            win.auditPct = p.pct;
+            win.auditCheck = p.id || "";
+            if (!p.running) {
+                stop();
+                win.auditRunning = false;
+                var r = backend.auditResult();
+                if (r.length) applyAudit(JSON.parse(r));
+            }
         }
     }
 
@@ -141,7 +170,11 @@ ApplicationWindow {
                 Label { text: "AuditXS"; font.pixelSize: 20; font.bold: true; Layout.leftMargin: 10 }
                 Label { id: scoreLabel; text: "Score –/100"; opacity: 0.9; Layout.leftMargin: 10 }
                 Item { Layout.fillWidth: true }   // draggable gap
-                Button { text: "Run audit"; highlighted: true; focusPolicy: Qt.NoFocus; onClicked: refreshAudit() }
+                Button {
+                    text: win.auditRunning ? win.auditPct + "%" : "Run audit"
+                    enabled: !win.auditRunning
+                    highlighted: true; focusPolicy: Qt.NoFocus; onClicked: refreshAudit()
+                }
                 Item { width: 10 }
                 WinButton { kind: "min";                onClicked: win.showMinimized() }
                 WinButton { kind: win.isMax ? "restore" : "max"; onClicked: win.toggleMaximize() }
@@ -155,6 +188,24 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.margins: 12
             opacity: 0.8
+        }
+
+        // Live audit progress: percentage bar + current check id.
+        ColumnLayout {
+            visible: win.auditRunning
+            Layout.fillWidth: true
+            Layout.leftMargin: 12; Layout.rightMargin: 12
+            spacing: 2
+            ProgressBar {
+                Layout.fillWidth: true
+                from: 0; to: 100
+                value: win.auditPct
+            }
+            Label {
+                text: win.auditPct + "%" + (win.auditCheck.length ? " — " + win.auditCheck : "")
+                font.pixelSize: 12
+                opacity: 0.7
+            }
         }
 
         TabBar {

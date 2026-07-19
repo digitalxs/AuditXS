@@ -26,6 +26,7 @@ import os
 import secrets
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import webbrowser
@@ -36,6 +37,21 @@ AUDITXS = os.environ.get("AUDITXS_BIN", "auditxs")
 TOKEN = secrets.token_urlsafe(24)
 PROFILE = os.environ.get("AUDITXS_PROFILE", "")   # empty → let auditxs decide
 VERSION = "?"
+
+# Progress file for long operations (audit): the CLI writes "PCT DONE TOTAL ID"
+# via --progress-file; GET /api/progress serves it so the SPA can render a
+# real percentage bar while the audit request is in flight.
+PROGRESS_PATH = os.path.join(tempfile.mkdtemp(prefix="auditxs-web-"), "progress")
+
+
+def read_progress():
+    try:
+        with open(PROGRESS_PATH) as f:
+            parts = f.readline().split()
+        return {"pct": int(parts[0]), "done": int(parts[1]),
+                "total": int(parts[2]), "id": parts[3] if len(parts) > 3 else ""}
+    except (OSError, ValueError, IndexError):
+        return {"pct": 0, "done": 0, "total": 0, "id": ""}
 
 # --------------------------------------------------------------- CLI bridge
 def run_auditxs(args, timeout=180):
@@ -155,6 +171,11 @@ footer.brand .links{margin-top:.15rem;font-size:.76rem}
 .note{background:var(--warnc);color:var(--warn);border-radius:var(--r);padding:.8rem 1.1rem;font-size:.85rem;margin:.6rem 0}
 .spin{width:1rem;height:1rem;border:2px solid var(--outline);border-top-color:var(--primary);border-radius:50%;display:inline-block;animation:sp .7s linear infinite;vertical-align:middle}
 @keyframes sp{to{transform:rotate(360deg)}}
+.pwrap{display:none;margin:.4rem 0 .2rem}
+.pwrap.on{display:block}
+.pbar{height:.4rem;border-radius:.3rem;background:var(--surface2);overflow:hidden}
+.pbar>div{height:100%;width:0%;border-radius:.3rem;background:var(--primary);transition:width .25s}
+.ptext{font-size:.75rem;color:var(--onv);margin-top:.25rem}
 </style></head><body>
 <div class="appbar">
   <div class="logo" aria-hidden="true">A</div>
@@ -169,6 +190,10 @@ footer.brand .links{margin-top:.15rem;font-size:.76rem}
     <div class="tab" data-tab="features">Features</div>
     <div class="tab" data-tab="snapshots">Snapshots</div>
     <div class="tab" data-tab="tools">Tools</div>
+  </div>
+  <div class="pwrap" id="pwrap">
+    <div class="pbar"><div id="pfill"></div></div>
+    <div class="ptext" id="ptext">0%</div>
   </div>
   <div id="cveHolder"></div>
   <div id="view"></div>
@@ -200,10 +225,26 @@ function ringColor(s){return s>=75?"var(--ok)":s>=50?"var(--warn)":"var(--err)";
 async function loadMeta(){META=await api("/api/meta");
  $("#hostmeta").textContent=`${META.host} · ${META.distro} · profile ${META.profile} · v${META.version}`;}
 
+let PTIMER=null;
+function progressStart(){
+ $("#pwrap").classList.add("on");$("#pfill").style.width="0%";$("#ptext").textContent="0%";
+ PTIMER=setInterval(async()=>{try{
+  const p=await api("/api/progress");
+  $("#pfill").style.width=(p.pct||0)+"%";
+  $("#ptext").textContent=(p.pct||0)+"%"+(p.total?` — ${p.done}/${p.total}`:"")+(p.id&&p.id!=="done"?` · ${p.id}`:"");
+ }catch(e){}},400);
+}
+function progressStop(){
+ if(PTIMER){clearInterval(PTIMER);PTIMER=null;}
+ $("#pfill").style.width="100%";$("#ptext").textContent="100%";
+ setTimeout(()=>$("#pwrap").classList.remove("on"),600);
+}
 async function runAudit(){
  $("#auditBtn").innerHTML='<span class="spin"></span>';
+ progressStart();
  try{const d=await api("/api/audit");RESULTS=d.results;SUMMARY=d.summary;await loadCve();render();toast("Audit complete");}
  catch(e){toast("Audit failed: "+e.message);}
+ progressStop();
  $("#auditBtn").textContent="Run audit";
 }
 async function loadCve(){try{const c=await api("/api/cve");const h=$("#cveHolder");
@@ -339,6 +380,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(self._meta())
         if u.path == "/api/audit":
             return self._json(self._audit())
+        if u.path == "/api/progress":
+            return self._json(read_progress())
         if u.path == "/api/explain":
             cid = qs.get("id", [""])[0]
             if not cid.replace("-", "").isalnum():
@@ -392,7 +435,12 @@ class Handler(BaseHTTPRequestHandler):
                 "distro": _osname(), "profile": PROFILE or "(configured)"}
 
     def _audit(self):
-        rc, out, err = run_auditxs(["audit", "--format", "json", "--quiet"] + profile_args(), timeout=240)
+        try:
+            open(PROGRESS_PATH, "w").close()
+        except OSError:
+            pass
+        rc, out, err = run_auditxs(["audit", "--format", "json", "--quiet",
+                                    "--progress-file", PROGRESS_PATH] + profile_args(), timeout=240)
         try:
             return json.loads(out)
         except ValueError:

@@ -231,11 +231,16 @@ print_audit_header() {
 }
 
 run_audit() {
-    local id fn rc st _prev_cat=""
+    local id fn rc st _prev_cat="" _total=0
     N_PASS=0 N_FAIL=0 N_WARN=0 N_SKIP=0 N_WAIVE=0
     AUDIT_DATE=$(date -Is)
     for id in "${CHECK_IDS[@]}"; do
+        selected "$id" && _total=$((_total + 1))
+    done
+    progress_begin "$_total"
+    for id in "${CHECK_IDS[@]}"; do
         selected "$id" || continue
+        progress_clear
         # nala-style section rule when the category changes
         if [ "${CHECK_CATEGORY[$id]}" != "$_prev_cat" ]; then
             _prev_cat=${CHECK_CATEGORY[$id]}
@@ -246,6 +251,7 @@ run_audit() {
             RESULT_DETAIL[$id]="Not applicable to the '$PROFILE' profile"
             N_SKIP=$((N_SKIP + 1))
             print_result "$id"
+            progress_step "$id"
             continue
         fi
         DETAIL=""
@@ -277,7 +283,9 @@ run_audit() {
             WAIVE) N_WAIVE=$((N_WAIVE + 1)) ;;
         esac
         print_result "$id"
+        progress_step "$id"
     done
+    progress_end
     compute_score
 }
 
@@ -355,8 +363,11 @@ cmd_harden() {
     [ "$DRYRUN" = 1 ] && info "${BOLD}DRY-RUN:${RC} every intended change is shown below, but nothing will be modified."
     say ""
 
-    local applied=0 skipped=0 notdone=0
+    local applied=0 skipped=0 notdone=0 _fi=0
     for id in "${targets[@]}"; do
+        _fi=$((_fi + 1))
+        say "${DIM}── fix $_fi of ${#targets[@]} ($((_fi * 100 / ${#targets[@]}))%)${RC}"
+        progress_file_note "$((_fi * 100 / ${#targets[@]}))" "$_fi" "${#targets[@]}" "$id"
         show_check_details "$id"
         printf '%b\n' "  ${CYAN}Current state:${RC}"
         fold_indent "${RESULT_DETAIL[$id]:-—}"

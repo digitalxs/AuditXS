@@ -39,6 +39,8 @@ ck "root page with token → 200"         200 "$(code -H "X-Auth-Token: $TOKEN" 
 ck "api without token → 403"            403 "$(code "$base/api/meta")"
 ck "api with bad token → 403"           403 "$(code -H "X-Auth-Token: nope" "$base/api/meta")"
 ck "api meta with token → 200"          200 "$(code -H "X-Auth-Token: $TOKEN" "$base/api/meta")"
+ck "api progress without token → 403"   403 "$(code "$base/api/progress")"
+ck "api progress with token → 200"      200 "$(code -H "X-Auth-Token: $TOKEN" "$base/api/progress")"
 ck "POST harden without token → 403"    403 "$(code -X POST -H 'Content-Type: application/json' -d '{"checks":["ACC-003"]}' "$base/api/harden")"
 
 # page carries the SPA and the audit endpoint returns valid JSON with a summary

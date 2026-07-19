@@ -7,6 +7,32 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.13.0]
+
+### Added
+- **Live progress with percentage in every interface.** The audit engine now
+  counts its work and reports it as it goes:
+  - **CLI** — an in-terminal progress bar
+    (`████░░ 45% (55/122) SSH-003`) drawn on stderr under the scrolling
+    results; auto-disabled when output is piped/captured, or with
+    `AUDITXS_NO_PROGRESS=1`. `harden` announces `fix N of M (P%)` per fix
+    and fleet mode prints `(host i/N · P%)` per host.
+  - **Terminal UI** — a real dialog gauge showing percentage and the current
+    check (replacing the fake pulsing gauge; the audit also no longer runs
+    twice).
+  - **zenity GUI** — audit, harden and the features view show true
+    percentages with the current check id in the progress dialog.
+  - **Qt app** — the audit runs in a worker thread (the window stays live)
+    with a Material progress bar, percentage and current check; the Run
+    audit button shows the live percentage.
+  - **Web UI** — a Material linear progress bar with percentage and check
+    count above the dashboard, fed by a new authenticated `/api/progress`
+    endpoint.
+  - Front-ends read progress via the new `--progress-file <path>` option
+    (one rewritten line: `PCT DONE TOTAL CHECK-ID`) — a CLI flag rather than
+    an environment variable so it survives pkexec's environment
+    sanitization.
+
 ## [0.12.0]
 
 ### Added

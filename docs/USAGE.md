@@ -71,6 +71,18 @@ Every console audit saves timestamped HTML and JSON reports under
 `/var/lib/auditxs/reports/` (plus `latest.json` / `latest.html`) and ends
 with a severity-weighted hardening score (0–100).
 
+**Progress.** Every interface shows live progress with a percentage while an
+operation runs. On the CLI a progress bar (`████░░ 45% (55/122) SSH-003`)
+is drawn on stderr below the scrolling results whenever the terminal is
+interactive — it disappears automatically when output is piped or captured
+(force it off with `AUDITXS_NO_PROGRESS=1`). The terminal UI shows a dialog
+gauge, the zenity and Qt apps a percentage dialog/bar, and the web UI a
+Material progress bar — all fed by the same engine. During `harden`, each fix
+is announced as `fix N of M (P%)`; fleet mode prints `(host i/N · P%)` per
+host. Integrators can read the machine progress with
+`--progress-file <path>`: the engine rewrites one line, `PCT DONE TOTAL
+CHECK-ID`, after every check.
+
 The **HTML report is interactive** (while staying a single, self-contained
 file you can archive or email):
 

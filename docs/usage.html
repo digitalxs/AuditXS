@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.12.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.13.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg active" href="usage.html">User manual</a>
@@ -147,6 +147,7 @@ sudo auditxs audit --check SSH-001 --check FW-002
 sudo auditxs audit --profile server         # override the configured profile
 sudo auditxs audit --format json            # machine-readable to stdout (also: tsv, html)</code></pre>
 <p>Every console audit saves timestamped HTML and JSON reports under <code>/var/lib/auditxs/reports/</code> (plus <code>latest.json</code> / <code>latest.html</code>) and ends with a severity-weighted hardening score (0–100).</p>
+<p><strong>Progress.</strong> Every interface shows live progress with a percentage while an operation runs. On the CLI a progress bar (<code>████░░ 45% (55/122) SSH-003</code>) is drawn on stderr below the scrolling results whenever the terminal is interactive — it disappears automatically when output is piped or captured (force it off with <code>AUDITXS_NO_PROGRESS=1</code>). The terminal UI shows a dialog gauge, the zenity and Qt apps a percentage dialog/bar, and the web UI a Material progress bar — all fed by the same engine. During <code>harden</code>, each fix is announced as <code>fix N of M (P%)</code>; fleet mode prints <code>(host i/N · P%)</code> per host. Integrators can read the machine progress with <code>--progress-file &lt;path&gt;</code>: the engine rewrites one line, <code>PCT DONE TOTAL CHECK-ID</code>, after every check.</p>
 <p>The <strong>HTML report is interactive</strong> (while staying a single, self-contained file you can archive or email):</p>
 <ul>
 <li><strong>Show only findings</strong> — a toggle in the score card hides every passed, skipped and waived check, so the report shows just the FAILs and WARNs; categories with nothing left to show disappear too. Flip it back to see the full evidence trail.</li>

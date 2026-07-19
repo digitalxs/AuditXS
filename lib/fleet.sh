@@ -89,12 +89,16 @@ Example: ${BOLD}auditxs fleet web01 db01 --user admin --key ~/.ssh/id_ed25519 --
     nala_end
     say ""
 
-    # Per-host loop.
+    # Per-host loop (with x/y · % progress on the console and progress file).
     local -a rows=() ov=()
-    local errored=0 with_fails=0 target
+    local errored=0 with_fails=0 target _hi=0
     for target in "${hosts[@]}"; do
+        _hi=$((_hi + 1))
+        FLEET_PROGRESS="($_hi/${#hosts[@]} · $((_hi * 100 / ${#hosts[@]}))%)"
+        progress_file_note "$((_hi * 100 / ${#hosts[@]}))" "$_hi" "${#hosts[@]}" "${target#*@}"
         _fleet_one "$target"
     done
+    FLEET_PROGRESS=""
 
     # Clear the password from the environment as soon as we are done with it.
     [ "$ask_pass" = 1 ] && unset SSHPASS
@@ -142,7 +146,7 @@ _fleet_one() {
     local remote="auditxs audit --format json --quiet"
     [ "$use_sudo" = 1 ] && remote="sudo -n $remote"
 
-    info "Auditing ${BOLD}$target${RC} …"
+    info "Auditing ${BOLD}$target${RC} ${DIM}${FLEET_PROGRESS:-}${RC} …"
     local out err rc
     out=$(timeout "$timeout" "${sshpass_pre[@]}" ssh "${ssh_opts[@]}" "$target" "$remote" 2>"$outdir/.stderr")
     rc=$?

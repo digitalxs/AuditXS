@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.12.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.13.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -102,11 +102,24 @@
 <a class="pg" href="../index.html">AuditXS home</a>
 <a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
 <main>
-<h1 id="changelog">Changelog</h1><div class="onpage"><b>On this page</b><a href="#0120">[0.12.0]</a><a href="#0111">[0.11.1]</a><a href="#0110">[0.11.0]</a><a href="#0101">[0.10.1]</a><a href="#0100">[0.10.0]</a><a href="#091">[0.9.1]</a><a href="#090">[0.9.0]</a><a href="#082">[0.8.2]</a><a href="#081">[0.8.1]</a><a href="#080">[0.8.0]</a><a href="#070--072">[0.7.0] – [0.7.2]</a><a href="#060">[0.6.0]</a><a href="#050">[0.5.0]</a><a href="#040">[0.4.0]</a><a href="#030">[0.3.0]</a><a href="#020">[0.2.0]</a><a href="#010">[0.1.0]</a></div>
+<h1 id="changelog">Changelog</h1><div class="onpage"><b>On this page</b><a href="#0130">[0.13.0]</a><a href="#0120">[0.12.0]</a><a href="#0111">[0.11.1]</a><a href="#0110">[0.11.0]</a><a href="#0101">[0.10.1]</a><a href="#0100">[0.10.0]</a><a href="#091">[0.9.1]</a><a href="#090">[0.9.0]</a><a href="#082">[0.8.2]</a><a href="#081">[0.8.1]</a><a href="#080">[0.8.0]</a><a href="#070--072">[0.7.0] – [0.7.2]</a><a href="#060">[0.6.0]</a><a href="#050">[0.5.0]</a><a href="#040">[0.4.0]</a><a href="#030">[0.3.0]</a><a href="#020">[0.2.0]</a><a href="#010">[0.1.0]</a></div>
 <p>All notable changes to <strong>AuditXS</strong> are recorded here. The format follows <a href="https://keepachangelog.com/">Keep a Changelog</a>, and the project uses <a href="https://semver.org/">Semantic Versioning</a>. The repository-root <code>VERSION</code> file is the single source of truth for the current version.</p>
 <hr>
-<h2 id="0120">[0.12.0]</h2>
+<h2 id="0130">[0.13.0]</h2>
 <h3 id="added">Added</h3>
+<ul>
+<li><strong>Live progress with percentage in every interface.</strong> The audit engine now counts its work and reports it as it goes:
+<ul>
+<li><strong>CLI</strong> — an in-terminal progress bar (<code>████░░ 45% (55/122) SSH-003</code>) drawn on stderr under the scrolling results; auto-disabled when output is piped/captured, or with <code>AUDITXS_NO_PROGRESS=1</code>. <code>harden</code> announces <code>fix N of M (P%)</code> per fix and fleet mode prints <code>(host i/N · P%)</code> per host.</li>
+<li><strong>Terminal UI</strong> — a real dialog gauge showing percentage and the current check (replacing the fake pulsing gauge; the audit also no longer runs twice).</li>
+<li><strong>zenity GUI</strong> — audit, harden and the features view show true percentages with the current check id in the progress dialog.</li>
+<li><strong>Qt app</strong> — the audit runs in a worker thread (the window stays live) with a Material progress bar, percentage and current check; the Run audit button shows the live percentage.</li>
+<li><strong>Web UI</strong> — a Material linear progress bar with percentage and check count above the dashboard, fed by a new authenticated <code>/api/progress</code> endpoint.</li>
+<li>Front-ends read progress via the new <code>--progress-file &lt;path&gt;</code> option (one rewritten line: <code>PCT DONE TOTAL CHECK-ID</code>) — a CLI flag rather than an environment variable so it survives pkexec's environment sanitization.</li>
+</ul></li>
+</ul>
+<h2 id="0120">[0.12.0]</h2>
+<h3 id="added-1">Added</h3>
 <ul>
 <li><strong>Authenticate once, not per click</strong> — a polkit policy (<code>com.digitalxs.auditxs.policy</code>, default <code>auth_admin_keep</code>) ships with both install methods: the first pkexec-elevated GUI action prompts, and polkit then remembers the authorization for the active session (~5 minutes), so a burst of consecutive Qt/zenity actions asks for the password once. The policy is installed by <code>setup.sh</code> and the <code>.deb</code>, removed on uninstall, and applies only to the canonical installed binary paths. A new <em>Privileges &amp; credential caching</em> section in the manual explains the model for every interface (CLI sudo cache, GUI polkit keep, web/tui root-once).</li>
 <li><strong>Documentation website</strong> — <code>scripts/build-site.py</code> (Python stdlib only) renders every guide to a branded, theme-aware, self-contained HTML page in <code>docs/</code> (sidebar navigation, on-page contents, cross-links rewritten), plus a <code>docs/index.html</code> hub — ready to publish at &lt;https://auditxs.digitalxs.ca/docs&gt;.</li>
@@ -114,7 +127,7 @@
 <li>CI now builds the site and validates the polkit policy XML on every push.</li>
 </ul>
 <h2 id="0111">[0.11.1]</h2>
-<h3 id="added-1">Added</h3>
+<h3 id="added-2">Added</h3>
 <ul>
 <li><strong>Interactive HTML report</strong> (still a single self-contained file):
 <ul>
@@ -124,7 +137,7 @@
 </ul></li>
 </ul>
 <h2 id="0110">[0.11.0]</h2>
-<h3 id="added-2">Added</h3>
+<h3 id="added-3">Added</h3>
 <ul>
 <li><strong>Fleet overview dashboard</strong> — every <code>auditxs fleet</code> run now writes an aggregated, self-contained HTML dashboard (<code>index.html</code>) next to the per-host reports: fleet-average score dial, clean/findings/errored host chips, and a per-host table with score bars and relative links to each host's saved JSON/HTML reports. Unreachable and errored hosts are shown, not hidden. Covered by unit tests.</li>
 <li><strong>Fleet walkthrough</strong> in <code>docs/USAGE.md</code> — end-to-end setup (install on targets, dedicated audit user + key, narrow sudoers rule, inventory file, run, review, drift-diff) plus a troubleshooting table mapping fleet states to their <code>AX6xxx</code> error numbers.</li>
@@ -134,13 +147,13 @@
 <li><code>docs/ARCHITECTURE.md</code> gained a fleet-mode section (data flow, invariants, dashboard design); <code>digitalxs-dev-doc.MD</code> §9 documents the <code>ov[]</code> record format and the coding workflow for extending the dashboard.</li>
 </ul>
 <h2 id="0101">[0.10.1]</h2>
-<h3 id="added-3">Added</h3>
+<h3 id="added-4">Added</h3>
 <ul>
 <li><strong>Qt runtime preflight</strong> — <code>auditxs qt</code> now detects when PySide6 and its QtQuick QML modules (Controls, Layouts, Window) are missing and offers to install the correct packages for the current distribution instead of failing with a raw <code>ImportError</code>. The prompt is shown in the terminal when attached to a tty, or as a zenity dialog when launched from the desktop; privileges are elevated with <code>pkexec</code> (graphical) or <code>sudo</code> as appropriate, and a declined prompt prints fall-back guidance for the web and terminal UIs. Package-install failures report error <code>AX5001</code>.</li>
 </ul>
 <h2 id="0100">[0.10.0]</h2>
 <p>Governance, integrations and a big coverage expansion — <strong>122 checks across 26 categories</strong>.</p>
-<h3 id="added-4">Added</h3>
+<h3 id="added-5">Added</h3>
 <ul>
 <li><strong>Accepted-risk waivers</strong> — <code>auditxs waive &lt;ID&gt; &quot;reason&quot; [--until DATE]</code>, <code>auditxs waivers</code>, <code>auditxs unwaive &lt;ID&gt;</code>. A waived finding renders as <strong>WAIVED</strong> (not FAIL/WARN) in audits, reports and drift alerts, keeps the original result in its detail, is excluded from the hardening score, and is emitted as a proper <strong>SARIF suppression</strong>. Expired waivers stop applying.</li>
 <li><strong>SARIF 2.1.0 and CSV export</strong> — <code>report --format sarif|csv</code>. SARIF carries <code>security-severity</code>, CIS/NIST properties and waiver suppressions, ready for <strong>GitHub code scanning</strong>, Azure DevOps and security dashboards.</li>
@@ -158,18 +171,18 @@
 <li>Fixture tests for the container/boot/database checks and waiver unit tests (72 unit / 45 fixture tests). Docs, man page and generated catalogues refreshed.</li>
 </ul>
 <h2 id="091">[0.9.1]</h2>
-<h3 id="added-5">Added</h3>
+<h3 id="added-6">Added</h3>
 <ul>
 <li>GUI branding across the web UI, Qt app, HTML report and zenity About: gradient brand logo, "by DigitalXS", and a footer — <em>🛡️ AuditXS · Made with ❤ from Canada 🍁 · © 2026 DigitalXS — Programming &amp; Development</em>.</li>
 </ul>
 <h2 id="090">[0.9.0]</h2>
-<h3 id="added-6">Added</h3>
+<h3 id="added-7">Added</h3>
 <ul>
 <li>Web-stack &amp; CMS coverage: <strong>nginx</strong> (obsolete TLS, HSTS), <strong>Varnish</strong> (admin binding, secret permissions), a <strong>WebApps</strong> category (WordPress, Drupal, Laravel, Roundcube), <strong>BIND</strong> (AXFR restriction, DNSSEC), and <strong>Network</strong> (promiscuous-mode interfaces, NTP time-sync).</li>
 <li><code>auditxs fleet --remote-report</code> leaves a full HTML report on each audited host.</li>
 </ul>
 <h2 id="082">[0.8.2]</h2>
-<h3 id="added-7">Added</h3>
+<h3 id="added-8">Added</h3>
 <ul>
 <li>Dedicated <strong>Fail2ban</strong> category: service enabled at boot, ban-policy sanity, recidive jail, <code>ignoreip</code> breadth.</li>
 </ul>
@@ -179,7 +192,7 @@
 <li>Web UI default port is now <strong>9000</strong> (override with <code>--port</code>).</li>
 </ul>
 <h2 id="080">[0.8.0]</h2>
-<h3 id="added-8">Added</h3>
+<h3 id="added-9">Added</h3>
 <ul>
 <li><strong>Fleet mode</strong> (<code>auditxs fleet</code>): read-only audits across many hosts over SSH (key or password auth), aggregated scores and per-host reports.</li>
 <li><strong>Error-code system</strong> (<code>auditxs errors</code>): stable <code>AXnnnn</code> codes with a plain why/fix, an occurrence ledger, and a generated <code>docs/ERRORS.md</code>.</li>
@@ -187,39 +200,39 @@
 <li>Developer &amp; maintainer guide (<code>digitalxs-dev-doc.MD</code>).</li>
 </ul>
 <h2 id="070--072">[0.7.0] – [0.7.2]</h2>
-<h3 id="added-9">Added</h3>
+<h3 id="added-10">Added</h3>
 <ul>
 <li><strong>Profile-gated interfaces</strong>: servers are text-only (CLI + a new ncurses <strong>terminal UI</strong>, <code>auditxs tui</code>); the web UI, Qt app and zenity GUI are workstation-only.</li>
 <li>Expanded, capability-grouped security-tool integration (ClamAV, OpenSCAP, auditd, USBGuard, Firejail, arpwatch, Logwatch, osquery, Trivy, …).</li>
 <li>Native window chrome for the Qt app (frameless window with in-app minimize/maximize/move/resize); the graphical launcher prefers the Qt app.</li>
 </ul>
 <h2 id="060">[0.6.0]</h2>
-<h3 id="added-10">Added</h3>
+<h3 id="added-11">Added</h3>
 <ul>
 <li>Localhost <strong>Material Design web UI</strong> (<code>auditxs web</code>) and an optional <strong>Qt/QML</strong> desktop app (<code>auditxs-gui-qt</code>); cybersecurity best-practices guide.</li>
 </ul>
 <h2 id="050">[0.5.0]</h2>
-<h3 id="added-11">Added</h3>
+<h3 id="added-12">Added</h3>
 <ul>
 <li>CIS Benchmark IDs + Level 1/2 metadata and filters; fixture-testable checks via an <code>AX_ROOT</code> path prefix; Debian <strong>.deb</strong> packaging with a man page.</li>
 </ul>
 <h2 id="040">[0.4.0]</h2>
-<h3 id="added-12">Added</h3>
+<h3 id="added-13">Added</h3>
 <ul>
 <li>Debian 13 awareness; service hardening (PHP, MySQL/MariaDB, Apache, Postfix, Dovecot, BIND, Unbound, ufw); CVE/known-vulnerability warnings; security-tool integration (<code>auditxs tools</code>); nala-style console + Material HTML report.</li>
 </ul>
 <h2 id="030">[0.3.0]</h2>
-<h3 id="added-13">Added</h3>
+<h3 id="added-14">Added</h3>
 <ul>
 <li>Five assessment domains and NIST CSF 2.0 mappings; <code>doctor</code>, <code>baseline</code>, <code>schedule</code>; debug mode; unit tests; the documentation set.</li>
 </ul>
 <h2 id="020">[0.2.0]</h2>
-<h3 id="added-14">Added</h3>
+<h3 id="added-15">Added</h3>
 <ul>
 <li>fail2ban/sshguard, SELinux/AppArmor status and <code>pam_pwquality</code> checks; baseline diff mode; the CI workflow and containerised smoke tests.</li>
 </ul>
 <h2 id="010">[0.1.0]</h2>
-<h3 id="added-15">Added</h3>
+<h3 id="added-16">Added</h3>
 <ul>
 <li>Initial release: the read-only audit engine, snapshot/rollback, ~40 checks, the CLI and zenity GUI, and the dxsbash-style installer.</li>
 </ul>

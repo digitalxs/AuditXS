@@ -196,6 +196,22 @@ tt "overview no link when absent" no grep -q 'href="db01.html"'      <<<"$fov"
 tt "overview escapes hostnames" yes grep -q 'bad&lt;host&gt;'        <<<"$fov"
 unset outdir ov fov
 
+# ---- progress engine (lib/core.sh) ---------------------------------------
+AUDITXS_PROGRESS_FILE="$TMPD/prog"
+progress_begin 4
+progress_step AAA-001 2>/dev/null
+read -r _pct _d _t _id < "$TMPD/prog"
+t "progress 1/4 writes 25%"       "25 1 4 AAA-001" "$_pct $_d $_t $_id"
+progress_step BBB 2>/dev/null; progress_step CCC 2>/dev/null; progress_step DDD 2>/dev/null
+read -r _pct _d _t _id < "$TMPD/prog"
+t "progress 4/4 writes 100%"      "100 4 4 DDD" "$_pct $_d $_t $_id"
+progress_end
+read -r _pct _d _t _id < "$TMPD/prog"
+t "progress_end marks done"       "100 4 4 done" "$_pct $_d $_t $_id"
+progress_begin 0 2>/dev/null
+tt "progress_begin 0 is a no-op"  yes progress_end
+unset AUDITXS_PROGRESS_FILE
+
 # ---- version consistency --------------------------------------------------
 # The README must always show the current version (badge + visible text line).
 _ver=$(tr -d '[:space:]' < VERSION)

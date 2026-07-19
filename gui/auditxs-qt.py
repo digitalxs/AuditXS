@@ -19,8 +19,27 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
+import threading
 
 _ID = re.compile(r"[A-Za-z0-9-]+")
+
+# Progress file: the audit runs with --progress-file so the elevated process
+# (whose environment pkexec sanitizes) reports "PCT DONE TOTAL ID" here; the
+# QML view polls it to drive a real percentage bar.
+_PROGRESS_DIR = tempfile.mkdtemp(prefix="auditxs-qt-")
+PROGRESS_FILE = os.path.join(_PROGRESS_DIR, "progress")
+
+
+def read_progress():
+    """Parse the progress file into a dict (pct/done/total/id)."""
+    try:
+        with open(PROGRESS_FILE) as f:
+            parts = f.readline().split()
+        return {"pct": int(parts[0]), "done": int(parts[1]),
+                "total": int(parts[2]), "id": parts[3] if len(parts) > 3 else ""}
+    except (OSError, ValueError, IndexError):
+        return {"pct": 0, "done": 0, "total": 0, "id": ""}
 
 # Subcommands that need root. When the GUI runs unprivileged (e.g. launched
 # from the desktop), each of these is elevated per-operation via pkexec — the
@@ -77,7 +96,12 @@ def data_meta():
 
 
 def data_audit():
-    rc, out, err = run_auditxs(["audit", "--format", "json", "--quiet"] + _profile_args())
+    try:
+        open(PROGRESS_FILE, "w").close()
+    except OSError:
+        pass
+    rc, out, err = run_auditxs(["audit", "--format", "json", "--quiet",
+                                "--progress-file", PROGRESS_FILE] + _profile_args())
     try:
         return json.loads(out)
     except ValueError:
@@ -165,6 +189,11 @@ def run_gui():
     os.environ.setdefault("QT_QUICK_CONTROLS_MATERIAL_THEME", "System")
 
     class Backend(QObject):
+        def __init__(self):
+            super().__init__()
+            self._audit_thread = None
+            self._audit_result = None
+
         @Slot(result=str)
         def meta(self):
             return json.dumps(data_meta())
@@ -172,6 +201,32 @@ def run_gui():
         @Slot(result=str)
         def audit(self):
             return json.dumps(data_audit())
+
+        # Async audit: auditStart() launches the audit in a worker thread so
+        # the window stays live; the QML polls auditProgress() for the
+        # percentage bar and collects auditResult() when running goes false.
+        @Slot()
+        def auditStart(self):
+            if self._audit_thread and self._audit_thread.is_alive():
+                return
+            self._audit_result = None
+
+            def _worker():
+                self._audit_result = json.dumps(data_audit())
+
+            self._audit_thread = threading.Thread(target=_worker, daemon=True)
+            self._audit_thread.start()
+
+        @Slot(result=str)
+        def auditProgress(self):
+            running = bool(self._audit_thread and self._audit_thread.is_alive())
+            p = read_progress()
+            p["running"] = running
+            return json.dumps(p)
+
+        @Slot(result=str)
+        def auditResult(self):
+            return self._audit_result or ""
 
         @Slot(str, result=str)
         def explain(self, cid):

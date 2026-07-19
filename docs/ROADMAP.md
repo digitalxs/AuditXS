@@ -23,6 +23,14 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.13
+
+- **Progress bars with percentage everywhere**: in-terminal bar for the CLI
+  (auto-off when piped), a real gauge in the TUI, true percentages in the
+  zenity dialogs, an async worker + Material bar in the Qt app, and an
+  authenticated `/api/progress` endpoint driving a linear bar in the web UI —
+  all fed by the engine via the new `--progress-file` option.
+
 ## Shipped in v0.12
 
 - **Single-prompt GUI authentication**: an installed polkit policy

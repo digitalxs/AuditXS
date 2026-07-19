@@ -40,6 +40,20 @@ class StubBackend(QObject):
                 '"severity":"critical","level":"1","cis":"5.1.20","detail":"x",'
                 '"fixable":true}]}')
 
+    # Async audit contract used by the progress bar (see gui/auditxs-qt.py):
+    # start → poll progress until running=false → collect the result.
+    @Slot()
+    def auditStart(self):
+        self._started = True
+
+    @Slot(result=str)
+    def auditProgress(self):
+        return '{"pct":100,"done":1,"total":1,"id":"done","running":false}'
+
+    @Slot(result=str)
+    def auditResult(self):
+        return self.audit()
+
     @Slot(str, result=str)
     def explain(self, cid):
         return "explain " + cid

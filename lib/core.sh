@@ -122,6 +122,61 @@ debug() {
 }
 hr()   { [ "$QUIET" = 1 ] || printf '%b\n' "${DIM}──────────────────────────────────────────────────────────────────${RC}"; }
 
+# ---------------------------------------------------------------- progress
+# Percentage progress for long operations (audits). Two channels:
+#   * an in-terminal bar drawn on stderr when it is a tty (auto-off when
+#     captured; force off with AUDITXS_NO_PROGRESS=1);
+#   * a machine-readable file when AUDITXS_PROGRESS_FILE (or --progress-file)
+#     is set: one line, "PCT DONE TOTAL CHECK-ID", overwritten each step —
+#     what the TUI gauge, zenity, Qt and web progress bars read.
+AX_PROGRESS_TOTAL=0
+AX_PROGRESS_DONE=0
+AX_PROGRESS_TTY=0
+
+progress_file_note() { # <pct> <done> <total> <label> — write the progress file
+    [ -n "${AUDITXS_PROGRESS_FILE:-}" ] || return 0
+    printf '%s %s %s %s\n' "$1" "$2" "$3" "${4:-}" > "$AUDITXS_PROGRESS_FILE" 2>/dev/null
+    return 0
+}
+
+progress_begin() { # <total units>
+    AX_PROGRESS_TOTAL=${1:-0} AX_PROGRESS_DONE=0 AX_PROGRESS_TTY=0
+    [ "$AX_PROGRESS_TOTAL" -gt 0 ] || return 0
+    if [ -t 2 ] && [ "${AUDITXS_NO_PROGRESS:-0}" != 1 ]; then AX_PROGRESS_TTY=1; fi
+    progress_file_note 0 0 "$AX_PROGRESS_TOTAL" ""
+}
+
+progress_clear() { # erase the bar so normal output can print
+    [ "$AX_PROGRESS_TTY" = 1 ] && printf '\r\033[2K' >&2
+    return 0
+}
+
+progress_step() { # <label> — one unit done; redraw bar / rewrite file
+    [ "$AX_PROGRESS_TOTAL" -gt 0 ] || return 0
+    AX_PROGRESS_DONE=$((AX_PROGRESS_DONE + 1))
+    local pct=$((AX_PROGRESS_DONE * 100 / AX_PROGRESS_TOTAL))
+    progress_file_note "$pct" "$AX_PROGRESS_DONE" "$AX_PROGRESS_TOTAL" "${1:-}"
+    if [ "$AX_PROGRESS_TTY" = 1 ]; then
+        local w=26 filled bar="" i=0
+        filled=$((pct * w / 100))
+        while [ "$i" -lt "$w" ]; do
+            if [ "$i" -lt "$filled" ]; then bar+="█"; else bar+="░"; fi
+            i=$((i + 1))
+        done
+        printf '\r\033[2K%b%s%b %3d%% (%d/%d) %s' \
+            "$CYAN" "$bar" "$RC" "$pct" "$AX_PROGRESS_DONE" "$AX_PROGRESS_TOTAL" "${1:-}" >&2
+    fi
+    return 0
+}
+
+progress_end() {
+    [ "$AX_PROGRESS_TOTAL" -gt 0 ] || return 0
+    progress_clear
+    progress_file_note 100 "$AX_PROGRESS_DONE" "$AX_PROGRESS_TOTAL" "done"
+    AX_PROGRESS_TOTAL=0 AX_PROGRESS_TTY=0
+    return 0
+}
+
 # ------------------------------------------------------------------ prompts
 # confirm "Question?"  → 0 = yes.  Honours --yes; reads the terminal directly
 # so it works even when stdout is being captured.

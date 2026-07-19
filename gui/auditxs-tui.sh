@@ -47,13 +47,35 @@ gauge_run() { # <text> <command...> — run a command behind a pulsing message
     wait "$pid"
 }
 
+gauge_progress() { # <text> <stdout-file> <command...> — real percentage gauge
+    # Runs the command once with --progress-file and feeds the true
+    # percentage (and current check id) to the dialog gauge.
+    local text=$1 outfile=$2; shift 2
+    local prog="$WORK/progress" donef="$WORK/gauge.done"
+    : > "$prog"; rm -f "$donef"
+    # stdout is the machine-readable payload; stderr lands in a sidecar so
+    # callers that want it (harden log) can append it afterwards.
+    ( "$@" --progress-file "$prog" > "$outfile" 2>"$outfile.stderr"; : > "$donef" ) &
+    local pid=$!
+    (
+        local pct d t cid
+        while [ ! -f "$donef" ]; do
+            if IFS=' ' read -r pct d t cid < "$prog" 2>/dev/null && [ -n "${pct:-}" ]; then
+                printf 'XXX\n%s\n%s\n%s  (%s/%s)\nXXX\n' \
+                    "$pct" "$text" "${cid:-starting…}" "${d:-0}" "${t:-?}"
+            fi
+            sleep 0.3
+        done
+        echo 100
+    ) | "$DIALOG" --title "$BT" --gauge "$text" 10 70 0
+    wait "$pid"
+}
+
 RESULTS="$WORK/audit.tsv"
 
 do_audit() {
-    gauge_run "Auditing (read-only — nothing is changed)…" \
+    gauge_progress "Auditing (read-only — nothing is changed)…" "$RESULTS" \
         "$AUDITXS_BIN" audit --format tsv --quiet
-    # regenerate to a file we control (gauge_run discards stdout)
-    "$AUDITXS_BIN" audit --format tsv --quiet > "$RESULTS" 2>/dev/null
     local pass fail warn skip
     pass=$(grep -c '^PASS' "$RESULTS"); fail=$(grep -c '^FAIL' "$RESULTS")
     warn=$(grep -c '^WARN' "$RESULTS"); skip=$(grep -c '^SKIP' "$RESULTS")
@@ -89,7 +111,9 @@ do_features() {
     yesno "Apply changes" "Turn ON the selected control(s) now?\nEach change is recorded in a snapshot and reversible." || return
     local cmd=("$AUDITXS_BIN" harden --yes --quiet) c
     for c in $chosen; do cmd+=(--check "$c"); done
-    "${cmd[@]}" > "$WORK/harden.log" 2>&1
+    gauge_progress "Applying selected fixes (snapshotted & reversible)…" \
+        "$WORK/harden.log" "${cmd[@]}"
+    cat "$WORK/harden.log.stderr" >> "$WORK/harden.log" 2>/dev/null
     sed -i 's/\x1b\[[0-9;]*m//g' "$WORK/harden.log"
     textbox "Result (every change is listed & reversible)" "$WORK/harden.log"
     do_audit

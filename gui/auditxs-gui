@@ -67,14 +67,33 @@ elevate() {
 WORK_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/auditxs"
 mkdir -p "$WORK_DIR"
 
+# progress_feed <pid> <progress-file> — translate the engine's progress file
+# ("PCT DONE TOTAL ID", see --progress-file) into zenity --progress input:
+# a percentage line plus a "# label" line, until the background job exits.
+progress_feed() {
+    local pid=$1 prog=$2 pct d t cid
+    while kill -0 "$pid" 2>/dev/null; do
+        if IFS=' ' read -r pct d t cid < "$prog" 2>/dev/null && [ -n "${pct:-}" ]; then
+            printf '%s\n' "$pct"
+            printf '# %s  (%s/%s · %s%%)\n' "${cid:-working…}" "${d:-0}" "${t:-?}" "$pct"
+        fi
+        sleep 0.3
+    done
+    echo 100
+}
+
 run_audit_gui() {
-    local out="$WORK_DIR/audit.tsv" rc_file="$WORK_DIR/audit.rc"
-    rm -f "$out" "$rc_file"
+    local out="$WORK_DIR/audit.tsv" rc_file="$WORK_DIR/audit.rc" prog="$WORK_DIR/audit.progress"
+    rm -f "$out" "$rc_file"; : > "$prog"
     (
-        elevate "$AUDITXS_BIN" audit --format tsv --quiet > "$out" 2>/dev/null
+        elevate "$AUDITXS_BIN" audit --format tsv --quiet --progress-file "$prog" > "$out" 2>/dev/null
         echo $? > "$rc_file"
-    ) | zenity --progress --title "AuditXS" --text "Auditing system (read-only — nothing is changed)…" \
-        --pulsate --no-cancel --auto-close 2>/dev/null
+    ) &
+    local apid=$!
+    progress_feed "$apid" "$prog" | zenity --progress --title "AuditXS" \
+        --text "Auditing system (read-only — nothing is changed)…" \
+        --percentage=0 --no-cancel --auto-close 2>/dev/null
+    wait "$apid" 2>/dev/null
 
     if [ "$(cat "$rc_file" 2>/dev/null)" != "0" ] || [ ! -s "$out" ]; then
         die_gui "The audit could not be run.\nAuthentication may have been cancelled."
@@ -131,12 +150,17 @@ run_harden_gui() {
     local c
     for c in $chosen; do cmd+=(--check "$c"); done
 
-    local log="$WORK_DIR/harden.log"
+    local log="$WORK_DIR/harden.log" prog="$WORK_DIR/harden.progress"
+    : > "$prog"
     (
-        elevate "${cmd[@]}" > "$log" 2>&1
+        elevate "${cmd[@]}" --progress-file "$prog" > "$log" 2>&1
         echo $? > "$WORK_DIR/harden.rc"
-    ) | zenity --progress --title "AuditXS" --text "Applying selected fixes…" \
-        --pulsate --no-cancel --auto-close 2>/dev/null
+    ) &
+    local hpid=$!
+    progress_feed "$hpid" "$prog" | zenity --progress --title "AuditXS" \
+        --text "Applying selected fixes…" \
+        --percentage=0 --no-cancel --auto-close 2>/dev/null
+    wait "$hpid" 2>/dev/null
 
     sed 's/\x1b\[[0-9;]*m//g' "$log" > "$log.clean" 2>/dev/null && mv "$log.clean" "$log"
     zenity --text-info --title "AuditXS — hardening result (every change is listed)" \
@@ -195,10 +219,14 @@ run_features_gui() {
         --checkbox "I reviewed these changes and want to turn these features ON." \
         --width 860 --height 600 2>/dev/null || return
 
-    local cmd=("$AUDITXS_BIN" harden --yes --quiet) log="$WORK_DIR/harden.log"
+    local cmd=("$AUDITXS_BIN" harden --yes --quiet) log="$WORK_DIR/harden.log" prog="$WORK_DIR/harden.progress"
     for c in $to_enable; do cmd+=(--check "$c"); done
-    ( elevate "${cmd[@]}" > "$log" 2>&1; echo $? > "$WORK_DIR/harden.rc" ) | \
-        zenity --progress --title "AuditXS" --text "Turning on selected features…" --pulsate --no-cancel --auto-close 2>/dev/null
+    : > "$prog"
+    ( elevate "${cmd[@]}" --progress-file "$prog" > "$log" 2>&1; echo $? > "$WORK_DIR/harden.rc" ) &
+    local fpid=$!
+    progress_feed "$fpid" "$prog" | zenity --progress --title "AuditXS" \
+        --text "Turning on selected features…" --percentage=0 --no-cancel --auto-close 2>/dev/null
+    wait "$fpid" 2>/dev/null
     sed 's/\x1b\[[0-9;]*m//g' "$log" > "$log.clean" 2>/dev/null && mv "$log.clean" "$log"
     zenity --text-info --title "AuditXS — result (every change is listed & reversible)" \
         --filename "$log" --width 860 --height 600 2>/dev/null

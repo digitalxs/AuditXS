@@ -189,6 +189,14 @@ Output format.
 .B \-\-baseline \fIreport.json\fP
 Compare audit results against a saved report.
 .TP
+.B \-\-progress\-file \fIpath\fP
+Write machine-readable progress ("PCT DONE TOTAL CHECK-ID", one line,
+rewritten each step) to
+.IR path .
+Used by the graphical interfaces; on an interactive terminal a progress bar
+with percentage is drawn automatically (disable with
+.BR AUDITXS_NO_PROGRESS=1 ).
+.TP
 .B \-\-dry\-run
 harden: show every intended change without applying it.
 .TP
