@@ -16,10 +16,11 @@ workflows. See [COMPLIANCE.md](COMPLIANCE.md) for framework alignment and
 6. [Baselines & drift detection](#baselines--drift-detection)
 7. [Scheduled audits](#scheduled-audits)
 8. [Maintenance (doctor)](#maintenance-doctor)
-9. [The GUI](#the-gui)
-10. [Debugging](#debugging)
-11. [Files & directories](#files--directories)
-12. [Exit codes](#exit-codes)
+9. [The GUI](#the-gui-workstation-profile)
+10. [Privileges & credential caching](#privileges--credential-caching)
+11. [Debugging](#debugging)
+12. [Files & directories](#files--directories)
+13. [Exit codes](#exit-codes)
 
 ## Concepts
 
@@ -425,6 +426,35 @@ same way.
 The console output uses a clean **nala-style** boxed layout; the HTML report
 uses **Material Design 3** (theme-aware light/dark, score ring, status
 chips). The zenity GUI itself follows your desktop's GTK theme.
+
+## Privileges & credential caching
+
+You should only have to authenticate **once per working session**, not once
+per action:
+
+- **CLI** — a single command run (`sudo auditxs harden`) authenticates once
+  for the whole run, however many fixes you apply. Between commands, sudo's
+  own credential cache applies (15 minutes by default per terminal), so
+  consecutive `sudo auditxs …` commands do not re-prompt. Adjust with
+  `timestamp_timeout` in sudoers if your policy allows a longer window.
+- **GUIs (Qt, zenity)** — the graphical front-ends run unprivileged and
+  elevate each individual operation with **pkexec**. AuditXS installs a
+  polkit policy (`com.digitalxs.auditxs.policy`, action
+  `com.digitalxs.auditxs.run`) whose default is **`auth_admin_keep`**: the
+  first elevated action prompts, and polkit then remembers the authorization
+  for the active desktop session (about five minutes, the polkit default), so
+  a burst of consecutive GUI actions asks for your password once. The policy
+  is installed by `setup.sh` and by the `.deb`, and removed on uninstall.
+  It applies only to the exact installed AuditXS binary paths
+  (`/opt/auditxs/auditxs`, `/usr/share/auditxs/auditxs`) — running from a
+  development checkout keeps the stricter prompt-every-time default.
+- **Web UI and terminal UI** — `sudo auditxs web` / `sudo auditxs tui`
+  authenticate once at launch and keep running with that privilege; there are
+  no further prompts for the life of the session.
+
+This design keeps the security property that matters — privileges are only
+ever exercised through the consented AuditXS entry points — while removing
+repeated password prompts inside one burst of work.
 
 ## Debugging
 

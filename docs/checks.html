@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Check catalogue — AuditXS documentation</title>
+<meta name="description" content="AuditXS — transparent, reversible Linux security auditing and hardening. Documentation.">
+<style>
+  :root {
+    --bg:#f6f6fa; --surface:#ffffff; --surface-2:#eef0f6; --on-surface:#1b1b21;
+    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#4b56d2; --primary-c:#fff;
+    --ok:#1e7d46; --err:#ba1a1a; --warn:#a25b00;
+    --ok-c:#e6f4ea; --err-c:#ffe9e7; --warn-c:#fff3e0;
+    --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121318; --surface:#1c1d24; --surface-2:#23252e; --on-surface:#e4e2e9;
+      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#bcc2ff; --primary-c:#1a2277;
+      --ok:#7fd99b; --err:#ffb4ab; --warn:#f5bd6e;
+      --ok-c:#12331f; --err-c:#3d1512; --warn-c:#3a2a12; }
+  }
+  * { box-sizing:border-box; }
+  body { font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif; margin:0;
+    background:var(--bg); color:var(--on-surface); line-height:1.6;
+    -webkit-font-smoothing:antialiased; }
+  a { color:var(--primary); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .layout { display:flex; max-width:78rem; margin:0 auto; min-height:100vh; }
+  nav.side { flex:0 0 15.5rem; padding:1.5rem 1rem 2rem; border-right:1px solid var(--outline);
+    position:sticky; top:0; align-self:flex-start; max-height:100vh; overflow-y:auto; }
+  .brandrow { display:flex; align-items:center; gap:.6rem; margin-bottom:1.2rem; }
+  .logo { width:2.2rem; height:2.2rem; border-radius:.8rem; background:var(--primary);
+    color:var(--primary-c); display:grid; place-items:center; font-weight:700; }
+  .brandrow b { font-size:1.02rem; }
+  .brandrow .v { display:block; color:var(--on-surface-var); font-size:.72rem; }
+  nav.side a.pg { display:block; padding:.42rem .7rem; border-radius:.6rem; font-size:.88rem;
+    color:var(--on-surface); margin:.1rem 0; }
+  nav.side a.pg:hover { background:var(--surface-2); text-decoration:none; }
+  nav.side a.pg.active { background:var(--primary); color:var(--primary-c); font-weight:600; }
+  nav.side .grp { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--on-surface-var); margin:1.1rem .7rem .3rem; }
+  main { flex:1 1 auto; min-width:0; padding:2rem 2.2rem 4rem; }
+  main h1 { font-size:1.7rem; margin:.2rem 0 1rem; line-height:1.25; }
+  main h2 { font-size:1.25rem; margin:2.2rem 0 .6rem; padding-top:.5rem;
+    border-top:1px solid var(--outline); }
+  main h3 { font-size:1.05rem; margin:1.6rem 0 .4rem; }
+  main h4 { font-size:.95rem; margin:1.2rem 0 .3rem; }
+  p { margin:.65rem 0; }
+  pre { background:var(--surface-2); border:1px solid var(--outline); border-radius:.8rem;
+    padding:.9rem 1.1rem; overflow-x:auto; font-size:.84rem; line-height:1.5; }
+  code { font-family:ui-monospace,"Cascadia Code",Menlo,monospace; font-size:.88em;
+    background:var(--surface-2); padding:.08rem .35rem; border-radius:.35rem; }
+  pre code { background:none; padding:0; font-size:1em; }
+  .tablewrap { overflow-x:auto; margin:.8rem 0; border:1px solid var(--outline);
+    border-radius:.8rem; }
+  table { border-collapse:collapse; width:100%; font-size:.86rem; }
+  th,td { text-align:left; padding:.5rem .8rem; border-bottom:1px solid var(--outline);
+    vertical-align:top; }
+  th { background:var(--surface-2); font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--on-surface-var); }
+  tr:last-child td { border-bottom:none; }
+  blockquote { border-left:3px solid var(--primary); margin:.8rem 0; padding:.2rem 1rem;
+    color:var(--on-surface-var); background:var(--surface-2); border-radius:0 .6rem .6rem 0; }
+  ul,ol { padding-left:1.4rem; margin:.5rem 0; }
+  li { margin:.25rem 0; }
+  hr { border:none; border-top:1px solid var(--outline); margin:1.6rem 0; }
+  img { max-width:100%; }
+  .onpage { background:var(--surface); border:1px solid var(--outline); border-radius:.9rem;
+    padding:.8rem 1.1rem; font-size:.84rem; margin:1rem 0 1.4rem; }
+  .onpage b { display:block; margin-bottom:.3rem; font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--on-surface-var); }
+  .onpage a { display:inline-block; margin:.15rem .8rem .15rem 0; }
+  footer { color:var(--on-surface-var); font-size:.78rem; margin-top:3rem;
+    border-top:1px solid var(--outline); padding-top:1.1rem; text-align:center; line-height:1.7; }
+  footer .brand { font-weight:700; color:var(--on-surface); }
+  footer .heart { color:#e0245e; }
+  .menubtn { display:none; }
+  @media (max-width:860px) {
+    .layout { flex-direction:column; }
+    nav.side { position:static; max-height:none; border-right:none;
+      border-bottom:1px solid var(--outline); flex-basis:auto; }
+    main { padding:1.2rem 1.1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.12.0</span></div></div>
+<a class="pg" href="index.html">Documentation home</a>
+<div class="grp">Guides</div>
+<a class="pg" href="usage.html">User manual</a>
+<a class="pg active" href="checks.html">Check catalogue</a>
+<a class="pg" href="errors.html">Error catalogue</a>
+<a class="pg" href="architecture.html">Architecture</a>
+<a class="pg" href="security-guide.html">Security guide</a>
+<a class="pg" href="compliance.html">Compliance</a>
+<a class="pg" href="webui.html">Web UI</a>
+<a class="pg" href="roadmap.html">Roadmap</a>
+<a class="pg" href="changelog.html">Changelog</a>
+<a class="pg" href="dev-guide.html">Developer guide</a>
+<div class="grp">Project</div>
+<a class="pg" href="../index.html">AuditXS home</a>
+<a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
+<main>
+<h1 id="auditxs-check-catalogue">AuditXS check catalogue</h1><div class="onpage"><b>On this page</b><a href="#updates--os-hardening-domain">Updates — OS Hardening domain</a><a href="#debian--os-hardening-domain">Debian — OS Hardening domain</a><a href="#os--os-hardening-domain">OS — OS Hardening domain</a><a href="#ssh--server-hardening-domain">SSH — Server Hardening domain</a><a href="#containers--os-hardening-domain">Containers — OS Hardening domain</a><a href="#fail2ban--network-security-domain">Fail2ban — Network Security domain</a><a href="#firewall--network-security-domain">Firewall — Network Security domain</a><a href="#accounts--server-hardening-domain">Accounts — Server Hardening domain</a><a href="#privileged--server-hardening-domain">Privileged — Server Hardening domain</a><a href="#filesystem--os-hardening-domain">Filesystem — OS Hardening domain</a><a href="#kernel--os-hardening-domain">Kernel — OS Hardening domain</a><a href="#boot--os-hardening-domain">Boot — OS Hardening domain</a><a href="#mac--os-hardening-domain">MAC — OS Hardening domain</a><a href="#services--application-hardening-domain">Services — Application Hardening domain</a><a href="#applications--application-hardening-domain">Applications — Application Hardening domain</a><a href="#php--application-hardening-domain">PHP — Application Hardening domain</a><a href="#webapps--application-hardening-domain">WebApps — Application Hardening domain</a><a href="#network--network-security-domain">Network — Network Security domain</a><a href="#mail--application-hardening-domain">Mail — Application Hardening domain</a><a href="#dns--network-security-domain">DNS — Network Security domain</a><a href="#database--database-hardening-domain">Database — Database Hardening domain</a><a href="#tls--network-security-domain">TLS — Network Security domain</a><a href="#logging--os-hardening-domain">Logging — OS Hardening domain</a><a href="#securitytools--os-hardening-domain">SecurityTools — OS Hardening domain</a><a href="#vulnerabilities--os-hardening-domain">Vulnerabilities — OS Hardening domain</a></div>
+<p>Generated from the check registry by <code>auditxs list --markdown</code> (v0.12.0).</p>
+<p>Legend: checks with an <strong>automatic fix</strong> are only ever applied by <code>auditxs harden</code> after showing you exactly what will change, and every change is recorded in a snapshot that <code>auditxs rollback</code> can restore. <strong>Manual</strong> checks only report — they never change the system.</p>
+<h2 id="updates--os-hardening-domain">Updates — OS Hardening domain</h2>
+<h3 id="upd-001--no-pending-package-updates">UPD-001 — No pending package updates</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 1.9 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> ID.RA-01, PR.PS-02</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Counts package updates pending in the package manager's cache. Unpatched software is the most common initial access vector; known vulnerabilities in outdated packages are actively exploited. AuditXS never upgrades packages itself because upgrades are not reversible — this check only reports.</p>
+<h3 id="upd-002--automatic-security-updates-are-enabled">UPD-002 — Automatic security updates are enabled</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 1.9 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> ID.RA-01, PR.PS-02</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Verifies that the distribution's automatic (security) update mechanism is installed and enabled: unattended-upgrades on Debian/Ubuntu/Pop!_OS, dnf-automatic on Fedora. Automatic security updates close the window between a patch being released and it being applied. On Arch and openSUSE there is no official unattended mechanism, so this check only advises.</p>
+<p><strong>What the fix changes:</strong> Debian family: installs the 'unattended-upgrades' package and writes /etc/apt/apt.conf.d/20auto-upgrades enabling daily list updates and unattended security upgrades. Fedora: installs 'dnf-automatic' and enables the dnf-automatic.timer systemd unit. No other update behaviour is changed.</p>
+<p><strong>How it is reverted:</strong> The snapshot records the previous content of 20auto-upgrades (or that it did not exist) and the previous state of dnf-automatic.timer. 'sudo auditxs rollback' restores both; packages installed by AuditXS are offered for removal during rollback.</p>
+<h3 id="upd-003--no-reboot-pending-to-activate-updates">UPD-003 — No reboot pending to activate updates</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> ID.RA-01, PR.PS-02</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Detects when installed updates (typically a new kernel or core libraries) require a reboot to actually take effect. Until the reboot, the system keeps running the old, vulnerable code. Report-only: AuditXS never reboots a system.</p>
+<h2 id="debian--os-hardening-domain">Debian — OS Hardening domain</h2>
+<h3 id="deb-001--apt-does-not-accept-unauthenticated-packages">DEB-001 — APT does not accept unauthenticated packages</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-06, PR.PS-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that APT is not configured to install packages that fail signature verification (APT::Get::AllowUnauthenticated and Acquire::AllowInsecureRepositories must not be enabled). Package signatures are what stop a tampered mirror or man-in-the-middle from installing malicious code — turning verification off removes the whole chain of trust behind apt.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/apt/apt.conf.d/99-auditxs-secure with 'APT::Get::AllowUnauthenticated "false";' and 'Acquire::AllowInsecureRepositories "false";', re-asserting the secure defaults. Existing apt configuration is not edited.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in (or restores its previous content).</p>
+<h3 id="deb-002--the-debianubuntu-release-still-receives-security-support">DEB-002 — The Debian/Ubuntu release still receives security support</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> ID.RA-01, PR.PS-02</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Compares the running release against the known end-of-life horizon. Debian 13 'trixie' (2025) and Debian 12 'bookworm' are current; releases past end-of-life (Debian ≤ 10, Ubuntu non-LTS past date) stop receiving security patches, so every later vulnerability stays unfixed. Report-only: a distribution upgrade is a major operation AuditXS will not perform for you.</p>
+<h3 id="deb-003--needrestart-reports-services-needing-a-restart-after-upgrades">DEB-003 — needrestart reports services needing a restart after upgrades</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-02, ID.RA-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that 'needrestart' is installed. After a library security update, long-running services keep the OLD vulnerable library mapped in memory until restarted; needrestart detects exactly which services need restarting so the patch actually takes effect. Complements the reboot check (UPD-003).</p>
+<p><strong>What the fix changes:</strong> Installs the 'needrestart' package. It then runs automatically after apt operations to list (and, interactively, restart) affected services.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' offers to remove the package it installed.</p>
+<h2 id="os--os-hardening-domain">OS — OS Hardening domain</h2>
+<h3 id="osh-001--remote-logins-display-an-authorized-use-banner">OSH-001 — Remote logins display an authorized-use banner</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 1.7.1 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-06</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that SSH presents a login banner (/etc/issue.net via the sshd 'Banner' directive). DISA STIG and many compliance regimes require a notice that use is monitored and restricted to authorized users — it has legal weight in prosecutions and removes any expectation of privacy. Aligned with STIG SRG-OS-000023.</p>
+<p><strong>What the fix changes:</strong> Writes a generic authorized-use notice to /etc/issue.net (the previous file is saved) and sets 'Banner /etc/issue.net' in /etc/ssh/sshd_config.d/99-auditxs.conf, validated with 'sshd -t'. Organizations with approved legal wording should replace the text in /etc/issue.net afterwards.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the previous /etc/issue.net and SSH configuration.</p>
+<h3 id="osh-002--tmp-is-a-separate-filesystem-with-restrictive-mount-options">OSH-002 — /tmp is a separate filesystem with restrictive mount options</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 1.1.2 · <strong>Level:</strong> 2</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that /tmp is its own filesystem mounted with nodev, nosuid and noexec (CIS 1.1.2). A separate, restricted /tmp prevents device-file tricks, setuid abuse and direct execution of attacker-staged files in the world-writable directory. Report-only: changing mounts on a running system risks breaking software mid-flight — the finding shows the systemd tmp.mount / fstab path instead. Note noexec on /tmp can affect some installers; test before enforcing.</p>
+<h2 id="ssh--server-hardening-domain">SSH — Server Hardening domain</h2>
+<h3 id="ssh-001--ssh-root-login-is-disabled">SSH-001 — SSH root login is disabled</h3>
+<ul>
+<li><strong>Severity:</strong> critical</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 5.1.20 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-03</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks the effective 'PermitRootLogin' value (via sshd -T). Direct root login is the primary target of SSH brute-force campaigns and removes the audit trail of who logged in. Administrators should log in as a normal user and elevate with sudo.</p>
+<p><strong>What the fix changes:</strong> Sets 'PermitRootLogin no' in /etc/ssh/sshd_config.d/99-auditxs.conf, validates the configuration with 'sshd -t' and reloads the SSH service. If you currently log in as root over SSH, make sure a normal user with sudo works FIRST — auditxs asks before applying and this warning is shown here on purpose.</p>
+<p><strong>How it is reverted:</strong> The previous SSH configuration is saved in the snapshot; 'sudo auditxs rollback' restores it, re-validates with 'sshd -t' and reloads sshd.</p>
+<h3 id="ssh-002--ssh-authentication-attempts-are-limited">SSH-002 — SSH authentication attempts are limited</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 5.1.5 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-03</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that 'MaxAuthTries' is 4 or lower. A low limit slows down password-guessing over a single connection and creates log noise attackers cannot avoid.</p>
+<p><strong>What the fix changes:</strong> Sets 'MaxAuthTries 3' in /etc/ssh/sshd_config.d/99-auditxs.conf, validates with 'sshd -t' and reloads sshd.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the previous SSH configuration files from the snapshot.</p>
+<h3 id="ssh-003--ssh-rejects-empty-passwords">SSH-003 — SSH rejects empty passwords</h3>
+<ul>
+<li><strong>Severity:</strong> critical</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 5.1.21 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-03</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that 'PermitEmptyPasswords' is disabled. Allowing empty passwords over SSH lets anyone log into accounts that have no password set.</p>
+<p><strong>What the fix changes:</strong> Sets 'PermitEmptyPasswords no' in /etc/ssh/sshd_config.d/99-auditxs.conf, validates with 'sshd -t' and reloads sshd.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the previous SSH configuration files from the snapshot.</p>
+<h3 id="ssh-004--ssh-x11-forwarding-is-disabled-on-servers">SSH-004 — SSH X11 forwarding is disabled on servers</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 5.1.9 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-03</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that 'X11Forwarding' is disabled. Servers rarely need to forward graphical applications; when enabled, a compromised server can attack connecting clients through the X11 channel.</p>
+<p><strong>What the fix changes:</strong> Sets 'X11Forwarding no' in /etc/ssh/sshd_config.d/99-auditxs.conf, validates with 'sshd -t' and reloads sshd.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the previous SSH configuration files from the snapshot.</p>
+<h3 id="ssh-005--ssh-uses-key-based-authentication-passwords-disabled">SSH-005 — SSH uses key-based authentication (passwords disabled)</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 5.1.22 · <strong>Level:</strong> 2</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-03</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks whether 'PasswordAuthentication' is disabled. Key-based authentication is immune to password guessing and credential stuffing. SAFETY GUARD: AuditXS will only offer this fix when at least one regular user already has ~/.ssh/authorized_keys — otherwise disabling passwords would lock you out, so it only warns.</p>
+<p><strong>What the fix changes:</strong> Sets 'PasswordAuthentication no' in /etc/ssh/sshd_config.d/99-auditxs.conf — but ONLY after re-verifying that at least one regular user has an authorized_keys file; the fix refuses to apply otherwise. Validates with 'sshd -t' and reloads sshd. Test key login in a SECOND terminal before closing your current session.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the previous SSH configuration files from the snapshot and reloads sshd, re-enabling password login.</p>
+<h3 id="ssh-006--idle-ssh-sessions-are-disconnected">SSH-006 — Idle SSH sessions are disconnected</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 5.1.10 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-03</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that 'ClientAliveInterval' (1–900 s) and 'ClientAliveCountMax' (3 or less) are configured so that dead or abandoned SSH sessions are closed instead of staying open indefinitely on unattended terminals.</p>
+<p><strong>What the fix changes:</strong> Sets 'ClientAliveInterval 300' and 'ClientAliveCountMax 2' (idle sessions are dropped after ~10 minutes) in /etc/ssh/sshd_config.d/99-auditxs.conf, validates with 'sshd -t' and reloads sshd.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the previous SSH configuration files from the snapshot.</p>
+<h3 id="ssh-007--ssh-login-grace-time-is-limited">SSH-007 — SSH login grace time is limited</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 5.1.4 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-03</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that 'LoginGraceTime' is 60 seconds or less. The grace period holds a connection slot open for unauthenticated clients; long values make denial-of-service against sshd easier.</p>
+<p><strong>What the fix changes:</strong> Sets 'LoginGraceTime 45' in /etc/ssh/sshd_config.d/99-auditxs.conf, validates with 'sshd -t' and reloads sshd.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the previous SSH configuration files from the snapshot.</p>
+<h3 id="ssh-008--ssh-brute-force-protection-is-active-fail2bansshguard">SSH-008 — SSH brute-force protection is active (fail2ban/sshguard)</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-03</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that an intrusion-prevention service (fail2ban with an sshd jail, or sshguard) is running to ban IPs that repeatedly fail SSH authentication. Rate-limiting brute-force attempts drastically reduces credential-guessing risk and log noise on exposed servers.</p>
+<p><strong>What the fix changes:</strong> Installs fail2ban (plus the python systemd bindings it needs to read the journal), writes /etc/fail2ban/jail.d/99-auditxs.conf enabling the sshd jail with 'backend = systemd', and enables + restarts the fail2ban service. Existing fail2ban configuration is not modified — the drop-in only enables the sshd jail. Defaults apply (5 failures → 10 minute ban).</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' removes the jail drop-in, restores the previous service state and offers to remove packages AuditXS installed.</p>
+<h2 id="containers--os-hardening-domain">Containers — OS Hardening domain</h2>
+<h3 id="con-001--docker-daemon-is-not-exposed-over-unencrypted-tcp">CON-001 — Docker daemon is not exposed over unencrypted TCP</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that the Docker daemon is not listening on a TCP socket without TLS. An unauthenticated 'tcp://…:2375' socket grants full root-equivalent control of the host to anyone who can reach it — a frequent cause of server compromise. The default unix socket is fine. Report-only.</p>
+<h3 id="con-002--docker-uses-user-namespace-remapping">CON-002 — Docker uses user-namespace remapping</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks for 'userns-remap' in daemon.json. Without it, UID 0 inside a container is UID 0 on the host, so a container breakout is immediate root. User-namespace remapping maps container root to an unprivileged host user — strong defence in depth. Report-only (enabling it changes volume ownership semantics, so it is a deliberate choice).</p>
+<h3 id="con-003--no-container-is-running-with---privileged">CON-003 — No container is running with --privileged</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks the running containers for '--privileged' (Privileged=true). A privileged container disables almost all isolation and can trivially take over the host. Report-only — stopping a workload is the operator's call.</p>
+<h3 id="con-004--membership-of-the-docker-group-is-limited">CON-004 — Membership of the 'docker' group is limited</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Lists members of the 'docker' group. Being in it is equivalent to root (you can mount the host filesystem into a container), so it should contain only trusted administrators. Report-only — verify each member should have that power.</p>
+<h3 id="con-005--docker-live-restore-is-enabled">CON-005 — Docker live-restore is enabled</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks for 'live-restore' in daemon.json, which keeps containers running across a daemon restart/upgrade. Without it, a daemon restart (e.g. for a security update) stops every workload — encouraging admins to defer updates. Report-only.</p>
+<h2 id="fail2ban--network-security-domain">Fail2ban — Network Security domain</h2>
+<h3 id="f2b-001--fail2ban-is-enabled-to-start-at-boot">F2B-001 — fail2ban is enabled to start at boot</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> DE.CM-01, DE.CM-06</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that the fail2ban service is enabled (starts automatically at boot). A fail2ban that is running now but not enabled loses all brute-force protection after the next reboot — a common and easily-missed gap.</p>
+<p><strong>What the fix changes:</strong> Enables the fail2ban service (systemctl enable fail2ban.service) so it starts on boot. Does not change any jail or ban configuration.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' disables the service again if it was disabled before.</p>
+<h3 id="f2b-002--fail2ban-ban-policy-is-not-too-permissive">F2B-002 — fail2ban ban policy is not too permissive</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> DE.CM-01, DE.CM-06</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks the effective default ban policy: 'maxretry' (failures before a ban) should be low (&lt;= 5) and 'bantime' should be meaningful (&gt;= 10 minutes). A high maxretry or a very short bantime lets brute-force attacks continue with little cost. Report-only — tuning ban policy is environment-specific.</p>
+<h3 id="f2b-003--a-recidive-jail-bans-repeat-offenders">F2B-003 — A recidive jail bans repeat offenders</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> DE.CM-01, DE.CM-06</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks for an enabled 'recidive' jail. Recidive watches fail2ban's own log and applies long bans to IPs that keep getting banned across jails — a cheap, high-value defence-in-depth layer against persistent attackers.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/fail2ban/jail.d/99-auditxs-recidive.conf enabling the built-in [recidive] jail and restarts fail2ban. Recidive reads fail2ban's own logfile (/var/log/fail2ban.log); if your fail2ban logs only to the journal, set 'logtarget' to a file for recidive to work.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' removes the drop-in and restarts fail2ban.</p>
+<h3 id="f2b-004--fail2ban-ignoreip-is-not-overly-broad">F2B-004 — fail2ban ignoreip is not overly broad</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> DE.CM-01, DE.CM-06</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that the 'ignoreip' allow-list does not whitelist large public ranges. A broad ignoreip (e.g. 0.0.0.0/0 or a public /8) silently exempts attackers from banning. Loopback and private (RFC1918) ranges are expected and fine. Report-only — the correct allow-list is site-specific, and editing it automatically could lock you out.</p>
+<h2 id="firewall--network-security-domain">Firewall — Network Security domain</h2>
+<h3 id="fw-001--a-host-firewall-is-installed">FW-001 — A host firewall is installed</h3>
+<ul>
+<li><strong>Severity:</strong> critical</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 3.5.1 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.IR-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that a host firewall front-end is available: ufw, firewalld, or an active nftables input ruleset. Without a host firewall every listening service — including ones started accidentally — is reachable from the network.</p>
+<p><strong>What the fix changes:</strong> Installs the distribution's conventional firewall front-end: 'ufw' on Debian/Ubuntu/Pop!_OS/Arch, 'firewalld' on Fedora/openSUSE. Installing the package does NOT enable the firewall yet — that is check FW-002, which asks separately.</p>
+<p><strong>How it is reverted:</strong> The installed package is recorded in the snapshot; 'sudo auditxs rollback' offers to remove it again.</p>
+<h3 id="fw-002--the-host-firewall-is-enabled-and-active">FW-002 — The host firewall is enabled and active</h3>
+<ul>
+<li><strong>Severity:</strong> critical</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 3.5.1.1 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.IR-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that the detected firewall is actually running: 'ufw status' reports active, or the firewalld service is active, or an nftables input ruleset is loaded. An installed-but-disabled firewall provides no protection.</p>
+<p><strong>What the fix changes:</strong> ufw: allows the SSH port(s) first when the system is managed over SSH (lockout guard), then runs 'ufw --force enable'. firewalld: enables and starts the firewalld service and ensures the 'ssh' service is allowed in the active zone when SSH is in use. Nothing else is opened or closed.</p>
+<p><strong>How it is reverted:</strong> The previous firewall state and any SSH allow-rule added by AuditXS are recorded; 'sudo auditxs rollback' disables the firewall again (if it was inactive before) and removes the added rules.</p>
+<h3 id="fw-003--firewall-default-denies-inbound-traffic">FW-003 — Firewall default-denies inbound traffic</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 3.5.1.2 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.IR-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that unsolicited inbound traffic is denied by default so only explicitly allowed services are reachable. ufw: 'deny (incoming)' default policy; firewalld: the default zone must not have target ACCEPT.</p>
+<p><strong>What the fix changes:</strong> ufw: runs 'ufw default deny incoming' (existing allow rules keep working). firewalld: sets the default zone's target back to 'default' (reject unmatched traffic) and reloads. Outbound traffic is not touched.</p>
+<p><strong>How it is reverted:</strong> The previous default policy / zone target is recorded; 'sudo auditxs rollback' restores it.</p>
+<h3 id="fw-004--ufw-logging-is-enabled">FW-004 — ufw logging is enabled</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 3.5.1.3 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> DE.CM-01, PR.PS-04</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that ufw logging is on (at least 'low'), so blocked/allowed connection decisions are recorded. Firewall logs are essential evidence when investigating scans, intrusions or misconfigured services. Only applies where ufw is the active firewall.</p>
+<p><strong>What the fix changes:</strong> Runs 'ufw logging low', recording the previous logging state so rollback restores it. No rules are changed.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the previous ufw logging level.</p>
+<h3 id="fw-005--a-firewall-management-gui-is-available-on-desktops-gufw">FW-005 — A firewall management GUI is available on desktops (gufw)</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.IR-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>On workstations with a graphical desktop, checks for 'gufw' — the graphical front-end for ufw — so non-CLI users can review and manage firewall rules. Purely a usability/visibility control; the firewall itself is covered by FW-001..004. Report-only.</p>
+<h2 id="accounts--server-hardening-domain">Accounts — Server Hardening domain</h2>
+<h3 id="acc-001--only-root-has-uid-0">ACC-001 — Only root has UID 0</h3>
+<ul>
+<li><strong>Severity:</strong> critical</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 6.2.9 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Scans /etc/passwd for accounts other than 'root' with UID 0. A second UID-0 account is a classic backdoor: it has full root power under an innocent name. Report-only: removing accounts is a decision AuditXS will not automate.</p>
+<h3 id="acc-002--no-accounts-have-empty-passwords">ACC-002 — No accounts have empty passwords</h3>
+<ul>
+<li><strong>Severity:</strong> critical</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 6.2.8 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-05</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Scans /etc/shadow for accounts whose password field is empty. Such accounts can be logged into without any password at all (locally, and over any service that permits it).</p>
+<p><strong>What the fix changes:</strong> Locks each affected account with 'passwd -l &lt;user&gt;' (places a '!' in the password field, blocking password login while leaving the account and its files intact). /etc/shadow is backed up to the snapshot first.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the saved /etc/shadow, returning the accounts to their previous state.</p>
+<h3 id="acc-003--password-aging-policy-is-configured">ACC-003 — Password aging policy is configured</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 5.5.1.1 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-05</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks /etc/login.defs for a sane password aging baseline: PASS_MAX_DAYS ≤ 365, PASS_MIN_DAYS ≥ 1 and PASS_WARN_AGE ≥ 7. This bounds how long a leaked password stays valid and prevents instant password re-use. Applies to newly created accounts; existing accounts keep their current aging until changed with 'chage'.</p>
+<p><strong>What the fix changes:</strong> Edits /etc/login.defs (backed up first) setting PASS_MAX_DAYS 365, PASS_MIN_DAYS 1, PASS_WARN_AGE 7. Existing accounts are NOT modified — the report lists the 'chage' command to update them if you wish.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the saved /etc/login.defs.</p>
+<h3 id="acc-004--sudo-always-requires-a-password">ACC-004 — sudo always requires a password</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Scans /etc/sudoers and /etc/sudoers.d/ for NOPASSWD entries. Passwordless sudo turns any compromise of that user account (or an unlocked terminal) into an instant full-root compromise. Report-only: sudoers changes are risky to automate, so AuditXS shows you exactly which lines to review with 'visudo'.</p>
+<h3 id="acc-005--system-accounts-cannot-log-in">ACC-005 — System accounts cannot log in</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 5.5.2 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-05</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that system (service) accounts — UID below the regular-user threshold — have a non-login shell such as /usr/sbin/nologin. Service accounts with real shells are convenient footholds after a service compromise.</p>
+<p><strong>What the fix changes:</strong> Backs up /etc/passwd, then sets the shell of each affected system account to 'nologin' with 'usermod -s'. Regular user accounts and root are never touched.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the saved /etc/passwd, returning the original shells.</p>
+<h3 id="acc-006--default-umask-is-restrictive-027">ACC-006 — Default umask is restrictive (027)</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 5.5.5 · <strong>Level:</strong> 2</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-05</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that the default UMASK in /etc/login.defs is 027 or stricter, so files created by users are not readable by every other account on the system. Applied to the server profile only — on single-user workstations the default 022 is a common and acceptable trade-off.</p>
+<p><strong>What the fix changes:</strong> Edits /etc/login.defs (backed up first) setting 'UMASK 027'. Only affects newly created login sessions; existing files are not changed.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the saved /etc/login.defs.</p>
+<h3 id="acc-007--password-quality-requirements-are-enforced">ACC-007 — Password quality requirements are enforced</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 5.4.1 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-05</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that pam_pwquality is part of the PAM password stack and that the effective minimum password length (minlen, including /etc/security/pwquality.conf.d drop-ins) is at least 12. Without quality rules users can set trivially guessable passwords. The policy applies when passwords are set or changed — existing passwords are not affected.</p>
+<p><strong>What the fix changes:</strong> Debian family: installs 'libpam-pwquality' (Debian wires it into the PAM stack automatically via pam-auth-update). openSUSE: enables the module with 'pam-config -a --pwquality' (the distribution's supported tool). Then writes /etc/security/pwquality.conf.d/99-auditxs.conf with 'minlen = 12' and 'minclass = 3'. PAM files are never edited directly. On Fedora/Arch with the module missing, AuditXS only reports (PAM stacks there should be changed via authselect / by hand).</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' removes the pwquality drop-in, reverts the pam-config change on openSUSE, and offers to remove the package if AuditXS installed it.</p>
+<h3 id="acc-008--failed-logins-lock-the-account-pam_faillock">ACC-008 — Failed logins lock the account (pam_faillock)</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that PAM locks an account after repeated failed logins (pam_faillock, or legacy pam_tally2). This slows password guessing at the console and for services that use PAM. Report-only — PAM changes are applied manually to avoid lockout risk.</p>
+<h3 id="acc-009--password-reuse-is-limited-pam_pwhistory">ACC-009 — Password reuse is limited (pam_pwhistory)</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that PAM remembers previous passwords (pam_pwhistory 'remember=N') so users cannot immediately cycle back to an old password when forced to change. Report-only.</p>
+<h2 id="privileged--server-hardening-domain">Privileged — Server Hardening domain</h2>
+<h3 id="prv-001--sudo-sessions-use-a-pty-and-are-logged">PRV-001 — sudo sessions use a pty and are logged</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 5.3.4 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-05, PR.PS-04</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that sudo is configured with 'Defaults use_pty' (prevents a malicious program run under sudo from detaching into the background with root privileges — CIS 5.2.2) and 'Defaults logfile' (a dedicated, append-friendly record of every sudo command — CIS 5.2.3). Privileged-command accountability is a core audit-trail requirement.</p>
+<p><strong>What the fix changes:</strong> Creates /etc/sudoers.d/99-auditxs (mode 0440) containing only 'Defaults use_pty' and 'Defaults logfile="/var/log/sudo.log"'. The file is validated with 'visudo -cf' and the whole sudo configuration re-validated with 'visudo -c'; if either fails the file is removed immediately. No existing sudoers file is edited.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in (or restores its previous content).</p>
+<h3 id="prv-002--ssh-logins-use-multi-factor-authentication">PRV-002 — SSH logins use multi-factor authentication</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 5.3.7 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-03</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks whether SSH requires more than one authentication factor: either 'AuthenticationMethods' chains factors (e.g. 'publickey,keyboard-interactive'), or an MFA PAM module (pam_google_authenticator, pam_u2f, pam_oath, pam_duo) is wired into the sshd stack. MFA is one of the highest-impact controls against credential theft. Report-only: enabling MFA requires enrolling every administrator first — automating it would lock people out, so AuditXS explains the path instead (aligned with NIST CSF PR.AA-03).</p>
+<h3 id="prv-003--administrative-account-inventory">PRV-003 — Administrative account inventory</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-05, ID.AM-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Lists every account with administrative rights: members of the sudo/wheel/admin groups plus explicit user entries in sudoers. Least privilege starts with knowing who holds privilege — review this list regularly and remove anyone who no longer needs it. Informational.</p>
+<h2 id="filesystem--os-hardening-domain">Filesystem — OS Hardening domain</h2>
+<h3 id="fs-001--world-writable-directories-have-the-sticky-bit">FS-001 — World-writable directories have the sticky bit</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 1.1.9 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Finds directories that any user may write to (like /tmp) but that lack the sticky bit. Without it, any user can delete or rename other users' files in that directory — a classic path for tmp-race attacks.</p>
+<p><strong>What the fix changes:</strong> Adds the sticky bit (chmod +t) to each affected directory. The previous mode of every directory is recorded in the snapshot. No files are touched, only directory modes.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores each directory's exact previous mode.</p>
+<h3 id="fs-002--no-world-writable-files">FS-002 — No world-writable files</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 6.1.10 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Finds regular files that ANY user on the system may modify. World-writable files let an unprivileged user tamper with data or scripts that other users — or root — later read or execute.</p>
+<p><strong>What the fix changes:</strong> Removes the world-write bit (chmod o-w) from each affected file. Every file's previous mode is recorded in the snapshot. Nothing is deleted and no other permission bits change.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores each file's exact previous mode.</p>
+<h3 id="fs-003--no-unowned-or-ungrouped-files">FS-003 — No unowned or ungrouped files</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 6.1.11 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Finds files whose owner or group no longer exists (usually left behind by removed packages or deleted users). A future account created with the same UID/GID silently inherits access to them. Report-only: correct ownership depends on what the files are, so AuditXS lists them with 'chown' guidance.</p>
+<h3 id="fs-004--sensitive-system-files-have-strict-permissions">FS-004 — Sensitive system files have strict permissions</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 6.1.2 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Verifies that credential and boot files are not readable/writable more broadly than needed: /etc/shadow and /etc/gshadow (and their '-' backups) at most 640, /etc/passwd and /etc/group at most 644, /etc/crontab and GRUB configuration at most 600, SSH host private keys at most 600. AuditXS only ever TIGHTENS modes — files already stricter than the baseline (e.g. Fedora's shadow at 000) are left untouched.</p>
+<p><strong>What the fix changes:</strong> For each file more permissive than its baseline, chmods it down to the baseline mode. Previous modes are recorded per file in the snapshot.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores each file's exact previous mode.</p>
+<h3 id="fs-005--home-directories-are-not-accessible-to-other-users">FS-005 — Home directories are not accessible to other users</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 6.2.7 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that each regular user's home directory is mode 750 or stricter, so other local users cannot read personal files, SSH keys, browser profiles or shell history.</p>
+<p><strong>What the fix changes:</strong> Chmods each over-permissive home directory to 750. Previous modes are recorded per directory. Only the home directory itself is changed — never its contents.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores each home directory's exact previous mode.</p>
+<h3 id="fs-006--suidsgid-binary-inventory">FS-006 — SUID/SGID binary inventory</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 6.1.13 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Inventories setuid/setgid binaries — programs that run with elevated privileges no matter who starts them — and flags any outside the well-known baseline (sudo, passwd, mount, ...). Unexpected SUID binaries are a common persistence technique. Report-only: removing the bit can break legitimate software, so review each finding.</p>
+<h2 id="kernel--os-hardening-domain">Kernel — OS Hardening domain</h2>
+<h3 id="krn-001--address-space-layout-randomization-aslr-is-fully-enabled">KRN-001 — Address space layout randomization (ASLR) is fully enabled</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 1.5.3 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.IR-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks kernel.randomize_va_space=2. ASLR randomizes process memory layout, making memory-corruption exploits substantially harder. 2 (full, including heap) is the kernel default; anything lower means it was weakened.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/sysctl.d/99-auditxs-krn-001.conf with 'kernel.randomize_va_space = 2' and applies it at runtime. Previous value is recorded.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in and restores the previous runtime value.</p>
+<h3 id="krn-002--kernel-address-and-log-exposure-is-restricted">KRN-002 — Kernel address and log exposure is restricted</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 1.5.1 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.IR-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks kernel.kptr_restrict ≥ 1 (hide kernel pointers from unprivileged users) and kernel.dmesg_restrict = 1 (require privilege to read the kernel log). Kernel addresses and dmesg output are building blocks for kernel exploits and information leaks.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/sysctl.d/99-auditxs-krn-002.conf setting only the values that are currently weaker than recommended (kptr_restrict=1, dmesg_restrict=1) and applies them at runtime. Values already stricter are left untouched.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in and restores the previous runtime values.</p>
+<h3 id="krn-003--tcp-syn-cookies-are-enabled">KRN-003 — TCP SYN cookies are enabled</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 3.3.9 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.IR-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks net.ipv4.tcp_syncookies=1. SYN cookies keep the system reachable during SYN-flood denial-of-service attacks instead of exhausting the connection backlog.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/sysctl.d/99-auditxs-krn-003.conf with 'net.ipv4.tcp_syncookies = 1' and applies it at runtime.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in and restores the previous runtime value.</p>
+<h3 id="krn-004--icmp-redirects-are-ignored-and-not-sent">KRN-004 — ICMP redirects are ignored and not sent</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 3.3.2 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.IR-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that the system neither accepts nor sends ICMP redirect messages (IPv4 and IPv6). Accepted redirects let an on-path attacker rewrite the routing table and intercept traffic; hosts that are not routers have no reason to send them.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/sysctl.d/99-auditxs-krn-004.conf disabling accept_redirects (v4+v6, all/default), secure_redirects and send_redirects, and applies the values at runtime.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in and restores the previous runtime values.</p>
+<h3 id="krn-005--source-routed-packets-are-rejected">KRN-005 — Source-routed packets are rejected</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 3.3.1 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.IR-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that accept_source_route is 0 for IPv4 and IPv6. Source routing lets the sender dictate a packet's path — a technique for bypassing firewall policy and spoofing; end hosts should never accept it.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/sysctl.d/99-auditxs-krn-005.conf disabling accept_source_route (v4+v6, all/default) and applies the values at runtime.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in and restores the previous runtime values.</p>
+<h3 id="krn-006--reverse-path-filtering-is-enabled">KRN-006 — Reverse-path filtering is enabled</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 3.3.7 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.IR-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks net.ipv4.conf.{all,default}.rp_filter is 1 (strict) or 2 (loose). Reverse-path filtering drops packets whose source address could not be routed back the way they came, blunting IP spoofing.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/sysctl.d/99-auditxs-krn-006.conf with rp_filter=1 for all/default and applies it at runtime. If your host does asymmetric routing (rare, multi-homed setups), skip this fix.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in and restores the previous runtime values.</p>
+<h3 id="krn-007--suspicious-martian-packets-are-logged">KRN-007 — Suspicious (martian) packets are logged</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 3.3.4 · <strong>Level:</strong> 2</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.IR-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks net.ipv4.conf.{all,default}.log_martians=1 so packets with impossible source addresses are logged. On servers this gives early warning of spoofing or misrouted traffic; on busy networks it adds log volume, which is why it is server-profile only.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/sysctl.d/99-auditxs-krn-007.conf with log_martians=1 for all/default and applies it at runtime.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in and restores the previous runtime values.</p>
+<h3 id="krn-008--ip-forwarding-is-disabled-unless-this-host-routes-traffic">KRN-008 — IP forwarding is disabled (unless this host routes traffic)</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 3.2.1 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.IR-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that IPv4/IPv6 forwarding is off. A host that silently forwards packets can be abused to pivot between networks. DETECTION: if Docker, Podman or libvirt is present, forwarding is required and this check passes with a note instead.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/sysctl.d/99-auditxs-krn-008.conf disabling net.ipv4.ip_forward and net.ipv6.conf.all.forwarding and applies it at runtime. The fix is only offered when no container/VM runtime was detected — do not apply it on routers or VPN gateways.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in and restores the previous runtime values.</p>
+<h3 id="krn-009--core-dumps-of-privileged-programs-are-disabled">KRN-009 — Core dumps of privileged programs are disabled</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 1.5.1 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.IR-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks fs.suid_dumpable=0. Core dumps of setuid programs can spill password hashes and other secrets those programs held in memory into files an attacker may read.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/sysctl.d/99-auditxs-krn-009.conf with 'fs.suid_dumpable = 0' and applies it at runtime.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in and restores the previous runtime value.</p>
+<h3 id="krn-010--ctrl-alt-del-does-not-reboot-the-system">KRN-010 — Ctrl-Alt-Del does not reboot the system</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 1.4.3 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.IR-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that the ctrl-alt-del systemd target is masked. On servers, anyone with (physical or remote-console) keyboard access could otherwise trigger an unclean reboot without authentication.</p>
+<p><strong>What the fix changes:</strong> Masks the target by linking /etc/systemd/system/ctrl-alt-del.target to /dev/null and runs 'systemctl daemon-reload'. No other keyboard behaviour changes.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' removes the mask link (restoring the saved file if one existed) and reloads systemd.</p>
+<h3 id="krn-011--core-dumps-are-restricted">KRN-011 — Core dumps are restricted</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.IR-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that process core dumps are restricted. Core dumps can contain passwords, keys and other secrets from process memory; on a server they are rarely needed. Looks for a hard 'core 0' limit and, on systemd, Storage=none/ProcessSizeMax=0 in coredump.conf. (Kernel fs.suid_dumpable is covered by KRN-009.) Report-only.</p>
+<h2 id="boot--os-hardening-domain">Boot — OS Hardening domain</h2>
+<h3 id="boot-001--grub-bootloader-is-password-protected">BOOT-001 — GRUB bootloader is password-protected</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks whether GRUB requires a password to edit boot entries or use the command line. Without it, anyone with console access can add 'init=/bin/bash' to get a root shell, bypassing every OS control. Set a GRUB superuser + password_pbkdf2. Report-only — a wrong GRUB password change can lock you out of booting.</p>
+<h3 id="boot-002--uefi-secure-boot-is-enabled">BOOT-002 — UEFI Secure Boot is enabled</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks whether UEFI Secure Boot is active, so only signed bootloaders/kernels run — blocking bootkits and unsigned kernel modules. Not applicable to legacy BIOS/VMs. Report-only (it is a firmware setting).</p>
+<h3 id="boot-003--kernel-lockdown-mode-is-active">BOOT-003 — Kernel lockdown mode is active</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks the kernel lockdown state. Lockdown ('integrity' or 'confidentiality') stops even root from modifying the running kernel (e.g. loading unsigned modules, /dev/mem), which hardens against kernel-level persistence. Report-only — enabling it can break some legitimate tools.</p>
+<h2 id="mac--os-hardening-domain">MAC — OS Hardening domain</h2>
+<h3 id="mac-001--a-mandatory-access-control-system-is-active-selinuxapparmor">MAC-001 — A mandatory access control system is active (SELinux/AppArmor)</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 1.6.1 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks whether SELinux is enforcing or AppArmor is active with loaded profiles. MAC systems confine what a compromised service can do, containing exploits that would otherwise have the full run of the system. Every supported distribution ships one: SELinux on Fedora; AppArmor on Ubuntu, Pop!_OS, Debian and openSUSE (Arch supports AppArmor but does not enable it by default). Report-only: enabling a MAC system needs kernel-parameter/bootloader changes and a reboot, which cannot be made safely reversible — the finding explains the right path for your distribution instead.</p>
+<h2 id="services--application-hardening-domain">Services — Application Hardening domain</h2>
+<h3 id="svc-001--legacy-plaintext-network-services-are-not-running">SVC-001 — Legacy plaintext network services are not running</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 2.3 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks for enabled/active legacy services that transmit credentials in cleartext or are historically unsafe: telnet, rsh/rlogin/rexec, tftp, xinetd/inetd, NIS (ypserv). These have modern encrypted replacements (SSH, SFTP) and should not run anywhere.</p>
+<p><strong>What the fix changes:</strong> Disables and stops each detected unit with 'systemctl disable --now', recording its previous enabled/active state. Packages are left installed (remove them manually if unneeded).</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' re-enables and restarts each service exactly as it was before.</p>
+<h3 id="svc-002--avahi-mdns-daemon-is-disabled-on-servers">SVC-002 — Avahi (mDNS) daemon is disabled on servers</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 2.1.3 · <strong>Level:</strong> 2</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that avahi-daemon is not running. Avahi advertises the machine and its services on the local network (mDNS/zeroconf) — useful on desktops, but on servers it is unneeded broadcast surface and information disclosure.</p>
+<p><strong>What the fix changes:</strong> Disables and stops avahi-daemon.service and avahi-daemon.socket, recording their previous state. The package stays installed.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' re-enables and restarts the units exactly as they were.</p>
+<h3 id="svc-003--printing-services-cups-are-disabled-on-servers">SVC-003 — Printing services (CUPS) are disabled on servers</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 2.1.4 · <strong>Level:</strong> 2</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that CUPS is not running. Print services listen on the network and have a long CVE history; servers that never print should not run them.</p>
+<p><strong>What the fix changes:</strong> Disables and stops cups.service, cups.socket and cups-browsed.service (where present), recording their previous state. The packages stay installed.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' re-enables and restarts the units exactly as they were.</p>
+<h3 id="svc-004--bluetooth-is-disabled-on-servers">SVC-004 — Bluetooth is disabled on servers</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 2.1.2 · <strong>Level:</strong> 2</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that the bluetooth service is not running. Servers rarely use Bluetooth; the stack adds kernel attack surface reachable from physical proximity.</p>
+<p><strong>What the fix changes:</strong> Disables and stops bluetooth.service, recording its previous state. The package stays installed.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' re-enables and restarts the unit exactly as it was.</p>
+<h3 id="svc-005--systemd-service-sandboxing-overview">SVC-005 — systemd service sandboxing overview</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Summarizes 'systemd-analyze security', which scores every running service by how much sandboxing (namespaces, capability limits, syscall filters) it uses. Informational: use it to pick services worth confining with systemd hardening directives.</p>
+<h2 id="applications--application-hardening-domain">Applications — Application Hardening domain</h2>
+<h3 id="app-001--nginx-does-not-disclose-its-version-server_tokens-off">APP-001 — nginx does not disclose its version (server_tokens off)</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that nginx is configured with 'server_tokens off' so error pages and the Server header stop advertising the exact version. Version disclosure gives attackers a shortcut to matching exploits; suppressing it is a baseline web-server hardening step.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/nginx/conf.d/99-auditxs.conf containing 'server_tokens off;'. The configuration is validated with 'nginx -t' — if validation fails the file is removed immediately — then nginx is reloaded (no downtime). Applied only when nginx.conf includes /etc/nginx/conf.d.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in and reloads nginx.</p>
+<h3 id="app-002--apache-does-not-disclose-version-details">APP-002 — Apache does not disclose version details</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that Apache is configured with 'ServerTokens Prod' and 'ServerSignature Off' so responses and error pages stop advertising the exact server version and modules. Same rationale as APP-001: version disclosure is free reconnaissance.</p>
+<p><strong>What the fix changes:</strong> Writes a labelled config drop-in (Debian family: /etc/apache2/conf-available/zz-auditxs.conf enabled via symlink; Fedora: /etc/httpd/conf.d/zz-auditxs.conf; openSUSE: /etc/apache2/conf.d/zz-auditxs.conf) setting ServerTokens Prod and ServerSignature Off. Validated with the Apache config test — removed immediately if validation fails — then Apache is reloaded.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in (and its enabling symlink on the Debian family) and reloads Apache.</p>
+<h3 id="app-003--apache-sends-security-response-headers">APP-003 — Apache sends security response headers</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.DS-02</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that Apache emits baseline browser-security headers: X-Content-Type-Options (nosniff), X-Frame-Options (clickjacking protection) and Referrer-Policy. These instruct browsers to behave defensively and are a standard part of web-server hardening (OWASP Secure Headers). HSTS is intentionally left out of the automatic fix because it must only be enabled once HTTPS is confirmed working.</p>
+<p><strong>What the fix changes:</strong> Enables mod_headers and writes a labelled conf drop-in (Debian: /etc/apache2/conf-available/zz-auditxs-headers.conf enabled via symlink; Fedora: /etc/httpd/conf.d/; openSUSE: /etc/apache2/conf.d/) adding X-Content-Type-Options, X-Frame-Options and Referrer-Policy. Validated with the Apache config test — removed on failure — then Apache is reloaded.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the drop-in (and its enabling symlink) and reloads Apache.</p>
+<h3 id="app-004--web-server-does-not-list-directory-contents">APP-004 — Web server does not list directory contents</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.DS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that automatic directory listing is disabled. When a directory has no index file and listing is on, the web server exposes the full file tree — source, backups, configs — to anyone. Apache: the 'Indexes' option should not be enabled; nginx: 'autoindex' should be off (its default). Report-only: the correct place to disable it depends on your vhost/.htaccess layout, so AuditXS shows where it is enabled rather than guessing.</p>
+<h3 id="ngx-001--nginx-does-not-offer-obsolete-tls-sslv3tls-1011">NGX-001 — nginx does not offer obsolete TLS (SSLv3/TLS 1.0/1.1)</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks the effective 'ssl_protocols' in the nginx configuration. SSLv3, TLS 1.0 and TLS 1.1 are deprecated and vulnerable (POODLE, BEAST) — a hardened server offers only TLS 1.2 and 1.3. Report-only: the correct TLS policy depends on the clients you must support.</p>
+<h3 id="ngx-002--nginx-sends-hsts-on-tls-sites">NGX-002 — nginx sends HSTS on TLS sites</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that an HTTPS-serving nginx sends a 'Strict-Transport-Security' (HSTS) header, which tells browsers to only ever connect over TLS and blunts SSL-stripping attacks. Report-only — enabling HSTS is a commitment (browsers will refuse plain HTTP for the max-age), so it must be a deliberate choice.</p>
+<h3 id="vrn-001--varnish-admin-interface-is-bound-to-localhost">VRN-001 — Varnish admin interface is bound to localhost</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks the Varnish management interface (varnishd -T). It must listen on the loopback address only (127.0.0.1:6082); if it is bound to a public address, anyone who can reach it — combined with the secret — can reconfigure the cache. Report-only.</p>
+<h3 id="vrn-002--varnish-admin-secret-file-is-not-world-readable">VRN-002 — Varnish admin secret file is not world-readable</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks the permissions of the Varnish admin secret (default /etc/varnish/secret). This file authenticates connections to the management interface; if it is world-readable, any local user can control the cache. It should be 0600/0640 and owned by root.</p>
+<p><strong>What the fix changes:</strong> Tightens the secret file to mode 0640 (root:root/varnish). The previous mode is recorded and restored on rollback.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the previous mode of the secret file.</p>
+<h2 id="php--application-hardening-domain">PHP — Application Hardening domain</h2>
+<h3 id="php-001--php-does-not-expose-its-version-expose_php-off">PHP-001 — PHP does not expose its version (expose_php Off)</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that 'expose_php' is Off so PHP stops advertising its exact version in the X-Powered-By response header and on error pages. Version disclosure hands attackers a shortcut to matching exploits.</p>
+<p><strong>What the fix changes:</strong> Sets 'expose_php = Off' in a 99-auditxs.ini drop-in inside each web SAPI's conf.d directory (Apache mod_php and PHP-FPM). Restart the web server / php-fpm to apply.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' removes the drop-in (or restores its previous content).</p>
+<h3 id="php-002--php-does-not-display-errors-to-visitors-display_errors-off">PHP-002 — PHP does not display errors to visitors (display_errors Off)</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.PS-04</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that 'display_errors' is Off. Rendered PHP errors leak file paths, SQL fragments and stack details to anyone hitting the page — reconnaissance gold. Errors should go to the log, not the browser.</p>
+<p><strong>What the fix changes:</strong> Sets 'display_errors = Off' (and leaves logging intact) in the 99-auditxs.ini drop-in for each web SAPI. Restart php-fpm / apache2 to apply.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' removes the drop-in (or restores its previous content).</p>
+<h3 id="php-003--php-session-cookies-are-hardened-httponly--secure--samesite">PHP-003 — PHP session cookies are hardened (HttpOnly + Secure + SameSite)</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-02, PR.AA-05</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks session.cookie_httponly (blocks JavaScript from reading the session cookie — mitigates XSS session theft), session.cookie_secure (cookie only sent over HTTPS) and session.cookie_samesite (CSRF mitigation). These are baseline web-session protections.</p>
+<p><strong>What the fix changes:</strong> Sets session.cookie_httponly = On, session.cookie_secure = On and session.cookie_samesite = Lax in the 99-auditxs.ini drop-in for each web SAPI. NOTE: cookie_secure requires the site to be served over HTTPS; on a plain-HTTP test site, sessions will only work once TLS is in place. Restart php-fpm / apache2 to apply.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' removes the drop-in (or restores its previous content).</p>
+<h3 id="php-004--dangerous-php-functions-are-reviewed-disable_functions">PHP-004 — Dangerous PHP functions are reviewed (disable_functions)</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks whether high-risk functions that turn a PHP-code-execution bug into full command execution (exec, system, shell_exec, passthru, popen, proc_open, and the config-reading php_uname) are listed in 'disable_functions'. Report-only: many legitimate applications and control panels rely on some of these, so blindly disabling them can break the site — AuditXS shows you the recommended list to add after confirming your apps do not need them.</p>
+<h2 id="webapps--application-hardening-domain">WebApps — Application Hardening domain</h2>
+<h3 id="wp-001--wordpress-wp-configphp-is-not-world-readable">WP-001 — WordPress wp-config.php is not world-readable</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.DS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>wp-config.php holds the database credentials and secret keys. If it is readable by other local users (or served as text), those secrets leak. It should be owned by the web user and mode 0640 or stricter. Report-only — correct ownership is site-specific.</p>
+<h3 id="wp-002--wordpress-debug-mode-wp_debug-is-off">WP-002 — WordPress debug mode (WP_DEBUG) is off</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.DS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>WP_DEBUG shows PHP errors, warnings and file paths to visitors — useful in development, dangerous in production where it leaks internals. This checks that WP_DEBUG is not defined as true. Report-only.</p>
+<h3 id="dru-001--drupal-settingsphp-is-not-world-readable">DRU-001 — Drupal settings.php is not world-readable</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.DS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Drupal's settings.php contains the database credentials and the site's hash salt. It should never be world-readable; Drupal itself warns when it is. This checks the permissions of every settings.php found. Report-only — the correct owner/group depends on your web user.</p>
+<h3 id="lar-001--laravel-env-is-not-world-readable">LAR-001 — Laravel .env is not world-readable</h3>
+<ul>
+<li><strong>Severity:</strong> critical</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.DS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>A Laravel .env file holds APP_KEY, database, mail and third-party credentials in plaintext. If it is world-readable (or served over HTTP), the whole application is compromised. It must be readable only by the web user (0640 or stricter) and never inside the public web root. Report-only.</p>
+<h3 id="lar-002--laravel-runs-in-production-mode-with-debug-off">LAR-002 — Laravel runs in production mode with debug off</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.DS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that Laravel's .env sets APP_ENV=production and APP_DEBUG=false. With APP_DEBUG=true, the Ignition error page renders full stack traces, environment variables and secrets to any visitor who triggers an error. Report-only.</p>
+<h3 id="rc-001--roundcube-config-is-protected-and-the-installer-is-disabled">RC-001 — Roundcube config is protected and the installer is disabled</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01, PR.DS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks Roundcube webmail: its config.inc.php (IMAP/SMTP credentials, des_key) must not be world-readable, and 'enable_installer' must not be left true — the installer can read and rewrite the configuration and must be off in production. Report-only.</p>
+<h2 id="network--network-security-domain">Network — Network Security domain</h2>
+<h3 id="net-001--listening-network-services-inventory">NET-001 — Listening network services inventory</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.IR-01, DE.CM-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Lists every TCP/UDP port the system is listening on. Informational — the point is that YOU can verify each entry is expected. Anything you do not recognize deserves investigation ('ss -tulpn' shows the owning process).</p>
+<h3 id="net-002--uncommon-network-protocols-are-disabled">NET-002 — Uncommon network protocols are disabled</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 3.4 · <strong>Level:</strong> 2</li>
+<li><strong>NIST CSF 2.0:</strong> PR.IR-01, DE.CM-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that rarely-used kernel network protocols (DCCP, SCTP, RDS, TIPC) cannot be auto-loaded. These modules have repeatedly been the vehicle for kernel privilege-escalation bugs, and almost no system needs them. If you knowingly use one (e.g. SCTP for telecom software), skip this fix.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/modprobe.d/99-auditxs-netproto.conf with 'install &lt;module&gt; /bin/false' for dccp, sctp, rds and tipc, preventing them from being loaded in the future. Modules already loaded are reported but NOT unloaded (no disruption).</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the modprobe drop-in (or restores its previous content).</p>
+<h3 id="net-003--no-wireless-interfaces-on-servers">NET-003 — No wireless interfaces on servers</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.IR-01, DE.CM-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Detects Wi-Fi interfaces on machines using the server profile. Wireless links on servers bypass wired network controls and extend the attack surface into radio range. Report-only: disabling networking automatically could sever your own connection, so AuditXS shows the 'rfkill block wifi' command instead.</p>
+<h3 id="net-004--listening-ports-match-the-approved-allowlist">NET-004 — Listening ports match the approved allowlist</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> DE.CM-01, PR.IR-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Compares every listening TCP/UDP port against the administrator-approved allowlist in /etc/auditxs/allowed-ports.conf. This turns 'what is listening?' (NET-001) into drift detection: a service that appears without being approved — a forgotten debug port, a dropped implant, a misconfigured install — is flagged immediately. Report-only: YOU decide what belongs on the list; AuditXS never opens or closes ports. Pair with 'auditxs schedule' for continuous drift monitoring.</p>
+<h3 id="net-005--no-network-interface-is-in-promiscuous-mode">NET-005 — No network interface is in promiscuous mode</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.IR-01, DE.CM-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks for interfaces in promiscuous mode (capturing all traffic on the segment). This is expected for bridges, some virtualisation and packet sniffers, but on a plain host it can indicate a sniffer left running or a compromise. Report-only — verify each one is expected.</p>
+<h3 id="net-006--system-time-is-kept-in-sync-ntp">NET-006 — System time is kept in sync (NTP)</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.IR-01, DE.CM-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that a time-synchronisation service is active (chrony, ntpd, systemd-timesyncd or openntpd). Accurate time underpins log correlation during incidents, TLS certificate validity, Kerberos/auth, and scheduled jobs. A drifting clock quietly breaks all of these.</p>
+<p><strong>What the fix changes:</strong> Enables an available time-sync service (systemd-timesyncd, chrony or ntp). If none is installed, AuditXS reports which to install rather than pulling in a package silently. The service enablement is recorded and reversible.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' disables the time-sync service again if it was disabled before.</p>
+<h2 id="mail--application-hardening-domain">Mail — Application Hardening domain</h2>
+<h3 id="pfx-001--postfix-is-not-an-open-relay">PFX-001 — Postfix is not an open relay</h3>
+<ul>
+<li><strong>Severity:</strong> critical</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-05, PR.IR-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks Postfix relay controls: smtpd_relay_restrictions / smtpd_recipient_restrictions must reject mail for domains you do not host (reject_unauth_destination), and mynetworks must not be dangerously broad. An open relay is abused within hours to send spam and gets your IP blacklisted. Report-only — relay policy depends on your network.</p>
+<h3 id="pfx-002--postfix-requires-tls-for-smtp">PFX-002 — Postfix requires TLS for SMTP</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-02</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that Postfix offers/uses TLS: smtpd_tls_security_level should be 'may' (opportunistic) or 'encrypt', and for submission (port 587) 'encrypt'. Without TLS, credentials and mail cross the network in cleartext. Report-only.</p>
+<h3 id="pfx-003--postfix-smtp-banner-does-not-leak-software-details">PFX-003 — Postfix SMTP banner does not leak software details</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that smtpd_banner does not advertise the Postfix/OS version and that the VRFY command is disabled (disable_vrfy_command=yes — VRFY lets attackers enumerate valid usernames). Report-only.</p>
+<h3 id="dov-001--dovecot-disables-cleartext-authentication-without-tls">DOV-001 — Dovecot disables cleartext authentication without TLS</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-02, PR.AA-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that Dovecot's 'disable_plaintext_auth' is yes, so IMAP/POP passwords are never accepted over an unencrypted connection. Otherwise a passive network observer captures every mailbox password. Report-only — Dovecot config is include-based and easy to break.</p>
+<h3 id="dov-002--dovecot-enforces-modern-tls">DOV-002 — Dovecot enforces modern TLS</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-02</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that Dovecot requires SSL/TLS (ssl = required) and disables obsolete protocols (ssl_min_protocol = TLSv1.2 or higher). Old TLS/SSL versions have exploitable weaknesses. Report-only.</p>
+<h3 id="mta-001--outbound-mail-is-authenticated-dkim--dmarc">MTA-001 — Outbound mail is authenticated (DKIM / DMARC)</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-02, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that a mail server signs and validates mail with DKIM/DMARC milters (OpenDKIM / OpenDMARC). Unsigned mail is trivial to spoof and is widely rejected or junked by recipients. (SPF and DMARC policy records live in DNS and are verified from the receiving side.) Report-only.</p>
+<h2 id="dns--network-security-domain">DNS — Network Security domain</h2>
+<h3 id="bnd-001--bind-does-not-allow-open-recursion">BND-001 — BIND does not allow open recursion</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.IR-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that BIND restricts recursion (allow-recursion / allow-query) to trusted clients rather than the whole internet. An open recursive resolver is abused for DNS amplification DDoS and cache poisoning. Report-only — recursion policy depends on who your resolver serves.</p>
+<h3 id="bnd-002--bind-hides-its-version">BND-002 — BIND hides its version</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that BIND overrides the 'version' option (version "not disclosed";) so a 'dig chaos txt version.bind' query does not reveal the exact BIND version and its known CVEs. Report-only.</p>
+<h3 id="bnd-003--bind-restricts-zone-transfers-allow-transfer">BND-003 — BIND restricts zone transfers (allow-transfer)</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.IR-01, PR.PS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that BIND does not allow AXFR zone transfers to arbitrary hosts. An open 'allow-transfer' lets anyone download entire zones (every hostname/record you serve), a valuable reconnaissance leak. Best practice is 'allow-transfer { none; };' globally, overridden per zone for real secondaries. Report-only.</p>
+<h3 id="bnd-004--bind-resolver-validates-dnssec">BND-004 — BIND resolver validates DNSSEC</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.IR-01, PR.PS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that a recursive BIND resolver has DNSSEC validation enabled (dnssec-validation auto|yes). Validation detects tampered DNS answers (cache poisoning / spoofing). 'dnssec-validation no' disables this protection. Report-only — authoritative-only servers may legitimately not validate.</p>
+<h3 id="unb-001--unbound-restricts-access-and-hides-identity">UNB-001 — Unbound restricts access and hides identity</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.IR-01, PR.PS-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks Unbound's access-control and information-leak settings: 'access-control' should not allow the whole internet (open resolver / amplification), and hide-identity / hide-version should be yes. Report-only.</p>
+<h2 id="database--database-hardening-domain">Database — Database Hardening domain</h2>
+<h3 id="db-001--mysqlmariadb-is-not-needlessly-exposed-to-the-network">DB-001 — MySQL/MariaDB is not needlessly exposed to the network</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-01, PR.DS-02, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>When MySQL/MariaDB is installed, checks whether it listens only on localhost. A database reachable from the network is a direct target for credential attacks and must sit behind strict firewall rules with TLS enforced. Report-only: AuditXS never edits database configuration. If exposure is found, the finding lists the hardening steps: set 'bind-address = 127.0.0.1' (if remote access is not required), 'require_secure_transport = ON' for TLS, run 'mysql_secure_installation' (removes anonymous users/test DB), and enable at-rest encryption (innodb_encrypt_tables / keyring) per your engine's documentation.</p>
+<h3 id="db-002--postgresql-uses-strong-authentication-and-is-not-needlessly-exposed">DB-002 — PostgreSQL uses strong authentication and is not needlessly exposed</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-01, PR.DS-02, PR.AA-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>When PostgreSQL is installed, checks (1) whether it listens only on localhost and (2) whether pg_hba.conf contains 'trust' entries, which grant access WITHOUT ANY authentication. Report-only: AuditXS never edits database configuration. Findings include the fix path: replace 'trust' with 'scram-sha-256', set 'password_encryption = scram-sha-256', restrict listen_addresses, enable TLS (ssl=on), and use encrypted storage for the data directory.</p>
+<h3 id="db-003--mysqlmariadb-local_infile-is-disabled">DB-003 — MySQL/MariaDB local_infile is disabled</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>When MySQL/MariaDB is installed, checks that 'local_infile' is OFF. LOAD DATA LOCAL INFILE lets a client (or an attacker who gains SQL access, e.g. via SQL injection) read arbitrary files from the database server's filesystem. Almost no application needs it. Report-only: AuditXS never edits database configuration — the finding gives the exact setting.</p>
+<h3 id="db-004--mysqlmariadb-has-no-anonymous-or-passwordless-accounts">DB-004 — MySQL/MariaDB has no anonymous or passwordless accounts</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.AA-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>When MySQL/MariaDB is installed, checks for anonymous accounts (empty User) and accounts with an empty authentication string — both allow login without credentials. These are exactly what 'mysql_secure_installation' removes. Report-only: account changes require DBA judgement; the finding lists what to run.</p>
+<h3 id="db-005--postgresql-requires-tls-for-connections">DB-005 — PostgreSQL requires TLS for connections</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that PostgreSQL has TLS enabled ('ssl = on'). Without it, credentials and query data cross the network in clear text. Report-only — enabling TLS needs a server certificate and a service restart.</p>
+<h3 id="db-006--mysqlmariadb-enforces-encrypted-connections">DB-006 — MySQL/MariaDB enforces encrypted connections</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-01, PR.AA-05</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks for 'require_secure_transport = ON' (or an ssl-cert/ssl-key) in the MySQL/MariaDB configuration, so clients must connect over TLS. Without it, credentials and data can be sent in clear text. Report-only.</p>
+<h2 id="tls--network-security-domain">TLS — Network Security domain</h2>
+<h3 id="tls-001--no-server-tls-certificate-is-expired-or-expiring-soon">TLS-001 — No server TLS certificate is expired or expiring soon</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-02, ID.AM-08</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Scans common certificate locations (Let's Encrypt and standard service directories) and checks each server certificate's expiry with openssl. Expired certificates cause outages and security warnings; certificates within 30 days of expiry need renewal now. Report-only — renewal is service-specific (certbot, ACME, manual).</p>
+<h2 id="logging--os-hardening-domain">Logging — OS Hardening domain</h2>
+<h3 id="log-001--system-journal-is-persistent-across-reboots">LOG-001 — System journal is persistent across reboots</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 6.2.1.1 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-04, DE.CM-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that systemd-journald stores logs on disk (/var/log/journal) instead of only in memory. With a volatile journal, every reboot — including one forced by an attacker — erases the evidence.</p>
+<p><strong>What the fix changes:</strong> Creates /var/log/journal and writes /etc/systemd/journald.conf.d/99-auditxs.conf with 'Storage=persistent', then restarts systemd-journald. Existing journald settings in other files are not modified.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' removes the drop-in and restarts journald. The /var/log/journal directory (and logs accumulated in it) is deliberately left in place — deleting logs on rollback would itself be a security problem; remove it manually if desired.</p>
+<h3 id="log-002--the-linux-audit-daemon-auditd-is-installed-and-running">LOG-002 — The Linux audit daemon (auditd) is installed and running</h3>
+<ul>
+<li><strong>Severity:</strong> high</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 6.3.1 · <strong>Level:</strong> 2</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-04, DE.CM-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that auditd — the kernel's audit trail collector — is installed, enabled and active. auditd records security-relevant events (authentication, privilege use, file access rules) in a tamper-resistant log that forensic investigation depends on.</p>
+<p><strong>What the fix changes:</strong> Installs the audit package (auditd/audit depending on distribution) if missing and enables + starts auditd.service. Previous service state and the installed package are recorded.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores the previous service state and offers to remove the package if AuditXS installed it.</p>
+<h3 id="log-003--baseline-audit-rules-are-loaded">LOG-003 — Baseline audit rules are loaded</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> 6.3.3 · <strong>Level:</strong> 2</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-04, DE.CM-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that auditd has at least a baseline rule set loaded. An audit daemon with zero rules records almost nothing. The AuditXS baseline watches identity files (/etc/passwd, shadow, group), sudoers, SSH server configuration, and (on x86_64) time changes and kernel module loading.</p>
+<p><strong>What the fix changes:</strong> Writes /etc/audit/rules.d/99-auditxs.rules with the baseline watches described above and loads it with 'augenrules --load'. Existing rules are not modified. Note: if auditd runs in immutable mode (-e 2) a reboot is needed before new rules take effect.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' deletes the rules file and reloads the audit rules.</p>
+<h3 id="log-004--no-world-writable-log-files">LOG-004 — No world-writable log files</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 6.2.3 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> PR.PS-04, DE.CM-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks /var/log for files that any user can modify. World-writable logs let an attacker falsify or destroy the record of their own activity.</p>
+<p><strong>What the fix changes:</strong> Removes the world-write bit (chmod o-w) from each affected file under /var/log, recording every file's previous mode. Nothing is deleted; read permissions are not changed.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' restores each file's exact previous mode.</p>
+<h2 id="securitytools--os-hardening-domain">SecurityTools — OS Hardening domain</h2>
+<h3 id="sec-001--a-host-audit-scanner-is-installed-lynis">SEC-001 — A host audit scanner is installed (Lynis)</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> ID.RA-01, DE.CM-08</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks for Lynis, the de-facto open-source host security auditor. Lynis performs hundreds of deep checks that complement AuditXS. Having it available means you can cross-verify hardening and produce an independent report ('auditxs tools scan lynis').</p>
+<p><strong>What the fix changes:</strong> Installs 'lynis' from the distribution repositories (recorded for rollback). AuditXS does not run it automatically — use 'auditxs tools scan lynis'.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' offers to remove the package it installed.</p>
+<h3 id="sec-002--a-rootkit--malware-detector-is-installed">SEC-002 — A rootkit / malware detector is installed</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> DE.CM-08, DE.CM-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks for a rootkit detector (rkhunter or chkrootkit). These scan for known rootkits, suspicious SUID files, and altered system binaries — a basic detective control on any server. Run via 'auditxs tools scan rkhunter'.</p>
+<p><strong>What the fix changes:</strong> Installs 'rkhunter' (recorded for rollback) and performs its initial file-property baseline ('rkhunter --propupd') so future scans can detect changes.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' offers to remove the package it installed.</p>
+<h3 id="sec-003--a-file-integrity-monitor-is-installed-aide">SEC-003 — A file integrity monitor is installed (AIDE)</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 2</li>
+<li><strong>NIST CSF 2.0:</strong> PR.DS-06, DE.CM-01</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks for AIDE (Advanced Intrusion Detection Environment). AIDE records cryptographic hashes of system files so tampering by an intruder is detected at the next check. It is the standard CIS/STIG file-integrity control. Report/installs only — AuditXS does not initialise the database automatically because that can take time and must happen on a known-good system.</p>
+<p><strong>What the fix changes:</strong> Installs 'aide'. IMPORTANT: after install, initialise the baseline on a trusted system with 'aideinit' (Debian) or 'aide --init', then move the new database into place. AuditXS does not do this for you so the baseline reflects a state you have verified.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' offers to remove the package it installed.</p>
+<h3 id="sec-004--an-intrusion-prevention--ids-engine-is-present-crowdsecsuricatafail2ban">SEC-004 — An intrusion prevention / IDS engine is present (CrowdSec/Suricata/fail2ban)</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> DE.CM-01, PR.IR-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks whether at least one active-defence engine is present: CrowdSec (collaborative IPS), Suricata (network IDS/IPS) or fail2ban (log-based banning). At least one is expected on an internet-facing server to detect and block attacks in progress. Use 'auditxs tools install crowdsec|suricata' for a guided setup.</p>
+<h3 id="sec-005--usb-device-control-usbguard-is-active">SEC-005 — USB device control (USBGuard) is active</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> DE.CM-08, ID.RA-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks whether USBGuard is installed and running to allow-list USB devices — a defence against BadUSB / rogue-device attacks at physical ports. Report-only: enable it only after generating a policy from your known-good devices ('auditxs tools install usbguard'), or you can lock out your own keyboard.</p>
+<h3 id="sec-006--a-security-scan-runs-on-a-schedule">SEC-006 — A security scan runs on a schedule</h3>
+<ul>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Profiles:</strong> server</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> DE.CM-08, ID.RA-01</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Checks that a recurring security scan is scheduled (a cron entry or systemd timer for rkhunter, lynis, aide, chkrootkit or 'auditxs schedule'). Installing a scanner is only useful if it actually runs regularly. Report-only.</p>
+<h2 id="vulnerabilities--os-hardening-domain">Vulnerabilities — OS Hardening domain</h2>
+<h3 id="vuln-001--no-installed-package-has-a-known-vulnerability-with-an-available-fix">VULN-001 — No installed package has a known vulnerability with an available fix</h3>
+<ul>
+<li><strong>Severity:</strong> critical</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> 1.9 · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> ID.RA-01, DE.CM-08, PR.PS-02</li>
+<li><strong>Fix:</strong> manual (report-only)</li>
+</ul>
+<p>Cross-references installed package versions against the distribution's own security data (Debian: debsecan or the security apt suite; Ubuntu: security suite; Fedora: dnf updateinfo; openSUSE: zypper patches). A finding means a package you have installed is known-vulnerable and a fixed version is already available in your repositories — the highest-value, lowest-noise vulnerability signal a host can produce offline. Report-only: AuditXS never upgrades packages, because upgrades are not reversible; apply security updates with your package manager.</p>
+<h3 id="vuln-002--a-precise-cve-data-source-is-available">VULN-002 — A precise CVE data source is available</h3>
+<ul>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Profiles:</strong> server,workstation</li>
+<li><strong>CIS Benchmark:</strong> — · <strong>Level:</strong> 1</li>
+<li><strong>NIST CSF 2.0:</strong> ID.RA-01, DE.CM-08</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
+</ul>
+<p>Checks that the host can produce a precise per-CVE report, not just a security-update count. On Debian this is the 'debsecan' package (queries the Debian Security Tracker); on Ubuntu it is Ubuntu Pro / ubuntu-security-status. Having it installed means VULN-001 can name exact CVEs rather than approximating from the security suite.</p>
+<p><strong>What the fix changes:</strong> Debian: installs 'debsecan'. Other families already ship their advisory tooling (dnf updateinfo, zypper patches) and this check passes there.</p>
+<p><strong>How it is reverted:</strong> 'sudo auditxs rollback' offers to remove the package it installed.</p>
+<footer>
+<div class="brand">🛡️ AuditXS</div>
+<div>Made with <span class="heart">&#10084;</span> from Canada 🍁</div>
+<div>&copy; 2026 <strong>DigitalXS</strong> — Programming &amp; Development ·
+ <a href="https://digitalxs.ca">digitalxs.ca</a> ·
+ <a href="https://github.com/digitalxs/AuditXS">GitHub</a></div>
+</footer>
+</main>
+</div>
+</body>
+</html>

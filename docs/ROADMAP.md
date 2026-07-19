@@ -23,6 +23,17 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.12
+
+- **Single-prompt GUI authentication**: an installed polkit policy
+  (`auth_admin_keep`) keeps the pkexec authorization for the active session,
+  so consecutive Qt/zenity actions ask for the password once; documented for
+  every interface in the manual's *Privileges & credential caching* section.
+- **Documentation website + landing page**: `scripts/build-site.py` renders
+  all guides into branded, self-contained HTML under `docs/` with a hub page,
+  and generates the project landing `index.html` — publishable as-is at
+  auditxs.digitalxs.ca. Built and validated in CI.
+
 ## Shipped in v0.11
 
 - **Interactive HTML report** *(v0.11.1)*: a "show only findings" toggle

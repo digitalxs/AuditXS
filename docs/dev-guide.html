@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Developer guide — AuditXS documentation</title>
+<meta name="description" content="AuditXS — transparent, reversible Linux security auditing and hardening. Documentation.">
+<style>
+  :root {
+    --bg:#f6f6fa; --surface:#ffffff; --surface-2:#eef0f6; --on-surface:#1b1b21;
+    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#4b56d2; --primary-c:#fff;
+    --ok:#1e7d46; --err:#ba1a1a; --warn:#a25b00;
+    --ok-c:#e6f4ea; --err-c:#ffe9e7; --warn-c:#fff3e0;
+    --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121318; --surface:#1c1d24; --surface-2:#23252e; --on-surface:#e4e2e9;
+      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#bcc2ff; --primary-c:#1a2277;
+      --ok:#7fd99b; --err:#ffb4ab; --warn:#f5bd6e;
+      --ok-c:#12331f; --err-c:#3d1512; --warn-c:#3a2a12; }
+  }
+  * { box-sizing:border-box; }
+  body { font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif; margin:0;
+    background:var(--bg); color:var(--on-surface); line-height:1.6;
+    -webkit-font-smoothing:antialiased; }
+  a { color:var(--primary); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .layout { display:flex; max-width:78rem; margin:0 auto; min-height:100vh; }
+  nav.side { flex:0 0 15.5rem; padding:1.5rem 1rem 2rem; border-right:1px solid var(--outline);
+    position:sticky; top:0; align-self:flex-start; max-height:100vh; overflow-y:auto; }
+  .brandrow { display:flex; align-items:center; gap:.6rem; margin-bottom:1.2rem; }
+  .logo { width:2.2rem; height:2.2rem; border-radius:.8rem; background:var(--primary);
+    color:var(--primary-c); display:grid; place-items:center; font-weight:700; }
+  .brandrow b { font-size:1.02rem; }
+  .brandrow .v { display:block; color:var(--on-surface-var); font-size:.72rem; }
+  nav.side a.pg { display:block; padding:.42rem .7rem; border-radius:.6rem; font-size:.88rem;
+    color:var(--on-surface); margin:.1rem 0; }
+  nav.side a.pg:hover { background:var(--surface-2); text-decoration:none; }
+  nav.side a.pg.active { background:var(--primary); color:var(--primary-c); font-weight:600; }
+  nav.side .grp { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--on-surface-var); margin:1.1rem .7rem .3rem; }
+  main { flex:1 1 auto; min-width:0; padding:2rem 2.2rem 4rem; }
+  main h1 { font-size:1.7rem; margin:.2rem 0 1rem; line-height:1.25; }
+  main h2 { font-size:1.25rem; margin:2.2rem 0 .6rem; padding-top:.5rem;
+    border-top:1px solid var(--outline); }
+  main h3 { font-size:1.05rem; margin:1.6rem 0 .4rem; }
+  main h4 { font-size:.95rem; margin:1.2rem 0 .3rem; }
+  p { margin:.65rem 0; }
+  pre { background:var(--surface-2); border:1px solid var(--outline); border-radius:.8rem;
+    padding:.9rem 1.1rem; overflow-x:auto; font-size:.84rem; line-height:1.5; }
+  code { font-family:ui-monospace,"Cascadia Code",Menlo,monospace; font-size:.88em;
+    background:var(--surface-2); padding:.08rem .35rem; border-radius:.35rem; }
+  pre code { background:none; padding:0; font-size:1em; }
+  .tablewrap { overflow-x:auto; margin:.8rem 0; border:1px solid var(--outline);
+    border-radius:.8rem; }
+  table { border-collapse:collapse; width:100%; font-size:.86rem; }
+  th,td { text-align:left; padding:.5rem .8rem; border-bottom:1px solid var(--outline);
+    vertical-align:top; }
+  th { background:var(--surface-2); font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--on-surface-var); }
+  tr:last-child td { border-bottom:none; }
+  blockquote { border-left:3px solid var(--primary); margin:.8rem 0; padding:.2rem 1rem;
+    color:var(--on-surface-var); background:var(--surface-2); border-radius:0 .6rem .6rem 0; }
+  ul,ol { padding-left:1.4rem; margin:.5rem 0; }
+  li { margin:.25rem 0; }
+  hr { border:none; border-top:1px solid var(--outline); margin:1.6rem 0; }
+  img { max-width:100%; }
+  .onpage { background:var(--surface); border:1px solid var(--outline); border-radius:.9rem;
+    padding:.8rem 1.1rem; font-size:.84rem; margin:1rem 0 1.4rem; }
+  .onpage b { display:block; margin-bottom:.3rem; font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--on-surface-var); }
+  .onpage a { display:inline-block; margin:.15rem .8rem .15rem 0; }
+  footer { color:var(--on-surface-var); font-size:.78rem; margin-top:3rem;
+    border-top:1px solid var(--outline); padding-top:1.1rem; text-align:center; line-height:1.7; }
+  footer .brand { font-weight:700; color:var(--on-surface); }
+  footer .heart { color:#e0245e; }
+  .menubtn { display:none; }
+  @media (max-width:860px) {
+    .layout { flex-direction:column; }
+    nav.side { position:static; max-height:none; border-right:none;
+      border-bottom:1px solid var(--outline); flex-basis:auto; }
+    main { padding:1.2rem 1.1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.12.0</span></div></div>
+<a class="pg" href="index.html">Documentation home</a>
+<div class="grp">Guides</div>
+<a class="pg" href="usage.html">User manual</a>
+<a class="pg" href="checks.html">Check catalogue</a>
+<a class="pg" href="errors.html">Error catalogue</a>
+<a class="pg" href="architecture.html">Architecture</a>
+<a class="pg" href="security-guide.html">Security guide</a>
+<a class="pg" href="compliance.html">Compliance</a>
+<a class="pg" href="webui.html">Web UI</a>
+<a class="pg" href="roadmap.html">Roadmap</a>
+<a class="pg" href="changelog.html">Changelog</a>
+<a class="pg active" href="dev-guide.html">Developer guide</a>
+<div class="grp">Project</div>
+<a class="pg" href="../index.html">AuditXS home</a>
+<a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
+<main>
+<h1 id="auditxs--developer--maintainer-guide">AuditXS — Developer &amp; Maintainer Guide</h1><div class="onpage"><b>On this page</b><a href="#table-of-contents">Table of contents</a><a href="#1-design-philosophy">1. Design philosophy</a><a href="#2-repository-map">2. Repository map</a><a href="#3-runtime-architecture">3. Runtime architecture</a><a href="#4-the-check-api--how-a-check-works">4. The check API — how a check works</a><a href="#5-core-library-reference">5. Core library reference</a><a href="#6-the-snapshot--rollback-engine">6. The snapshot / rollback engine</a><a href="#7-interfaces-and-profile-gating">7. Interfaces and profile gating</a><a href="#8-the-error-code-system">8. The error-code system</a><a href="#9-fleet-mode-internals">9. Fleet mode internals</a><a href="#10-debugging">10. Debugging</a><a href="#11-testing">11. Testing</a><a href="#12-coding-standards">12. Coding standards</a><a href="#13-versioning--the-release-process">13. Versioning &amp; the release process</a><a href="#14-working-with-github-on-this-project">14. Working with GitHub on this project</a><a href="#15-maintenance-runbook">15. Maintenance runbook</a><a href="#16-security-model--threat-considerations">16. Security model &amp; threat considerations</a></div>
+<p><code>digitalxs-dev-doc.MD</code> — the engineering companion to the user-facing <a href="https://github.com/digitalxs/AuditXS/blob/main/README.md">README</a>. It documents how AuditXS is built, why it is built that way, and everything you need to develop, debug, test, package, release and maintain it.</p>
+<p>Audience: contributors and maintainers. If you only want to <em>use</em> AuditXS, read the <a href="https://github.com/digitalxs/AuditXS/blob/main/README.md">README</a> and <a href="usage.html">docs/USAGE.md</a> instead.</p>
+<hr>
+<h2 id="table-of-contents">Table of contents</h2>
+<ol>
+<li><a href="#1-design-philosophy">Design philosophy</a></li>
+<li><a href="#2-repository-map">Repository map</a></li>
+<li><a href="#3-runtime-architecture">Runtime architecture</a></li>
+<li><a href="#4-the-check-api--how-a-check-works">The check API — how a check works</a></li>
+<li><a href="#5-core-library-reference">Core library reference</a></li>
+<li><a href="#6-the-snapshot--rollback-engine">The snapshot / rollback engine</a></li>
+<li><a href="#7-interfaces-and-profile-gating">Interfaces and profile gating</a></li>
+<li><a href="#8-the-error-code-system">The error-code system</a></li>
+<li><a href="#9-fleet-mode-internals">Fleet mode internals</a></li>
+<li><a href="#10-debugging">Debugging</a></li>
+<li><a href="#11-testing">Testing</a></li>
+<li><a href="#12-coding-standards">Coding standards</a></li>
+<li><a href="#13-versioning--the-release-process">Versioning &amp; the release process</a></li>
+<li><a href="#14-working-with-github-on-this-project">Working with GitHub on this project</a></li>
+<li><a href="#15-maintenance-runbook">Maintenance runbook</a></li>
+<li><a href="#16-security-model--threat-considerations">Security model &amp; threat considerations</a></li>
+</ol>
+<hr>
+<h2 id="1-design-philosophy">1. Design philosophy</h2>
+<p>Everything in AuditXS follows three inviolable rules. When in doubt, they win over convenience:</p>
+<ol>
+<li><strong>Transparent</strong> — <code>auditxs audit</code> is strictly read-only. Every check documents <em>what</em> it inspects, <em>why</em>, <em>exactly what</em> its fix changes and <em>how</em> to revert it. Every file AuditXS writes carries a header naming the check that wrote it.</li>
+<li><strong>Reversible</strong> — nothing is changed before the previous state is captured in a snapshot. If a change cannot be recorded, it is not made. <code>auditxs rollback</code> restores everything.</li>
+<li><strong>Consented</strong> — fixes are applied one at a time, each after explicit confirmation (or <code>--yes</code>), with <code>--dry-run</code> to preview.</li>
+</ol>
+<p>Practical consequences you must preserve when contributing:</p>
+<ul>
+<li><strong>Audit code must never mutate the system.</strong> <code>audit_*</code> functions only read.</li>
+<li><strong>Fix code must record before it changes.</strong> Use the snapshot helpers; never edit a file without first backing it up through them.</li>
+<li><strong>Irreversible actions are refused or left manual</strong> (package upgrades, removing accounts, anything with data-loss potential).</li>
+<li><strong>Fail safe.</strong> Validate daemon configs (<code>sshd -t</code>, <code>nginx -t</code>) and restore on failure; guard against SSH/firewall lockout.</li>
+</ul>
+<hr>
+<h2 id="2-repository-map">2. Repository map</h2>
+<pre><code>auditxs                 CLI entry point / dispatcher (sources libs + checks, routes commands)
+VERSION                 single source of truth for the version string
+lib/                    the engine (pure Bash, one concern per file)
+  core.sh               colours, logging, prompts, privilege/env checks, xrun, write_file
+  errors.sh             the AXnnnn error catalogue + ax_error() reporter
+  distro.sh             distribution detection + package-manager abstraction
+  registry.sh           check registration, metadata, run_audit, scoring, framework maps
+  backup.sh             snapshot/rollback engine (manifest.tsv + changes.log)
+  fixlib.sh             shared fix helpers (sysctl groups, sshd, services, logindefs)
+  report.sh             text / TSV / JSON / HTML (Material Design) report renderers
+  cve.sh                CVE / known-vulnerability scan (distribution security data)
+  tools.sh              &#x27;auditxs tools&#x27; — install/scan external security tooling
+  fleet.sh              &#x27;auditxs fleet&#x27; — read-only audit across hosts over SSH
+  maintenance.sh        doctor, baseline, schedule, diff
+checks/                 26 self-registering check modules (122 checks); numbered by category
+gui/
+  auditxs-gui           zenity front-end (per-op pkexec; prefers the Qt app when present)
+  auditxs-tui.sh        ncurses (whiptail/dialog) terminal UI — the server interface
+  auditxs-web.py        localhost Material Design web UI (Python stdlib only)
+  auditxs-qt.py         PySide6 host for the Qt/QML app (Qt-free data layer + selftest)
+  auditxs.qml           Qt Quick Controls (Material) view with custom window chrome
+setup.sh                installer (Server/Workstation selection, dxsbash-style)
+uninstall.sh            uninstaller (protects snapshots)
+scripts/
+  updater.sh            &#x27;update-auditxs&#x27; command
+  release.sh            local release prep (build + checksum + optional sign + tag)
+  build-site.py         static docs website generator (docs/*.html + index.html)
+packaging/
+  build-deb.sh          builds the .deb + SHA256 checksum
+  auditxs.8             man page
+  com.digitalxs.auditxs.policy   polkit policy (GUI auth kept between actions)
+tests/                  unit.sh, check_test.sh, web_test.sh, qml_test.py, smoke.sh
+.github/workflows/
+  ci.yml                lint + tests + .deb build + 5-distro smoke matrix
+  release.yml           tag-triggered signed release
+docs/                   USAGE, SECURITY-GUIDE, WEBUI, CHECKS (generated), COMPLIANCE,
+                        ERRORS (generated), ARCHITECTURE, ROADMAP</code></pre>
+<p><strong>Load order</strong> (<code>auditxs</code> lines near the top): <code>core → errors → distro → backup → registry → report → fixlib → maintenance → cve → tools → fleet</code>, then every <code>checks/*.sh</code> in filename order. Because sourcing is ordered, a library may use anything defined earlier — <code>errors.sh</code> is loaded right after <code>core.sh</code> so every later module can call <code>ax_error</code>.</p>
+<hr>
+<h2 id="3-runtime-architecture">3. Runtime architecture</h2>
+<p>A single Bash process; no daemon, no state machine beyond global variables.</p>
+<pre><code> user → auditxs &lt;cmd&gt; [opts]
+          │
+          ├─ source lib/*.sh  (defines helpers + the check registry arrays)
+          ├─ source checks/*.sh  (each calls register_check + set_meta at load time,
+          │                       and defines audit_&lt;ID&gt; / fix_&lt;ID&gt; functions)
+          ├─ parse global options into FORMAT/FILTER_*/ARGS
+          ├─ detect_distro ; load /etc/auditxs/auditxs.conf (PROFILE)
+          └─ dispatch on &lt;cmd&gt;:
+                audit   → run_audit → print_summary → save_reports  (read-only)
+                harden  → cmd_harden → per-check: explain → confirm → snapshot → fix → verify
+                rollback→ replay a snapshot manifest in reverse
+                report/diff/baseline/schedule/doctor/cve/tools/fleet/errors/…</code></pre>
+<p>Key global state (defined in <code>lib/registry.sh</code>) is a set of associative arrays keyed by check ID: <code>CHECK_CATEGORY</code>, <code>CHECK_SEVERITY</code>, <code>CHECK_PROFILES</code>, <code>CHECK_TITLE</code>, <code>CHECK_META_DESC/FIX/REVERT/CIS/LEVEL</code>, and the per-run <code>RESULT_STATUS</code> / <code>RESULT_DETAIL</code>. <code>CHECK_IDS</code> preserves registration order.</p>
+<p><strong>Filesystem prefix for testability.</strong> <code>AX_ROOT</code> (<code>lib/core.sh</code>) is a path prefix, empty in production. Checks that read system files resolve them through <code>axpath()</code> (e.g. <code>axpath /etc/login.defs</code>). Setting <code>AUDITXS_ROOT_PREFIX=/some/fixture</code> makes a check read from a fixture tree instead of the real system — this is how <code>tests/check_test.sh</code> exercises real <code>audit_*</code> logic without touching the host.</p>
+<hr>
+<h2 id="4-the-check-api--how-a-check-works">4. The check API — how a check works</h2>
+<p>A check is ~15–30 lines in a <code>checks/*.sh</code> file. Files are numbered by category (<code>20-ssh.sh</code>, <code>40-accounts.sh</code>, …) and load in that order.</p>
+<h3 id="41-anatomy">4.1 Anatomy</h3>
+<pre class="lang-bash"><code># 1) Register: &lt;id&gt; &lt;category&gt; &lt;severity&gt; &lt;profiles&gt; &lt;title&gt;
+register_check &quot;SSH-001&quot; &quot;SSH&quot; &quot;critical&quot; &quot;server,workstation&quot; \
+    &quot;SSH root login is disabled&quot;
+
+# 2) Metadata: the transparency contract (desc/fix/revert) + framework tags
+set_meta SSH-001 desc   &quot;What is checked and why…&quot;
+set_meta SSH-001 fix    &quot;What the automatic fix changes…&quot;
+set_meta SSH-001 revert &quot;How it is reverted…&quot;
+set_meta SSH-001 cis    &quot;5.1.20&quot;      # optional CIS Benchmark reference
+set_meta SSH-001 level  &quot;1&quot;           # optional CIS level (1 or 2)
+set_meta SSH-001 nist   &quot;PR.AA-01&quot;    # optional NIST CSF 2.0 mapping
+
+# 3) Audit function — READ ONLY. Name: audit_&lt;ID with &#x27;-&#x27; → &#x27;_&#x27;&gt;
+audit_SSH_001() {
+    ssh_installed || { DETAIL=&quot;OpenSSH server is not installed&quot;; return 3; }  # SKIP
+    local v; v=$(sshd_effective permitrootlogin)
+    [ &quot;$v&quot; = no ] &amp;&amp; { DETAIL=&quot;PermitRootLogin no&quot;; return 0; }               # PASS
+    DETAIL=&quot;PermitRootLogin is &#x27;$v&#x27;&quot;; return 1                                # FAIL
+}
+
+# 4) Fix function (optional) — name: fix_&lt;ID&gt;. Only runs after consent.
+fix_SSH_001() { sshd_set PermitRootLogin no &amp;&amp; sshd_apply; }</code></pre>
+<h3 id="42-return-code-convention-status_str-in-registrysh">4.2 Return-code convention (<code>status_str</code> in <code>registry.sh</code>)</h3>
+<div class="tablewrap"><table>
+<tr><th>return</th><th>status</th><th>meaning</th></tr>
+<tr><td><code>0</code></td><td><strong>PASS</strong></td><td>control is in place</td></tr>
+<tr><td><code>1</code></td><td><strong>FAIL</strong></td><td>control is missing; if a <code>fix_*</code> exists it is offered</td></tr>
+<tr><td><code>2</code></td><td><strong>WARN</strong></td><td>needs human judgement; never auto-fixed</td></tr>
+<tr><td><code>3</code></td><td><strong>SKIP</strong></td><td>not applicable (software absent, wrong profile)</td></tr>
+</table></div>
+<p>Set the module-global <code>DETAIL</code> string to explain the result; it appears in the console, reports and GUIs. A check with no <code>fix_*</code> is a <strong>manual</strong> check and is never applied automatically.</p>
+<h3 id="43-rules-for-check-authors">4.3 Rules for check authors</h3>
+<ul>
+<li><strong>Audit reads only.</strong> No writes, no service restarts, no package changes.</li>
+<li><strong>Resolve system paths with <code>axpath</code></strong> so the check is fixture-testable.</li>
+<li><strong>Skip cleanly</strong> when the relevant software is absent (<code>return 3</code>).</li>
+<li><strong>Fixes go through the snapshot helpers</strong> (§6) and validate-or-restore for daemons. Use the shared helpers in <code>fixlib.sh</code> where possible.</li>
+<li><strong>Add fixture tests</strong> in <code>tests/check_test.sh</code> for non-trivial logic.</li>
+<li>Regenerate the catalogue afterwards: <code>./auditxs list --markdown &gt; docs/CHECKS.md</code>.</li>
+</ul>
+<hr>
+<h2 id="5-core-library-reference">5. Core library reference</h2>
+<div class="tablewrap"><table>
+<tr><th>File</th><th>Provides</th></tr>
+<tr><td><code>core.sh</code></td><td><code>AUDITXS_VERSION</code> (read from <code>VERSION</code>), colour vars, <code>say/info/ok/warn/err/die/debug</code>, <code>log</code>, <code>confirm</code>, <code>require_root</code>, <code>have</code>, <code>has_systemd</code>, <code>svc_active/enabled/enable</code>, <code>unit_exists</code>, <code>xrun</code>/<code>xrun_q</code> (dry-run-aware command runner), <code>write_file</code>, <code>AX_ROOT</code>/<code>axpath</code></td></tr>
+<tr><td><code>errors.sh</code></td><td>The <code>AXnnnn</code> catalogue, <code>ax_error</code>/<code>ax_die</code>, <code>cmd_errors</code> (§8)</td></tr>
+<tr><td><code>distro.sh</code></td><td><code>detect_distro</code> (sets <code>DISTRO_ID/NAME/FAMILY/VERSION</code>, <code>PKG</code>), <code>pkg_installed</code>, <code>pkg_install</code></td></tr>
+<tr><td><code>registry.sh</code></td><td><code>register_check</code>, <code>set_meta</code>, <code>run_audit</code>, <code>cmd_harden</code>, <code>has_fix</code>, <code>compute_score</code>, <code>status_str</code>, <code>sev_weight</code>, <code>domain_of</code>, <code>nist_of</code>, <code>cis_of</code>, framework/domain maps, filters (<code>selected</code>, <code>check_applies</code>)</td></tr>
+<tr><td><code>backup.sh</code></td><td><code>snapshot_begin_lazy</code>/<code>snapshot_finish</code>, <code>track_file</code>, <code>record_mode</code>/<code>record_sysctl</code>/<code>record_service_state</code>, <code>manifest_add</code>, <code>record_action</code>, <code>rollback_snapshot</code>, <code>latest_snapshot</code>, <code>cmd_snapshots</code>, <code>emergency_restore_file</code></td></tr>
+<tr><td><code>fixlib.sh</code></td><td><code>audit_sysctl_group</code>/<code>fix_sysctl_group</code>, <code>sshd_effective/set/apply</code>, <code>ssh_installed</code>, <code>ssh_in_use</code>, <code>disable_unit</code>/<code>enable_unit</code>, <code>set_logindefs</code>, <code>local_filesystems</code></td></tr>
+<tr><td><code>report.sh</code></td><td><code>results_text/tsv/json/html</code>, <code>save_reports</code>, <code>cmd_diff</code>, <code>diff_current_against</code>, <code>json_escape</code>, <code>html_escape</code></td></tr>
+<tr><td><code>cve.sh</code></td><td><code>cve_scan</code>, <code>cve_banner</code>, <code>cmd_cve</code> (Debian debsecan, Fedora <code>dnf updateinfo</code>, openSUSE <code>zypper patches</code>)</td></tr>
+<tr><td><code>tools.sh</code></td><td><code>cmd_tools</code> (status/install/scan/vpn), tool metadata, per-tool post-install</td></tr>
+<tr><td><code>fleet.sh</code></td><td><code>cmd_fleet</code> and its per-host SSH runner (§9)</td></tr>
+<tr><td><code>maintenance.sh</code></td><td><code>cmd_doctor</code>, <code>cmd_baseline</code>, <code>cmd_schedule</code></td></tr>
+</table></div>
+<p>The distribution abstraction is the reason one codebase spans Debian/Ubuntu/Pop, Arch, Fedora/RHEL and openSUSE: <code>DISTRO_FAMILY</code> is one of <code>debian</code>/<code>arch</code>/ <code>redhat</code>/<code>suse</code>, and <code>PKG</code> is <code>apt</code>/<code>pacman</code>/<code>dnf</code>/<code>zypper</code>. Branch on <code>DISTRO_FAMILY</code>, never on a specific distro name.</p>
+<hr>
+<h2 id="6-the-snapshot--rollback-engine">6. The snapshot / rollback engine</h2>
+<p><code>lib/backup.sh</code> is the safety net that makes hardening reversible.</p>
+<ul>
+<li><strong><code>snapshot_begin_lazy</code></strong> creates <code>/var/lib/auditxs/snapshots/&lt;timestamp&gt;/</code> and begins a manifest. Called lazily on the first change of a <code>harden</code> run, so a run that changes nothing leaves no empty snapshot.</li>
+<li><strong><code>track_file &lt;path&gt;</code></strong> copies the current file into the snapshot and records a <code>file</code> (or <code>file_created</code>) action.</li>
+<li><strong><code>record_mode</code> / <code>record_sysctl</code> / <code>record_service_state</code></strong> capture the previous permission / sysctl value / service state before a change.</li>
+<li><strong><code>manifest_add &lt;type&gt; &lt;target&gt; &lt;prev&gt; &lt;new&gt;</code></strong> appends a tab-separated row to <code>&lt;snapshot&gt;/manifest.tsv</code>. Every recorded change also lands in the global append-only ledger <code>/var/lib/auditxs/changes.log</code>.</li>
+<li><strong><code>snapshot_finish</code></strong> closes the run and tells the user where the manifest is.</li>
+<li><strong><code>rollback_snapshot &lt;id|latest&gt;</code></strong> (the <code>rollback</code> command) replays the manifest <strong>in reverse order</strong> (<code>tac</code>), restoring files, modes, sysctls and services, re-validating daemons, and optionally removing packages the run installed.</li>
+</ul>
+<p><strong>Invariant:</strong> if <code>manifest_add</code> cannot write, the change must not proceed (reversibility comes first — see error <code>AX4002</code>). When you add a new kind of mutation, add a matching <code>record_*</code> and a rollback case for its manifest type.</p>
+<p>Manifest row format: <code>seq  check  type  target  prev  new</code>.</p>
+<hr>
+<h2 id="7-interfaces-and-profile-gating">7. Interfaces and profile gating</h2>
+<p>All five interfaces are thin front-ends over the same CLI — every action is an <code>auditxs</code> command you could type.</p>
+<div class="tablewrap"><table>
+<tr><th>Interface</th><th>File</th><th>Notes</th></tr>
+<tr><td>CLI</td><td><code>auditxs</code></td><td>the canonical surface; everything else calls it</td></tr>
+<tr><td>Terminal UI</td><td><code>gui/auditxs-tui.sh</code></td><td>whiptail/dialog; the interactive interface for servers (works over SSH)</td></tr>
+<tr><td>Web UI</td><td><code>gui/auditxs-web.py</code></td><td>Python stdlib only; localhost bind, ephemeral token, CSRF header, strict CSP</td></tr>
+<tr><td>Qt app</td><td><code>gui/auditxs-qt.py</code> + <code>auditxs.qml</code></td><td>PySide6; frameless window with custom min/max/move/resize chrome</td></tr>
+<tr><td>zenity</td><td><code>gui/auditxs-gui</code></td><td>GTK dialogs; prefers the Qt app when PySide6 is present</td></tr>
+</table></div>
+<p><strong>Profile gating.</strong> The <code>PROFILE</code> (server|workstation, from <code>/etc/auditxs/auditxs.conf</code> or <code>--profile</code>) decides both which checks apply and which interfaces are allowed. Servers are text-only: <code>web</code>/<code>qt</code>/<code>auditxs-gui</code> call <code>require_workstation_interface</code> and refuse on the server profile, steering the user to <code>auditxs tui</code>. When adding a graphical feature, gate it the same way.</p>
+<p><strong>Elevation model.</strong> The zenity and Qt GUIs run <strong>unprivileged</strong> and elevate each privileged action with <code>pkexec</code> (see <code>_elevate</code> in <code>auditxs-qt.py</code> and <code>elevate</code> in <code>auditxs-gui</code>), so the window displays on X11 and Wayland. The web server runs as root (localhost only). The CLI uses <code>require_root</code> per command.</p>
+<hr>
+<h2 id="8-the-error-code-system">8. The error-code system</h2>
+<p><code>lib/errors.sh</code> is the single source of truth for operational errors.</p>
+<ul>
+<li>Every recoverable failure reports a stable <strong><code>AXnnnn</code></strong> number, grouped by area: <code>AX1xxx</code> environment, <code>AX2xxx</code> audit, <code>AX3xxx</code> harden, <code>AX4xxx</code> snapshot/rollback, <code>AX5xxx</code> tools, <code>AX6xxx</code> fleet/SSH, <code>AX7xxx</code> reporting, <code>AX9xxx</code> internal.</li>
+<li><strong><code>ax_error &lt;CODE&gt; [context…]</code></strong> prints the number, a one-line <em>why</em> and <em>fix</em>, plus the context, to stderr; logs it; appends to the ledger <code>/var/lib/auditxs/errors.log</code>; and returns 1. <strong><code>ax_die</code></strong> does that then exits 1.</li>
+<li><strong><code>auditxs errors</code></strong> browses the catalogue; <code>auditxs errors AX6002</code> explains one; <code>auditxs errors ssh</code> searches; <code>auditxs errors log</code> shows recent occurrences on this host.</li>
+<li><strong><code>docs/ERRORS.md</code> is generated</strong>: <code>./auditxs errors --markdown &gt; docs/ERRORS.md</code>.</li>
+</ul>
+<h3 id="adding-an-error-code">Adding an error code</h3>
+<ol>
+<li>Add one <code>_ax_def AXNNNN &quot;title&quot; &quot;why&quot; &quot;fix&quot;</code> line in the right numeric group in <code>lib/errors.sh</code> (this also appends to <code>AX_ERR_CODES</code> for ordering).</li>
+<li>Call <code>ax_error AXNNNN &quot;key=value context&quot;</code> at the failure site.</li>
+<li>Regenerate <code>docs/ERRORS.md</code>.</li>
+</ol>
+<p>Codes are an API — never renumber or repurpose an existing code; add a new one.</p>
+<hr>
+<h2 id="9-fleet-mode-internals">9. Fleet mode internals</h2>
+<p><code>lib/fleet.sh</code> audits many hosts over SSH. It is <strong>read-only by design</strong> — it only ever runs <code>auditxs audit --format json</code> remotely and never hardens over SSH. Apply fixes on each host after reviewing its report.</p>
+<ul>
+<li><strong>Auth:</strong> key auth is preferred (<code>--key</code>, or the SSH agent). Password auth (<code>--ask-pass</code>) reads the password once and passes it to <code>sshpass -e</code> via the environment, never on the command line (so it never appears in <code>ps</code>); the variable is unset immediately after the run. sshpass-missing ⇒ <code>AX6004</code>.</li>
+<li><strong>Host keys:</strong> <code>StrictHostKeyChecking=accept-new</code> by default (trust-on-first- use, refuses <em>changed</em> keys — MITM protection). <code>--strict-host-key</code> requires a pre-known key; <code>--insecure-host-key</code> disables checking (warned).</li>
+<li><strong>Per host:</strong> wrap <code>ssh</code> in <code>timeout</code>; classify the outcome into a specific error code by inspecting the exit status and stderr — <code>255</code>+"permission denied" ⇒ <code>AX6002</code>, "host key verification failed" ⇒ <code>AX6003</code>, "command not found" ⇒ <code>AX6005</code>, timeout ⇒ <code>AX6007</code>, no JSON ⇒ <code>AX6006</code>, otherwise unreachable ⇒ <code>AX6001</code>. Each host's JSON is saved under <code>/var/lib/auditxs/reports/fleet/&lt;ts&gt;/</code>.</li>
+<li><strong>Exit code:</strong> <code>2</code> if any host could not be audited, <code>1</code> if all reachable but some have failing checks, <code>0</code> if all clean — CI/monitoring friendly.</li>
+</ul>
+<p>Remote hosts must have AuditXS installed; fleet never pushes code. The summary JSON is parsed with <code>grep</code> (no hard Python dependency in the core path).</p>
+<h3 id="the-aggregated-overview-dashboard-v011">The aggregated overview dashboard (v0.11)</h3>
+<p>Every fleet run also writes <code>&lt;outdir&gt;/index.html</code>, an aggregated Material dashboard for the whole run. The moving parts:</p>
+<ul>
+<li><strong><code>ov[]</code> records.</strong> <code>_fleet_row</code> has a dual role: it appends the aligned console table row <em>and</em> a TAB-separated structured record to <code>ov[]</code> — <code>host \t state \t pass \t fail \t warn \t score \t filename-stem</code> (the stem is the host sanitized <code>[^A-Za-z0-9._-] → _</code>, same as the saved report files). Both <code>rows[]</code> and <code>ov[]</code> are <code>local</code> to <code>cmd_fleet</code> and mutated from <code>_fleet_one</code>/<code>_fleet_row</code> via bash dynamic scoping. Error outcomes (UNREACHABLE, AUTHFAIL, …) are records too — the dashboard shows them, it does not hide them.</li>
+<li><strong><code>_fleet_overview_html</code></strong> is a <em>pure</em> generator: it reads <code>ov[]</code> and <code>$outdir</code> from the caller's scope and writes HTML to stdout. It computes the clean/findings/errored host counts and the fleet-average score (numeric scores only), then renders one table row per record. Links to <code>&lt;stem&gt;.json</code>/<code>&lt;stem&gt;.html</code> are <strong>relative</strong> and only emitted when the file actually exists, so the run directory is self-contained and can be archived or copied whole. All host-derived text goes through <code>html_escape</code>.</li>
+</ul>
+<p><strong>Coding workflow when you touch the dashboard:</strong></p>
+<ol>
+<li>Change the record format only in <code>_fleet_row</code>, and update every consumer (<code>_fleet_overview_html</code> is currently the only one). Keep the record TAB-separated — host names can contain almost anything else.</li>
+<li>The generator must stay pure (no SSH, no globals written) — that is what lets <code>tests/unit.sh</code> cover it by fabricating <code>ov[]</code> + a temp <code>$outdir</code> and grepping the output ("fleet HTML overview" test block). Extend those tests with every new column or aggregate you add.</li>
+<li>Keep the page self-contained (inline CSS, no external assets, relative links) and theme-aware (the <code>prefers-color-scheme: dark</code> block), matching <code>results_html</code> in <code>lib/report.sh</code> — the two share the visual language and the branded footer.</li>
+<li>Run the gate: <code>bash -n lib/fleet.sh &amp;&amp; shellcheck -S warning lib/fleet.sh &amp;&amp; bash tests/unit.sh</code>.</li>
+</ol>
+<hr>
+<h2 id="10-debugging">10. Debugging</h2>
+<ul>
+<li><strong><code>--debug</code></strong> (or <code>AUDITXS_DEBUG=1</code>) turns on <code>debug()</code> output: per-check status, return code, timing and the first chars of <code>DETAIL</code>, to stderr and the log.</li>
+<li><strong><code>--dry-run</code></strong> with <code>harden</code> prints every intended command (<code>xrun</code> shows <code>[dry-run] would run: …</code>) and file write without changing anything.</li>
+<li><strong>Logs:</strong> <code>/var/log/auditxs/auditxs-&lt;date&gt;.log</code> (root) or <code>~/.local/state/auditxs/…</code> (non-root). Errors also go to <code>/var/lib/auditxs/errors.log</code>.</li>
+<li><strong>Fixture debugging:</strong> run a single check against a fixture tree — <code>AUDITXS_ROOT_PREFIX=/path/to/fixture</code> plus the check's <code>audit_*</code> function (see <code>tests/check_test.sh</code> for the harness).</li>
+<li><strong>Syntax first:</strong> <code>bash -n &lt;file&gt;</code> catches most Bash mistakes before running.</li>
+<li><strong>Doctor:</strong> <code>auditxs doctor</code> diagnoses tooling, config, snapshot integrity, the scheduler and now the available interfaces.</li>
+</ul>
+<hr>
+<h2 id="11-testing">11. Testing</h2>
+<div class="tablewrap"><table>
+<tr><th>Suite</th><th>Command</th><th>What it covers</th><th>Safe on your machine?</th></tr>
+<tr><td>Unit</td><td><code>bash tests/unit.sh</code></td><td>pure functions (escaping, scoring, parsing, helpers)</td><td>yes</td></tr>
+<tr><td>Check fixtures</td><td><code>bash tests/check_test.sh</code></td><td>real <code>audit_*</code> logic against fixture trees via <code>AX_ROOT</code></td><td>yes</td></tr>
+<tr><td>Web UI</td><td><code>bash tests/web_test.sh</code></td><td>token auth, CSRF, loopback binding, JSON routes</td><td>yes</td></tr>
+<tr><td>Qt/QML</td><td><code>python3 tests/qml_test.py</code></td><td>loads <code>auditxs.qml</code> offscreen, drives window controls (skips without PySide6)</td><td>yes</td></tr>
+<tr><td>Qt data layer</td><td><code>python3 gui/auditxs-qt.py --selftest</code></td><td>Qt-free backend + the pkexec <code>_elevate</code> decision</td><td>yes</td></tr>
+<tr><td>Smoke (e2e)</td><td><code>bash tests/smoke.sh</code></td><td>install + <code>audit</code>/<code>harden --dry-run</code> in a container</td><td><strong>containers only</strong></td></tr>
+</table></div>
+<p><code>tests/smoke.sh</code> actually changes a system, so run it only in disposable containers (that is what CI does across five distros). Everything else is safe to run locally and in CI.</p>
+<p><strong>When you add code, add a test.</strong> New pure helper ⇒ <code>unit.sh</code>. New/<em>changed</em> check logic ⇒ a fixture case in <code>check_test.sh</code>. New error code ⇒ it appears in the generated <code>docs/ERRORS.md</code> (diff it). Keep it green before you push.</p>
+<hr>
+<h2 id="12-coding-standards">12. Coding standards</h2>
+<ul>
+<li><strong>Bash 4+</strong>, portable across the four package families. Prefer POSIX-ish constructs; use Bash arrays/associative arrays (they are why the registry is clean).</li>
+<li><strong>ShellCheck clean at <code>-S warning</code>.</strong> The repo's intentional suppressions are in <code>.shellcheckrc</code> (dynamic sourcing, deliberate word-splitting, compact status expressions). Do not add blanket <code># shellcheck disable</code> lines — justify each one.</li>
+<li><strong>Quote expansions</strong>; branch on <code>DISTRO_FAMILY</code>, not distro names; resolve system paths through <code>axpath</code> in checks.</li>
+<li><strong>User-facing text</strong> goes through <code>say/info/ok/warn/err</code>; never <code>echo</code> raw colour codes. Errors go through <code>ax_error</code>.</li>
+<li><strong>Match the surrounding style</strong> — comment density, naming (<code>audit_&lt;ID&gt;</code> / <code>fix_&lt;ID&gt;</code>, <code>cmd_&lt;subcommand&gt;</code>, <code>_private_helper</code>), and the nala-style box UI.</li>
+<li>CI enforces <code>bash -n</code> + ShellCheck on <code>auditxs</code>, <code>setup.sh</code>, <code>uninstall.sh</code>, the GUIs, <code>scripts/*.sh</code>, <code>lib/*.sh</code>, <code>checks/*.sh</code>.</li>
+</ul>
+<hr>
+<h2 id="13-versioning--the-release-process">13. Versioning &amp; the release process</h2>
+<p><strong>Single source of truth: the root <code>VERSION</code> file.</strong> <code>lib/core.sh</code> reads it, <code>packaging/build-deb.sh</code> reads it, git tags mirror it. Never hard-code a version elsewhere. Semantic versioning: <code>MAJOR.MINOR.PATCH</code>.</p>
+<p>To cut a release:</p>
+<pre class="lang-bash"><code># 1. Bump the version and note what changed
+echo &quot;0.8.1&quot; &gt; VERSION
+$EDITOR docs/ROADMAP.md          # add a &quot;Shipped in vX.Y.Z&quot; line
+$EDITOR CHANGELOG.md             # add the release notes
+./auditxs list --markdown &gt; docs/CHECKS.md   # if checks changed
+./auditxs errors --markdown &gt; docs/ERRORS.md # if error codes changed
+python3 scripts/build-site.py    # regenerate the HTML docs site + landing page
+                                 # (docs/*.html, docs/index.html, index.html —
+                                 #  published at https://auditxs.digitalxs.ca)
+
+# 2. Verify + build + checksum locally (also runs the test gate)
+./scripts/release.sh             # add --sign to GPG-sign, --tag to tag locally
+
+# 3. Commit, tag, push the tag → triggers the Release workflow
+git add -A &amp;&amp; git commit -m &quot;Release v0.8.1&quot;
+git tag -a v0.8.1 -m &quot;AuditXS v0.8.1&quot;
+git push origin HEAD
+git push origin v0.8.1</code></pre>
+<p>Pushing a <code>v*</code> tag runs <code>.github/workflows/release.yml</code>, which on a clean runner: verifies the tag equals <code>VERSION</code>, runs the lint/test gate, builds the <code>.deb</code>, writes <code>SHA256SUMS</code>, <strong>GPG-signs the checksums when the <code>GPG_PRIVATE_KEY</code>/<code>GPG_PASSPHRASE</code> repo secrets are set</strong> (otherwise ships unsigned), and publishes a GitHub Release with the <code>.deb</code>, <code>SHA256SUMS</code>, signature and man page attached.</p>
+<p><strong>Users verify a download with</strong> <code>sha256sum -c SHA256SUMS</code> and, when signed, <code>gpg --verify SHA256SUMS.asc SHA256SUMS</code>.</p>
+<p>To enable signing, add repo secrets (Settings → Secrets and variables → Actions): <code>GPG_PRIVATE_KEY</code> (<code>gpg --armor --export-secret-keys KEYID</code>) and <code>GPG_PASSPHRASE</code>.</p>
+<hr>
+<h2 id="14-working-with-github-on-this-project">14. Working with GitHub on this project</h2>
+<p><strong>Branches.</strong> <code>main</code> is the release line and is protected by CI. Do feature work on a topic branch and open a pull request.</p>
+<pre class="lang-bash"><code>git checkout -b feature/short-description
+# … commit …
+git push -u origin feature/short-description</code></pre>
+<p><strong>Commits.</strong> Imperative subject, a body that says <em>why</em>, wrap ~72 cols. Keep a change and its tests/docs in the same commit where practical.</p>
+<p><strong>Pull requests.</strong> CI (<code>ci.yml</code>) must be green: lint, unit/check/web/qt tests, <code>.deb</code> build, and the five-distro smoke matrix. In the PR body describe the change, how you verified it, and any user-facing/behaviour notes. If a PR template exists, fill its sections.</p>
+<p><strong>CI overview (<code>.github/workflows/ci.yml</code>), runs on push to <code>main</code> and every PR:</strong></p>
+<ul>
+<li><strong>lint</strong> — <code>bash -n</code> + <code>shellcheck -S warning</code> over the whole shell surface.</li>
+<li><strong>unit</strong> — <code>unit.sh</code>, <code>check_test.sh</code>, <code>web_test.sh</code>, the Qt selftest, and the offscreen <code>qml_test.py</code> (installs PySide6 + minimal GL libs).</li>
+<li><strong>package</strong> — builds the <code>.deb</code> and installs/smoke-tests it in a <code>debian:stable</code> container.</li>
+<li><strong>smoke matrix</strong> — <code>smoke.sh</code> in <code>debian:stable</code>, <code>ubuntu:24.04</code>, <code>fedora:latest</code>, <code>archlinux:latest</code>, <code>opensuse/leap:15.6</code>.</li>
+</ul>
+<p><strong>Releases</strong> are tag-driven (§13). Never edit a published release's artifacts by hand — bump <code>VERSION</code> and cut a new tag.</p>
+<p><strong>Issues / error reports.</strong> Ask reporters for the <code>AXnnnn</code> code and a <code>--debug</code> trace; the code points straight at the failure class in <code>docs/ERRORS.md</code>.</p>
+<hr>
+<h2 id="15-maintenance-runbook">15. Maintenance runbook</h2>
+<ul>
+<li><strong>A check misfires on a distro.</strong> Reproduce with a fixture (<code>AUDITXS_ROOT_PREFIX</code>), fix the <code>audit_*</code>/<code>fix_*</code>, add the fixture case to <code>check_test.sh</code>, regenerate <code>docs/CHECKS.md</code>.</li>
+<li><strong>A new distro release changes defaults.</strong> Update the relevant check and, if needed, <code>detect_distro</code>. Add it to the smoke matrix if it is a new family.</li>
+<li><strong>Add a security tool.</strong> Extend <code>_tool_pkg</code>/<code>_tool_present</code>/<code>_install_post</code> and the status/scan lists in <code>lib/tools.sh</code>; mirror the choice in the TUI and zenity tool menus.</li>
+<li><strong>CVE source changes.</strong> <code>lib/cve.sh</code> is per-family; keep the parser tolerant and never let a CVE lookup mutate the system.</li>
+<li><strong>State growth.</strong> Snapshots and reports accumulate under <code>/var/lib/auditxs</code>. <code>auditxs doctor</code> reports the size; document rotation for operators.</li>
+<li><strong>Dependency drift.</strong> ShellCheck, PySide6 and container base images move; keep CI pinned where it matters and green everywhere.</li>
+<li><strong>Keep docs generated.</strong> <code>docs/CHECKS.md</code> and <code>docs/ERRORS.md</code> are generated — regenerate them in the same commit that changes their sources.</li>
+</ul>
+<hr>
+<h2 id="16-security-model--threat-considerations">16. Security model &amp; threat considerations</h2>
+<p>AuditXS runs with root and edits security-sensitive configuration, so its own safety matters as much as its findings.</p>
+<ul>
+<li><strong>Least privilege at the edges.</strong> GUIs run unprivileged and elevate per action via <code>pkexec</code>; the web UI binds loopback only, requires an ephemeral token and a CSRF header, sets a strict CSP, and calls subprocesses argv-only (never a shell string).</li>
+<li><strong>No remote code execution by AuditXS.</strong> Third-party installers (CrowdSec/OSSEC/osquery/Trivy) are shown as official signed-repo steps, never piped to a shell. Fleet mode pushes no code and only runs a read-only audit.</li>
+<li><strong>Secrets.</strong> Never log passwords or keys. Fleet password auth uses <code>sshpass -e</code> (environment, not argv) and clears <code>SSHPASS</code> after use.</li>
+<li><strong>Supply chain.</strong> Releases ship <code>SHA256SUMS</code> and (when configured) a detached GPG signature; the <code>VERSION</code>↔tag check prevents mislabelled artifacts.</li>
+<li><strong>Fail safe.</strong> Daemon changes are validated (<code>sshd -t</code>, <code>nginx -t</code>) and auto-restored on failure; the firewall step has an SSH lockout guard; every change is reversible via the snapshot engine.</li>
+<li><strong>Input from the system is untrusted.</strong> Treat file contents, command output and remote responses defensively; quote and validate.</li>
+</ul>
+<p>When in doubt, choose the option that is more transparent, more reversible, and less privileged — in that order.</p>
+<hr>
+<p><em>Part of <a href="https://github.com/digitalxs/AuditXS/blob/main/README.md">AuditXS</a> by <a href="https://digitalxs.ca">DigitalXS</a>. See also <a href="architecture.html">docs/ARCHITECTURE.md</a>, <a href="checks.html">docs/CHECKS.md</a>, <a href="errors.html">docs/ERRORS.md</a> and <a href="security-guide.html">docs/SECURITY-GUIDE.md</a>.</em></p>
+<footer>
+<div class="brand">🛡️ AuditXS</div>
+<div>Made with <span class="heart">&#10084;</span> from Canada 🍁</div>
+<div>&copy; 2026 <strong>DigitalXS</strong> — Programming &amp; Development ·
+ <a href="https://digitalxs.ca">digitalxs.ca</a> ·
+ <a href="https://github.com/digitalxs/AuditXS">GitHub</a></div>
+</footer>
+</main>
+</div>
+</body>
+</html>

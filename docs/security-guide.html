@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Security guide — AuditXS documentation</title>
+<meta name="description" content="AuditXS — transparent, reversible Linux security auditing and hardening. Documentation.">
+<style>
+  :root {
+    --bg:#f6f6fa; --surface:#ffffff; --surface-2:#eef0f6; --on-surface:#1b1b21;
+    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#4b56d2; --primary-c:#fff;
+    --ok:#1e7d46; --err:#ba1a1a; --warn:#a25b00;
+    --ok-c:#e6f4ea; --err-c:#ffe9e7; --warn-c:#fff3e0;
+    --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121318; --surface:#1c1d24; --surface-2:#23252e; --on-surface:#e4e2e9;
+      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#bcc2ff; --primary-c:#1a2277;
+      --ok:#7fd99b; --err:#ffb4ab; --warn:#f5bd6e;
+      --ok-c:#12331f; --err-c:#3d1512; --warn-c:#3a2a12; }
+  }
+  * { box-sizing:border-box; }
+  body { font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif; margin:0;
+    background:var(--bg); color:var(--on-surface); line-height:1.6;
+    -webkit-font-smoothing:antialiased; }
+  a { color:var(--primary); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .layout { display:flex; max-width:78rem; margin:0 auto; min-height:100vh; }
+  nav.side { flex:0 0 15.5rem; padding:1.5rem 1rem 2rem; border-right:1px solid var(--outline);
+    position:sticky; top:0; align-self:flex-start; max-height:100vh; overflow-y:auto; }
+  .brandrow { display:flex; align-items:center; gap:.6rem; margin-bottom:1.2rem; }
+  .logo { width:2.2rem; height:2.2rem; border-radius:.8rem; background:var(--primary);
+    color:var(--primary-c); display:grid; place-items:center; font-weight:700; }
+  .brandrow b { font-size:1.02rem; }
+  .brandrow .v { display:block; color:var(--on-surface-var); font-size:.72rem; }
+  nav.side a.pg { display:block; padding:.42rem .7rem; border-radius:.6rem; font-size:.88rem;
+    color:var(--on-surface); margin:.1rem 0; }
+  nav.side a.pg:hover { background:var(--surface-2); text-decoration:none; }
+  nav.side a.pg.active { background:var(--primary); color:var(--primary-c); font-weight:600; }
+  nav.side .grp { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--on-surface-var); margin:1.1rem .7rem .3rem; }
+  main { flex:1 1 auto; min-width:0; padding:2rem 2.2rem 4rem; }
+  main h1 { font-size:1.7rem; margin:.2rem 0 1rem; line-height:1.25; }
+  main h2 { font-size:1.25rem; margin:2.2rem 0 .6rem; padding-top:.5rem;
+    border-top:1px solid var(--outline); }
+  main h3 { font-size:1.05rem; margin:1.6rem 0 .4rem; }
+  main h4 { font-size:.95rem; margin:1.2rem 0 .3rem; }
+  p { margin:.65rem 0; }
+  pre { background:var(--surface-2); border:1px solid var(--outline); border-radius:.8rem;
+    padding:.9rem 1.1rem; overflow-x:auto; font-size:.84rem; line-height:1.5; }
+  code { font-family:ui-monospace,"Cascadia Code",Menlo,monospace; font-size:.88em;
+    background:var(--surface-2); padding:.08rem .35rem; border-radius:.35rem; }
+  pre code { background:none; padding:0; font-size:1em; }
+  .tablewrap { overflow-x:auto; margin:.8rem 0; border:1px solid var(--outline);
+    border-radius:.8rem; }
+  table { border-collapse:collapse; width:100%; font-size:.86rem; }
+  th,td { text-align:left; padding:.5rem .8rem; border-bottom:1px solid var(--outline);
+    vertical-align:top; }
+  th { background:var(--surface-2); font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--on-surface-var); }
+  tr:last-child td { border-bottom:none; }
+  blockquote { border-left:3px solid var(--primary); margin:.8rem 0; padding:.2rem 1rem;
+    color:var(--on-surface-var); background:var(--surface-2); border-radius:0 .6rem .6rem 0; }
+  ul,ol { padding-left:1.4rem; margin:.5rem 0; }
+  li { margin:.25rem 0; }
+  hr { border:none; border-top:1px solid var(--outline); margin:1.6rem 0; }
+  img { max-width:100%; }
+  .onpage { background:var(--surface); border:1px solid var(--outline); border-radius:.9rem;
+    padding:.8rem 1.1rem; font-size:.84rem; margin:1rem 0 1.4rem; }
+  .onpage b { display:block; margin-bottom:.3rem; font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--on-surface-var); }
+  .onpage a { display:inline-block; margin:.15rem .8rem .15rem 0; }
+  footer { color:var(--on-surface-var); font-size:.78rem; margin-top:3rem;
+    border-top:1px solid var(--outline); padding-top:1.1rem; text-align:center; line-height:1.7; }
+  footer .brand { font-weight:700; color:var(--on-surface); }
+  footer .heart { color:#e0245e; }
+  .menubtn { display:none; }
+  @media (max-width:860px) {
+    .layout { flex-direction:column; }
+    nav.side { position:static; max-height:none; border-right:none;
+      border-bottom:1px solid var(--outline); flex-basis:auto; }
+    main { padding:1.2rem 1.1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.12.0</span></div></div>
+<a class="pg" href="index.html">Documentation home</a>
+<div class="grp">Guides</div>
+<a class="pg" href="usage.html">User manual</a>
+<a class="pg" href="checks.html">Check catalogue</a>
+<a class="pg" href="errors.html">Error catalogue</a>
+<a class="pg" href="architecture.html">Architecture</a>
+<a class="pg active" href="security-guide.html">Security guide</a>
+<a class="pg" href="compliance.html">Compliance</a>
+<a class="pg" href="webui.html">Web UI</a>
+<a class="pg" href="roadmap.html">Roadmap</a>
+<a class="pg" href="changelog.html">Changelog</a>
+<a class="pg" href="dev-guide.html">Developer guide</a>
+<div class="grp">Project</div>
+<a class="pg" href="../index.html">AuditXS home</a>
+<a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
+<main>
+<h1 id="linux-security-hardening--a-practical-best-practices-guide">Linux Security Hardening — a practical best-practices guide</h1><div class="onpage"><b>On this page</b><a href="#contents">Contents</a><a href="#1-core-principles">1. Core principles</a><a href="#2-the-hardening-workflow">2. The hardening workflow</a><a href="#3-server-hardening">3. Server hardening</a><a href="#4-os-hardening">4. OS hardening</a><a href="#5-network-security">5. Network security</a><a href="#6-application-hardening">6. Application hardening</a><a href="#7-database-hardening">7. Database hardening</a><a href="#8-vulnerability--patch-management">8. Vulnerability &amp; patch management</a><a href="#9-detection--monitoring">9. Detection &amp; monitoring</a><a href="#10-backups-recovery--incident-response">10. Backups, recovery &amp; incident response</a><a href="#11-compliance-frameworks">11. Compliance frameworks</a><a href="#12-quick-checklists">12. Quick checklists</a><a href="#13-references">13. References</a></div>
+<p>This guide is the <em>reasoning</em> behind AuditXS: the professional cybersecurity practices it checks for, why they matter, and how to apply them safely. It is organised so you can read it top-to-bottom as a hardening playbook, or jump to a domain. Every recommendation links to the AuditXS check(s) that verify it, so you can move from "I should do this" to "AuditXS confirms it's done" in one step.</p>
+<blockquote><p>AuditXS applies conservative, widely-accepted baselines. This guide is educational and general; always test on non-production systems first and keep console access when hardening remote machines.</p></blockquote>
+<h2 id="contents">Contents</h2>
+<ol>
+<li><a href="#1-core-principles">Core principles</a></li>
+<li><a href="#2-the-hardening-workflow">The hardening workflow</a></li>
+<li><a href="#3-server-hardening">Server hardening — privileged access, MFA, SSH</a></li>
+<li><a href="#4-os-hardening">OS hardening — patching, kernel, filesystem, MAC, logging</a></li>
+<li><a href="#5-network-security">Network security — firewall, exposure, DNS</a></li>
+<li><a href="#6-application-hardening">Application hardening — web, PHP, services</a></li>
+<li><a href="#7-database-hardening">Database hardening</a></li>
+<li><a href="#8-vulnerability--patch-management">Vulnerability &amp; patch management</a></li>
+<li><a href="#9-detection--monitoring">Detection &amp; monitoring</a></li>
+<li><a href="#10-backups-recovery--incident-response">Backups, recovery &amp; incident response</a></li>
+<li><a href="#11-compliance-frameworks">Compliance frameworks</a></li>
+<li><a href="#12-quick-checklists">Quick checklists</a></li>
+<li><a href="#13-references">References</a></li>
+</ol>
+<hr>
+<h2 id="1-core-principles">1. Core principles</h2>
+<p>Every specific control below is an instance of one of these ideas. Understand the principles and the specifics follow.</p>
+<ul>
+<li><strong>Least privilege.</strong> Every user, process and service should have the minimum access it needs and no more. Root is a last resort; services run as dedicated non-login accounts; sudo is accountable and password-protected. <em>(AuditXS: ACC-001, ACC-005, PRV-001, PRV-003, ACC-004.)</em></li>
+<li><strong>Defence in depth.</strong> No single control is trusted alone. A firewall <em>and</em> key-only SSH <em>and</em> fail2ban <em>and</em> auditd. If one layer fails, others hold.</li>
+<li><strong>Reduce the attack surface.</strong> Software that isn't installed can't be exploited; a port that isn't listening can't be attacked. Remove or disable what you don't use. <em>(SVC-001..004, NET-002, KRN-008, FW-003.)</em></li>
+<li><strong>Patch quickly.</strong> The most-exploited vulnerabilities are known ones with patches available. Automate security updates and track CVEs. <em>(UPD-001/002, VULN-001/002, DEB-002/003.)</em></li>
+<li><strong>Assume breach.</strong> Design so that a compromise is <em>detected</em> and <em>contained</em>. Log security events tamper-resistantly; alert on drift. <em>(LOG-001..004, NET-004, <code>auditxs schedule</code>.)</em></li>
+<li><strong>Encrypt in transit and at rest.</strong> Credentials and data must not cross the network or sit on disk in cleartext. <em>(SSH, PFX-002, DOV-002, DB-001/002.)</em></li>
+<li><strong>Change control &amp; reversibility.</strong> Every change is intentional, documented, and reversible. AuditXS embodies this: snapshots, a change ledger, and rollback. Never make a hardening change you cannot undo.</li>
+<li><strong>Verify, don't trust.</strong> After any change, confirm the system behaves as intended. AuditXS re-audits every fix it applies; you should test the service too.</li>
+</ul>
+<hr>
+<h2 id="2-the-hardening-workflow">2. The hardening workflow</h2>
+<p>A repeatable loop, not a one-time event:</p>
+<pre><code>   audit ──► review ──► harden ──► verify ──► baseline ──► monitor
+     ▲                                                        │
+     └────────────────────── re-audit ◄──────────────────────┘</code></pre>
+<ol>
+<li><strong>Audit (read-only).</strong> <code>sudo auditxs audit</code> — understand the current state and the score. Nothing changes.</li>
+<li><strong>Review.</strong> Read the findings. <code>auditxs explain &lt;ID&gt;</code> tells you what each fix changes and how it reverts. Decide what applies to <em>your</em> environment.</li>
+<li><strong>Harden — with a safety net.</strong> <code>sudo auditxs harden --dry-run</code> first to preview, then <code>sudo auditxs harden</code> to apply per-control with consent. <strong>Keep a second session / console open</strong> when hardening SSH or the firewall.</li>
+<li><strong>Verify.</strong> AuditXS re-checks each fix; you verify the service still works (log in over SSH in a <em>new</em> session before closing the old one).</li>
+<li><strong>Baseline.</strong> <code>sudo auditxs baseline set</code> records the approved good state.</li>
+<li><strong>Monitor for drift.</strong> <code>sudo auditxs schedule enable</code> runs a daily audit; any regression from the baseline fails the systemd unit so monitoring alerts.</li>
+</ol>
+<p>The golden rule for remote machines: <strong>never lock yourself out.</strong> AuditXS has lockout guards (it allows the SSH port before enabling a firewall, and refuses to disable password auth unless keys already exist) — but you should still test in a parallel session.</p>
+<hr>
+<h2 id="3-server-hardening">3. Server hardening</h2>
+<p><em>Privileged access, authentication, and the most-attacked entry point: SSH.</em></p>
+<h3 id="privileged-access-management">Privileged access management</h3>
+<ul>
+<li><strong>One human, one account.</strong> No shared logins. Administrators log in as themselves and elevate with sudo, so the audit trail shows <em>who</em> did <em>what</em>.</li>
+<li><strong>sudo must require a password and be accountable.</strong> No <code>NOPASSWD</code> for interactive users; enable <code>use_pty</code> (a rogue program can't detach with root) and a dedicated sudo logfile. <em>(PRV-001, ACC-004.)</em></li>
+<li><strong>Inventory your admins regularly.</strong> Know exactly who is in <code>sudo</code>/<code>wheel</code> and remove anyone who no longer needs it. <em>(PRV-003.)</em></li>
+<li><strong>root has no second.</strong> Only UID 0 is root; no account should have empty or no password. <em>(ACC-001, ACC-002.)</em></li>
+</ul>
+<h3 id="multi-factor-authentication-mfa">Multi-factor authentication (MFA)</h3>
+<p>MFA is one of the highest-impact controls against credential theft. For SSH, chain factors with <code>AuthenticationMethods publickey,keyboard-interactive</code> and a TOTP/hardware-key PAM module (google-authenticator, pam_u2f). <strong>Enrol every admin first</strong> and test in a parallel session — misconfigured MFA locks everyone out. <em>(PRV-002 reports posture; enrolment is manual by design.)</em></p>
+<h3 id="ssh-hardening-the-essentials">SSH hardening (the essentials)</h3>
+<div class="tablewrap"><table>
+<tr><th>Practice</th><th>Why</th><th>Check</th></tr>
+<tr><td>Disable root login</td><td>removes the #1 brute-force target and preserves accountability</td><td>SSH-001</td></tr>
+<tr><td>Key-based auth, disable passwords</td><td>immune to guessing/credential-stuffing (set up keys first!)</td><td>SSH-005</td></tr>
+<tr><td>Limit auth attempts (<code>MaxAuthTries ≤ 4</code>)</td><td>slows guessing, creates log noise attackers can't avoid</td><td>SSH-002</td></tr>
+<tr><td>Reject empty passwords</td><td>blocks login to accounts with no password</td><td>SSH-003</td></tr>
+<tr><td>Idle-session timeout</td><td>closes abandoned terminals</td><td>SSH-006</td></tr>
+<tr><td>Short login grace time</td><td>blunts pre-auth DoS</td><td>SSH-007</td></tr>
+<tr><td>Disable X11 forwarding on servers</td><td>a compromised server can't attack clients</td><td>SSH-004</td></tr>
+<tr><td>Brute-force protection (fail2ban/CrowdSec)</td><td>bans attacking IPs automatically</td><td>SSH-008, SEC-004</td></tr>
+<tr><td>Login banner</td><td>legal notice; required by many standards</td><td>OSH-001</td></tr>
+</table></div>
+<p>Beyond the baseline: restrict <code>AllowUsers</code>/<code>AllowGroups</code>, move off port 22 only as obscurity (not security), and consider a bastion host for fleets.</p>
+<hr>
+<h2 id="4-os-hardening">4. OS hardening</h2>
+<p><em>CIS Benchmark / DISA STIG aligned operating-system configuration.</em></p>
+<h3 id="patch-management">Patch management</h3>
+<p>Keep the system patched — it is the single most effective control. Enable unattended <strong>security</strong> updates (<code>unattended-upgrades</code> on Debian/Ubuntu, <code>dnf-automatic</code> on Fedora), reboot when the kernel updates, and run a supported release. <em>(UPD-001/002/003, DEB-002/003.)</em></p>
+<h3 id="kernel-hardening-sysctl">Kernel hardening (sysctl)</h3>
+<p>Sensible network/kernel defaults that cost nothing and close real attack classes: full ASLR, hidden kernel pointers, TCP SYN cookies, ignore ICMP redirects and source routing, reverse-path filtering, disable IP forwarding unless routing, and no setuid core dumps. <em>(KRN-001..010.)</em> AuditXS writes one labelled <code>/etc/sysctl.d/</code> drop-in per control and can revert each.</p>
+<h3 id="filesystem--permissions">Filesystem &amp; permissions</h3>
+<ul>
+<li>Sensitive files locked down: <code>/etc/shadow</code> ≤ 640, SSH host keys 600, GRUB config 600. AuditXS only ever <em>tightens</em>. <em>(FS-004.)</em></li>
+<li>No world-writable files; sticky bit on world-writable dirs; no unowned files; home directories not world-readable. <em>(FS-001/002/003/005.)</em></li>
+<li>Know your setuid/setgid binaries — each is a privilege boundary. <em>(FS-006.)</em></li>
+<li>Separate, restricted <code>/tmp</code> (<code>nodev,nosuid,noexec</code>). <em>(OSH-002.)</em></li>
+</ul>
+<h3 id="mandatory-access-control-mac">Mandatory Access Control (MAC)</h3>
+<p>Run SELinux (enforcing) or AppArmor (with profiles) so a compromised service is confined and can't roam the system. Every supported distro ships one. <em>(MAC-001.)</em></p>
+<h3 id="logging--audit-trail">Logging &amp; audit trail</h3>
+<p>You cannot respond to what you cannot see:</p>
+<ul>
+<li>Persistent journal so logs survive reboots. <em>(LOG-001.)</em></li>
+<li>The Linux audit daemon (<code>auditd</code>) with baseline rules watching identity files, sudoers and SSH config — a tamper-resistant record. <em>(LOG-002/003.)</em></li>
+<li>No world-writable log files. <em>(LOG-004.)</em></li>
+<li>Ship logs off-box (rsyslog relay, Loki, ELK) so an attacker can't erase them.</li>
+</ul>
+<h3 id="accounts--passwords">Accounts &amp; passwords</h3>
+<p>Password aging, minimum quality (pam_pwquality, <code>minlen ≥ 12</code>), a restrictive default umask, and non-login shells for service accounts. <em>(ACC-003/005/006/007.)</em> Prefer passphrases and a password manager over rotation theatre.</p>
+<hr>
+<h2 id="5-network-security">5. Network security</h2>
+<ul>
+<li><strong>Default-deny host firewall.</strong> Every server runs one (ufw or firewalld), active, denying unsolicited inbound by default, allowing only what you serve. Log firewall decisions. <em>(FW-001/002/003/004.)</em></li>
+<li><strong>Know what listens.</strong> Inventory listening ports and <em>approve</em> them; anything new is drift to investigate — a forgotten debug port, a dropped implant, a bad install. <em>(NET-001, NET-004.)</em></li>
+<li><strong>Shrink protocol surface.</strong> Prevent auto-loading of exotic network protocols (DCCP, SCTP, RDS, TIPC) that have a long CVE history and no legitimate use on most hosts. <em>(NET-002.)</em></li>
+<li><strong>DNS.</strong> If you run a resolver (BIND/Unbound), restrict recursion to your clients (open resolvers are abused for amplification DDoS), hide the version, and enable DNSSEC validation. <em>(BND-001/002, UNB-001.)</em></li>
+<li><strong>Segment.</strong> Put databases and management interfaces on private networks; never expose them to the internet. Use a VPN (WireGuard/OpenVPN) for remote admin, with private keys at mode 600 and modern ciphers. <em>(<code>auditxs tools vpn</code>.)</em></li>
+</ul>
+<hr>
+<h2 id="6-application-hardening">6. Application hardening</h2>
+<p><em>Least privilege, secure configuration, and no information leaks for exposed apps.</em></p>
+<ul>
+<li><strong>Don't disclose versions.</strong> Web servers and PHP should not advertise exact versions (free reconnaissance for attackers). <em>(APP-001/002, PHP-001.)</em></li>
+<li><strong>Send security headers.</strong> <code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options</code>, <code>Referrer-Policy</code>, and — once HTTPS is confirmed — HSTS and a Content-Security-Policy. <em>(APP-003.)</em></li>
+<li><strong>No directory listing.</strong> Disable autoindex/<code>Options Indexes</code>. <em>(APP-004.)</em></li>
+<li><strong>PHP:</strong> <code>display_errors Off</code> (errors leak paths/SQL), hardened session cookies (HttpOnly, Secure, SameSite), and review dangerous functions (<code>exec</code>, <code>system</code>, …) in <code>disable_functions</code>. <em>(PHP-002/003/004.)</em></li>
+<li><strong>Remove unneeded services.</strong> Legacy plaintext services (telnet, rsh, FTP), and desktop services on servers (Avahi, CUPS, Bluetooth) should be gone. <em>(SVC-001/002/003/004.)</em></li>
+<li><strong>Confine services.</strong> Use systemd sandboxing directives (<code>ProtectSystem</code>, <code>NoNewPrivileges</code>, <code>PrivateTmp</code>, syscall filters). <em>(SVC-005.)</em></li>
+<li><strong>TLS everywhere.</strong> Terminate with modern TLS (1.2+), strong ciphers, and automated certificates (Let's Encrypt). Redirect HTTP→HTTPS.</li>
+</ul>
+<h3 id="mail-servers">Mail servers</h3>
+<ul>
+<li><strong>Postfix:</strong> never an open relay (<code>reject_unauth_destination</code>, tight <code>mynetworks</code>), require TLS, don't leak the version, disable VRFY. <em>(PFX-001/002/003.)</em></li>
+<li><strong>Dovecot:</strong> disable plaintext auth without TLS, require TLS 1.2+. <em>(DOV-001/002.)</em></li>
+</ul>
+<hr>
+<h2 id="7-database-hardening">7. Database hardening</h2>
+<p>Databases hold the crown jewels; treat them accordingly. AuditXS is <strong>report-only</strong> here by design (auto-editing a database causes outages), but the practices are essential:</p>
+<ul>
+<li><strong>Never expose to the internet.</strong> Bind to localhost or a private network; gate with the firewall. <em>(DB-001, DB-002.)</em></li>
+<li><strong>Strong authentication.</strong> No anonymous or passwordless accounts (run <code>mysql_secure_installation</code>); PostgreSQL must not use <code>trust</code> auth — use <code>scram-sha-256</code>. <em>(DB-004, DB-002.)</em></li>
+<li><strong>Least privilege.</strong> Per-application accounts scoped to their own database; no application using the admin/root DB user.</li>
+<li><strong>Encryption.</strong> TLS for connections (<code>require_secure_transport</code>, <code>ssl=on</code>); at-rest encryption for the data directory.</li>
+<li><strong>Disable risky features.</strong> e.g. MySQL <code>local_infile</code> (arbitrary file read via SQL injection). <em>(DB-003.)</em></li>
+<li>**Backups you have <em>tested</em> restoring.** Encrypted, off-box.</li>
+</ul>
+<hr>
+<h2 id="8-vulnerability--patch-management">8. Vulnerability &amp; patch management</h2>
+<ul>
+<li><strong>Track known vulnerabilities.</strong> <code>sudo auditxs cve</code> warns when an installed package has a reported CVE with a fix available (Debian <code>debsecan</code>/security suite, Fedora <code>dnf updateinfo</code>, openSUSE patches). This appears in the audit, the report and the web UI. <em>(VULN-001/002.)</em></li>
+<li><strong>Prioritise by exploitability</strong>, not just CVSS — a network-reachable, actively-exploited bug beats a theoretical local one. Watch CISA KEV.</li>
+<li><strong>Scan deeper periodically</strong> with dedicated tools: Greenbone/OpenVAS (network), Trivy (containers/images), Lynis (host). AuditXS integrates the host auditors: <code>sudo auditxs tools install lynis &amp;&amp; sudo auditxs tools scan</code>.</li>
+<li><strong>Patch the whole stack</strong> — OS, language runtimes, application dependencies, container base images, and firmware.</li>
+</ul>
+<hr>
+<h2 id="9-detection--monitoring">9. Detection &amp; monitoring</h2>
+<p>Assume prevention will sometimes fail; make sure you'll <em>know</em>:</p>
+<ul>
+<li><strong>Host audit trail:</strong> auditd + rules (LOG-002/003), persistent journal.</li>
+<li><strong>Intrusion prevention:</strong> fail2ban or CrowdSec (log-based banning), Suricata (network IDS/IPS). <em>(SEC-004; <code>auditxs tools install crowdsec|suricata</code>.)</em></li>
+<li><strong>File integrity monitoring:</strong> AIDE records hashes of system files so tampering is detected. Initialise the baseline on a known-good system. <em>(SEC-003.)</em></li>
+<li><strong>Rootkit / malware detection:</strong> rkhunter and chkrootkit for rootkits; ClamAV for known malware (<code>auditxs tools install clamav</code>, then <code>auditxs tools scan clamav</code>). <em>(SEC-002.)</em></li>
+<li><strong>Endpoint visibility:</strong> osquery exposes live system state as SQL tables (processes, sockets, packages, users) — invaluable for hunting and inventory. Trivy scans the filesystem and container images for known vulnerabilities and misconfigurations.</li>
+<li><strong>Device &amp; application containment:</strong> USBGuard allow-lists USB devices to blunt BadUSB / rogue-device attacks; Firejail sandboxes risky applications; arpwatch flags ARP/MAC changes that can signal spoofing on the LAN.</li>
+<li><strong>Configuration drift:</strong> an approved baseline + scheduled audit (<code>auditxs baseline set</code>, <code>auditxs schedule enable</code>) turns "did something change?" into an automatic alert. <em>(NET-004 for listening-port drift.)</em></li>
+<li><strong>Centralise and alert.</strong> Ship logs off-box and alert on the signals that matter (auth failures, sudo use, new listeners, audit regressions). Logwatch summarises daily log activity into a digest.</li>
+</ul>
+<h3 id="security-tooling-auditxs-integrates">Security tooling AuditXS integrates</h3>
+<p>AuditXS does not reimplement scanners — it installs, runs and collects the output of the established ones through one reversible interface. Inventory your coverage with <code>auditxs tools status</code> (grouped by capability), install with <code>auditxs tools install &lt;name&gt;</code>, and run with <code>auditxs tools scan</code>:</p>
+<div class="tablewrap"><table>
+<tr><th>Capability</th><th>Tools</th></tr>
+<tr><td>Host auditing / compliance</td><td>Lynis, Tiger, lsat, checksecurity, <strong>OpenSCAP</strong> (SCAP/SSG, CIS/STIG profiles)</td></tr>
+<tr><td>Rootkit / malware</td><td>rkhunter, chkrootkit, <strong>ClamAV</strong></td></tr>
+<tr><td>File integrity</td><td>AIDE</td></tr>
+<tr><td>Vulnerability data</td><td>debsecan, <strong>Trivy</strong></td></tr>
+<tr><td>Audit / accounting</td><td>auditd, process accounting (acct)</td></tr>
+<tr><td>Active defence / IDS</td><td>Fail2ban, CrowdSec, Suricata, arpwatch</td></tr>
+<tr><td>Isolation / device control</td><td>Firejail, USBGuard</td></tr>
+<tr><td>Endpoint visibility / logs</td><td>osquery, Logwatch</td></tr>
+<tr><td>Host IDS</td><td>OSSEC / Wazuh (guided setup)</td></tr>
+</table></div>
+<p>OpenSCAP is the tool of choice for <strong>formal compliance evidence</strong>: point it at the SCAP Security Guide content for your distro and evaluate a CIS or STIG profile (<code>auditxs tools scan openscap</code> picks a sensible profile automatically).</p>
+<hr>
+<h2 id="10-backups-recovery--incident-response">10. Backups, recovery &amp; incident response</h2>
+<p>Hardening reduces the chance of compromise; backups and a plan determine whether one is a nuisance or a catastrophe.</p>
+<ul>
+<li><strong>3-2-1 backups:</strong> three copies, two media, one off-site. Encrypted.</li>
+<li><strong>Test restores</strong> — an untested backup is a hope, not a backup.</li>
+<li><strong>Have a written incident-response plan:</strong> how to isolate a host, who to notify, how to preserve evidence (AuditXS's change ledger and auditd logs help reconstruct <em>what changed and when</em>), and how to rebuild from known-good.</li>
+<li><strong>After an incident</strong>, rebuild rather than clean where feasible; rotate all credentials and keys.</li>
+</ul>
+<p>AuditXS supports the RECOVER function narrowly but usefully: <code>auditxs rollback</code> restores a known configuration state, and <code>/var/lib/auditxs/changes.log</code> is an append-only record of every change it ever made.</p>
+<hr>
+<h2 id="11-compliance-frameworks">11. Compliance frameworks</h2>
+<p>AuditXS maps each check to widely-used frameworks so an audit doubles as evidence. See <a href="compliance.html">COMPLIANCE.md</a> for the full detail.</p>
+<ul>
+<li><strong>CIS Benchmarks</strong> — every mappable check carries an indicative CIS section and a <strong>profile level</strong> (1 = broad baseline; 2 = stricter defence-in-depth). Scope with <code>--level 1|2</code> and <code>--framework cis</code>.</li>
+<li><strong>NIST CSF 2.0</strong> — checks are tagged by function/category (IDENTIFY, PROTECT, DETECT; plus RECOVER via rollback).</li>
+<li><strong>DISA STIG</strong> — the OS-hardening controls align with STIG principles (banners, permissions, auditing).</li>
+<li><strong>OWASP</strong> — the web/application controls follow the Secure Headers and secure-configuration guidance.</li>
+</ul>
+<p>Compliance is a <em>floor</em>, not a ceiling. Passing a benchmark is the start of security, not the end of it.</p>
+<hr>
+<h2 id="12-quick-checklists">12. Quick checklists</h2>
+<h3 id="new-server-first-hour">New server (first hour)</h3>
+<ul>
+<li>[ ] Create a non-root admin user with sudo; test SSH login as that user.</li>
+<li>[ ] SSH: disable root login, set up keys, disable password auth (SSH-001/005).</li>
+<li>[ ] Enable a default-deny firewall, allowing only SSH + your services (FW-*).</li>
+<li>[ ] Enable automatic security updates (UPD-002).</li>
+<li>[ ] <code>sudo auditxs audit --profile server</code> → <code>harden</code> the failures.</li>
+<li>[ ] Install brute-force protection (fail2ban/CrowdSec) and auditd.</li>
+<li>[ ] <code>sudo auditxs baseline set</code> and <code>sudo auditxs schedule enable</code>.</li>
+<li>[ ] Configure off-box logging and tested backups.</li>
+</ul>
+<h3 id="workstation">Workstation</h3>
+<ul>
+<li>[ ] <code>sudo auditxs audit --profile workstation</code> → review and <code>harden</code>.</li>
+<li>[ ] Enable the firewall and automatic updates.</li>
+<li>[ ] Full-disk encryption (set at install time).</li>
+<li>[ ] A password manager; MFA on important accounts.</li>
+<li>[ ] Keep the browser and its extensions minimal and updated.</li>
+</ul>
+<hr>
+<h2 id="13-references">13. References</h2>
+<ul>
+<li>CIS Benchmarks — &lt;https://www.cisecurity.org/cis-benchmarks&gt;</li>
+<li>NIST Cybersecurity Framework 2.0 — &lt;https://www.nist.gov/cyberframework&gt;</li>
+<li>DISA STIGs — &lt;https://public.cyber.mil/stigs/&gt;</li>
+<li>OWASP Secure Headers Project — &lt;https://owasp.org/www-project-secure-headers/&gt;</li>
+<li>CISA Known Exploited Vulnerabilities — &lt;https://www.cisa.gov/known-exploited-vulnerabilities-catalog&gt;</li>
+<li>Lynis — &lt;https://cisofy.com/lynis/&gt;</li>
+<li>OpenSCAP &amp; SCAP Security Guide — &lt;https://www.open-scap.org/&gt; · &lt;https://github.com/ComplianceAsCode/content&gt;</li>
+<li>ClamAV — &lt;https://www.clamav.net/&gt; · osquery — &lt;https://osquery.io/&gt; · Trivy — &lt;https://trivy.dev/&gt;</li>
+<li>USBGuard — &lt;https://usbguard.github.io/&gt; · Firejail — &lt;https://firejail.wordpress.com/&gt;</li>
+<li>AuditXS check catalogue — <a href="checks.html">CHECKS.md</a> · usage — <a href="usage.html">USAGE.md</a></li>
+</ul>
+<hr>
+<p><em>This guide ships with AuditXS. Run <code>sudo auditxs audit</code> to see which of these practices your system already follows, and <code>auditxs explain &lt;ID&gt;</code> for the detail behind any check.</em></p>
+<footer>
+<div class="brand">🛡️ AuditXS</div>
+<div>Made with <span class="heart">&#10084;</span> from Canada 🍁</div>
+<div>&copy; 2026 <strong>DigitalXS</strong> — Programming &amp; Development ·
+ <a href="https://digitalxs.ca">digitalxs.ca</a> ·
+ <a href="https://github.com/digitalxs/AuditXS">GitHub</a></div>
+</footer>
+</main>
+</div>
+</body>
+</html>

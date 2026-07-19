@@ -8,7 +8,7 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.11.1-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.12.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![Checks](https://img.shields.io/badge/checks-122-8957e5)](docs/CHECKS.md)
@@ -194,6 +194,11 @@ nothing runs a browser or a root web server on a headless box:
 | Native desktop app (Qt) | `sudo auditxs qt` | – | ✔ |
 | Graphical launcher (zenity) | `auditxs-gui` | – | ✔ |
 
+**Authenticate once, not per click** — the GUIs elevate individual actions
+via pkexec, and an installed polkit policy (`auth_admin_keep`) remembers the
+authentication for a few minutes, so consecutive GUI actions prompt for your
+password only once. The CLI relies on sudo's own credential cache.
+
 > On a server, `web` / `qt` / `auditxs-gui` refuse to start and point you at
 > `sudo auditxs tui`. If a machine is really a desktop installed with the
 > server profile, add `--profile workstation` for a one-off, or edit the config.
@@ -351,6 +356,12 @@ installer, `sudo ./setup.sh`.
 ---
 
 ## 📚 Documentation
+
+**Browse it as a website:** the documentation is also built into a static
+HTML site — `index.html` (project page) and `docs/*.html` (manuals) — published
+at **<https://auditxs.digitalxs.ca/docs>**. Regenerate any time with
+`python3 scripts/build-site.py` (standard library only, self-contained pages,
+no external assets).
 
 | Guide | What's inside |
 |---|---|

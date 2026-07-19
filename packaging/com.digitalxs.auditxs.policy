@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1.0/policyconfig.dtd">
+<!--
+  AuditXS polkit policy — keeps GUI authentication for consecutive actions.
+
+  The zenity and Qt front-ends run unprivileged and elevate each individual
+  operation with pkexec. Without a policy, polkit prompts for EVERY action.
+  These actions use auth_admin_keep, so one successful authentication is
+  remembered for the active session (polkit keeps it ~5 minutes), and a run
+  of consecutive AuditXS operations only asks once.
+
+  One action per canonical install path (pkexec matches the resolved path):
+    /opt/auditxs/auditxs        installed by setup.sh
+    /usr/share/auditxs/auditxs  installed by the .deb package
+-->
+<policyconfig>
+  <vendor>DigitalXS — Programming &amp; Development</vendor>
+  <vendor_url>https://digitalxs.ca</vendor_url>
+
+  <action id="com.digitalxs.auditxs.run">
+    <description>Run the AuditXS security audit tool</description>
+    <message>Authentication is required to run AuditXS. It will be remembered for a few minutes, so consecutive AuditXS actions do not prompt again.</message>
+    <icon_name>security-high</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/opt/auditxs/auditxs</annotate>
+  </action>
+
+  <action id="com.digitalxs.auditxs.run-packaged">
+    <description>Run the AuditXS security audit tool</description>
+    <message>Authentication is required to run AuditXS. It will be remembered for a few minutes, so consecutive AuditXS actions do not prompt again.</message>
+    <icon_name>security-high</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/share/auditxs/auditxs</annotate>
+  </action>
+</policyconfig>

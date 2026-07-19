@@ -175,6 +175,15 @@ install_files() {
     mkdir -p "$STATE_DIR/snapshots" "$STATE_DIR/reports" "$LOG_DIR"
     chmod 750 "$STATE_DIR" "$STATE_DIR/snapshots" "$STATE_DIR/reports" "$LOG_DIR"
     ok "State directories ready ($STATE_DIR, $LOG_DIR)"
+
+    # Polkit policy: keep GUI authentication (auth_admin_keep), so consecutive
+    # pkexec-elevated AuditXS actions only ask for the password once.
+    if [ -d /usr/share/polkit-1/actions ] && [ -f "$INSTALL_DIR/packaging/com.digitalxs.auditxs.policy" ]; then
+        cp "$INSTALL_DIR/packaging/com.digitalxs.auditxs.policy" \
+           /usr/share/polkit-1/actions/com.digitalxs.auditxs.policy \
+            && chmod 644 /usr/share/polkit-1/actions/com.digitalxs.auditxs.policy \
+            && ok "Polkit policy installed (GUI authentication is kept between actions)"
+    fi
 }
 
 choose_profile() {

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architecture — AuditXS documentation</title>
+<meta name="description" content="AuditXS — transparent, reversible Linux security auditing and hardening. Documentation.">
+<style>
+  :root {
+    --bg:#f6f6fa; --surface:#ffffff; --surface-2:#eef0f6; --on-surface:#1b1b21;
+    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#4b56d2; --primary-c:#fff;
+    --ok:#1e7d46; --err:#ba1a1a; --warn:#a25b00;
+    --ok-c:#e6f4ea; --err-c:#ffe9e7; --warn-c:#fff3e0;
+    --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121318; --surface:#1c1d24; --surface-2:#23252e; --on-surface:#e4e2e9;
+      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#bcc2ff; --primary-c:#1a2277;
+      --ok:#7fd99b; --err:#ffb4ab; --warn:#f5bd6e;
+      --ok-c:#12331f; --err-c:#3d1512; --warn-c:#3a2a12; }
+  }
+  * { box-sizing:border-box; }
+  body { font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif; margin:0;
+    background:var(--bg); color:var(--on-surface); line-height:1.6;
+    -webkit-font-smoothing:antialiased; }
+  a { color:var(--primary); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .layout { display:flex; max-width:78rem; margin:0 auto; min-height:100vh; }
+  nav.side { flex:0 0 15.5rem; padding:1.5rem 1rem 2rem; border-right:1px solid var(--outline);
+    position:sticky; top:0; align-self:flex-start; max-height:100vh; overflow-y:auto; }
+  .brandrow { display:flex; align-items:center; gap:.6rem; margin-bottom:1.2rem; }
+  .logo { width:2.2rem; height:2.2rem; border-radius:.8rem; background:var(--primary);
+    color:var(--primary-c); display:grid; place-items:center; font-weight:700; }
+  .brandrow b { font-size:1.02rem; }
+  .brandrow .v { display:block; color:var(--on-surface-var); font-size:.72rem; }
+  nav.side a.pg { display:block; padding:.42rem .7rem; border-radius:.6rem; font-size:.88rem;
+    color:var(--on-surface); margin:.1rem 0; }
+  nav.side a.pg:hover { background:var(--surface-2); text-decoration:none; }
+  nav.side a.pg.active { background:var(--primary); color:var(--primary-c); font-weight:600; }
+  nav.side .grp { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--on-surface-var); margin:1.1rem .7rem .3rem; }
+  main { flex:1 1 auto; min-width:0; padding:2rem 2.2rem 4rem; }
+  main h1 { font-size:1.7rem; margin:.2rem 0 1rem; line-height:1.25; }
+  main h2 { font-size:1.25rem; margin:2.2rem 0 .6rem; padding-top:.5rem;
+    border-top:1px solid var(--outline); }
+  main h3 { font-size:1.05rem; margin:1.6rem 0 .4rem; }
+  main h4 { font-size:.95rem; margin:1.2rem 0 .3rem; }
+  p { margin:.65rem 0; }
+  pre { background:var(--surface-2); border:1px solid var(--outline); border-radius:.8rem;
+    padding:.9rem 1.1rem; overflow-x:auto; font-size:.84rem; line-height:1.5; }
+  code { font-family:ui-monospace,"Cascadia Code",Menlo,monospace; font-size:.88em;
+    background:var(--surface-2); padding:.08rem .35rem; border-radius:.35rem; }
+  pre code { background:none; padding:0; font-size:1em; }
+  .tablewrap { overflow-x:auto; margin:.8rem 0; border:1px solid var(--outline);
+    border-radius:.8rem; }
+  table { border-collapse:collapse; width:100%; font-size:.86rem; }
+  th,td { text-align:left; padding:.5rem .8rem; border-bottom:1px solid var(--outline);
+    vertical-align:top; }
+  th { background:var(--surface-2); font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--on-surface-var); }
+  tr:last-child td { border-bottom:none; }
+  blockquote { border-left:3px solid var(--primary); margin:.8rem 0; padding:.2rem 1rem;
+    color:var(--on-surface-var); background:var(--surface-2); border-radius:0 .6rem .6rem 0; }
+  ul,ol { padding-left:1.4rem; margin:.5rem 0; }
+  li { margin:.25rem 0; }
+  hr { border:none; border-top:1px solid var(--outline); margin:1.6rem 0; }
+  img { max-width:100%; }
+  .onpage { background:var(--surface); border:1px solid var(--outline); border-radius:.9rem;
+    padding:.8rem 1.1rem; font-size:.84rem; margin:1rem 0 1.4rem; }
+  .onpage b { display:block; margin-bottom:.3rem; font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--on-surface-var); }
+  .onpage a { display:inline-block; margin:.15rem .8rem .15rem 0; }
+  footer { color:var(--on-surface-var); font-size:.78rem; margin-top:3rem;
+    border-top:1px solid var(--outline); padding-top:1.1rem; text-align:center; line-height:1.7; }
+  footer .brand { font-weight:700; color:var(--on-surface); }
+  footer .heart { color:#e0245e; }
+  .menubtn { display:none; }
+  @media (max-width:860px) {
+    .layout { flex-direction:column; }
+    nav.side { position:static; max-height:none; border-right:none;
+      border-bottom:1px solid var(--outline); flex-basis:auto; }
+    main { padding:1.2rem 1.1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.12.0</span></div></div>
+<a class="pg" href="index.html">Documentation home</a>
+<div class="grp">Guides</div>
+<a class="pg" href="usage.html">User manual</a>
+<a class="pg" href="checks.html">Check catalogue</a>
+<a class="pg" href="errors.html">Error catalogue</a>
+<a class="pg active" href="architecture.html">Architecture</a>
+<a class="pg" href="security-guide.html">Security guide</a>
+<a class="pg" href="compliance.html">Compliance</a>
+<a class="pg" href="webui.html">Web UI</a>
+<a class="pg" href="roadmap.html">Roadmap</a>
+<a class="pg" href="changelog.html">Changelog</a>
+<a class="pg" href="dev-guide.html">Developer guide</a>
+<div class="grp">Project</div>
+<a class="pg" href="../index.html">AuditXS home</a>
+<a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
+<main>
+<h1 id="auditxs-architecture">AuditXS architecture</h1><div class="onpage"><b>On this page</b><a href="#check-api">Check API</a><a href="#snapshot-format">Snapshot format</a><a href="#profiles">Profiles</a><a href="#adding-a-distribution">Adding a distribution</a><a href="#domains-and-nist-csf-mapping-v03">Domains and NIST CSF mapping (v0.3)</a><a href="#maintenance-commands-v03">Maintenance commands (v0.3)</a><a href="#debugging-and-testing">Debugging and testing</a><a href="#v04-additions">v0.4 additions</a><a href="#v05-additions">v0.5 additions</a><a href="#v06--the-web-ui">v0.6 — the web UI</a><a href="#fleet-mode-v08--v011">Fleet mode (v0.8 → v0.11)</a></div>
+<p>AuditXS is plain Bash (4+) with no runtime dependencies beyond coreutils and the tools it audits. It is organised as a small engine plus self-registering, self-documenting check modules.</p>
+<pre><code>auditxs                 CLI dispatcher: sources lib/*, then checks/*, parses args
+lib/core.sh             colours, logging, prompts, xrun/write_file (dry-run aware)
+lib/distro.sh           /etc/os-release detection, apt/pacman/dnf/zypper abstraction
+lib/backup.sh           snapshot + manifest + ledger + rollback engine
+lib/registry.sh         check registration, audit/harden runners, list/explain
+lib/report.sh           TSV / JSON / self-contained HTML reports
+lib/fixlib.sh           shared fix helpers (sysctl drop-ins, sshd, units, login.defs)
+checks/NN-&lt;category&gt;.sh check modules, loaded in numeric order
+gui/auditxs-gui         zenity front-end; elevates individual CLI calls via pkexec</code></pre>
+<h2 id="check-api">Check API</h2>
+<p>A check is registered with one call plus metadata, and implements <code>audit_&lt;ID&gt;</code> (required) and <code>fix_&lt;ID&gt;</code> (optional):</p>
+<pre class="lang-bash"><code>register_check &quot;SSH-001&quot; &quot;SSH&quot; &quot;critical&quot; &quot;server,workstation&quot; \
+    &quot;SSH root login is disabled&quot;
+set_meta SSH-001 desc   &quot;What is checked and why it matters…&quot;
+set_meta SSH-001 fix    &quot;Exactly what the automatic fix changes…&quot;
+set_meta SSH-001 revert &quot;How rollback restores the previous state…&quot;
+
+audit_SSH_001() {   # 0=PASS 1=FAIL(fixable) 2=WARN(manual) 3=SKIP
+    DETAIL=&quot;human-readable evidence&quot;
+    return 1
+}
+fix_SSH_001() { sshd_set PermitRootLogin no &amp;&amp; sshd_apply; }</code></pre>
+<p>Rules for fixes:</p>
+<ul>
+<li><strong>Record before you touch.</strong> Call <code>track_file</code>, <code>record_mode</code>, <code>record_sysctl</code>, <code>record_service_state</code> or <code>record_action</code> <em>before</em> modifying anything. <code>track_file</code> copies an existing file into the snapshot, or records that the file did not exist (so rollback deletes it).</li>
+<li><strong>Run through <code>xrun</code>/<code>xrun_q</code>/<code>write_file</code></strong> so <code>--dry-run</code> shows the exact command or file content instead of executing.</li>
+<li><strong>Never remove data, never loosen permissions, never upgrade packages.</strong> Checks whose remediation is irreversible or judgment-heavy return WARN (2) and have no fix function.</li>
+<li>After a fix, the engine re-runs the audit function to verify, and reports honestly if it still fails.</li>
+</ul>
+<h2 id="snapshot-format">Snapshot format</h2>
+<p>Created lazily on the first recorded action of a <code>harden</code> run:</p>
+<pre><code>/var/lib/auditxs/snapshots/&lt;YYYYMMDD-HHMMSS&gt;/
+├── meta            id/date/host/profile/version
+├── manifest.tsv    seq  check-id  type  target  prev  new
+├── checks          IDs of checks that applied fixes
+├── files/…         verbatim copies of files before modification
+└── ROLLED_BACK     (timestamp; present once reverted)</code></pre>
+<p>Manifest action types and their rollback behaviour:</p>
+<div class="tablewrap"><table>
+<tr><th>type</th><th>rollback</th></tr>
+<tr><td><code>file</code></td><td>copy saved file back</td></tr>
+<tr><td><code>file_created</code></td><td>delete the file</td></tr>
+<tr><td><code>mode</code></td><td>chmod back to recorded octal mode</td></tr>
+<tr><td><code>sysctl</code></td><td><code>sysctl -w key=previous</code> (drop-in file itself is a <code>file_created</code>)</td></tr>
+<tr><td><code>service</code></td><td>restore recorded enabled/active state</td></tr>
+<tr><td><code>pkg</code></td><td>offer to remove package AuditXS installed</td></tr>
+<tr><td><code>ufw_state</code> / <code>ufw_rule</code> / <code>ufw_default</code></td><td>disable ufw / delete rule / restore policy</td></tr>
+<tr><td><code>fw_service</code> / <code>fw_target</code></td><td>remove firewalld service / restore zone target</td></tr>
+<tr><td><code>note</code></td><td>informational only</td></tr>
+</table></div>
+<p>Rollback replays the manifest <strong>in reverse order</strong>, then reloads affected daemons (systemd units, journald, auditd rules) and validates + reloads sshd if SSH files were restored.</p>
+<p>Every recorded action is also appended to the global ledger <code>/var/lib/auditxs/changes.log</code> — an append-only, human-readable history of everything AuditXS ever changed on the machine, including rollbacks.</p>
+<h2 id="profiles">Profiles</h2>
+<p><code>PROFILE</code> (<code>server</code> | <code>workstation</code>) comes from <code>/etc/auditxs/auditxs.conf</code> (written by the installer) or <code>--profile</code>. Each check declares the profiles it applies to; non-applicable checks are reported as SKIP, so the report always shows the full picture.</p>
+<h2 id="adding-a-distribution">Adding a distribution</h2>
+<p><code>lib/distro.sh</code> maps <code>ID</code>/<code>ID_LIKE</code> to a family (<code>debian</code>, <code>arch</code>, <code>redhat</code>, <code>suse</code>) which selects the package manager and firewall convention. Derivatives usually work out of the box via <code>ID_LIKE</code>.</p>
+<h2 id="domains-and-nist-csf-mapping-v03">Domains and NIST CSF mapping (v0.3)</h2>
+<p><code>DOMAIN_OF_CATEGORY</code> in <code>lib/registry.sh</code> rolls categories up into the five assessment domains (<code>--domain</code> filter, report grouping). <code>NIST_OF_CATEGORY</code> provides indicative NIST CSF 2.0 mappings per category; individual checks override with <code>set_meta &lt;ID&gt; nist &quot;PR.AA-03&quot;</code>. Both surfaces appear in <code>explain</code>, <code>list --markdown</code>, JSON and HTML reports.</p>
+<h2 id="maintenance-commands-v03">Maintenance commands (v0.3)</h2>
+<p><code>lib/maintenance.sh</code> implements:</p>
+<ul>
+<li><code>doctor</code> — installation/tooling/config diagnostics plus snapshot integrity verification (manifest structure, saved file copies).</li>
+<li><code>baseline set|show|clear</code> — manages <code>/etc/auditxs/baseline.json</code>, the approved report used for drift comparison.</li>
+<li><code>schedule enable|disable|status|run</code> — a systemd service+timer pair running <code>auditxs schedule run</code> daily: quiet audit, then <code>diff_current_against</code> the baseline; a regression fails the unit so monitoring can alert. The units are plain labelled files removed by <code>schedule disable</code> (and by the uninstaller).</li>
+</ul>
+<h2 id="debugging-and-testing">Debugging and testing</h2>
+<ul>
+<li><code>--debug</code> (or <code>AUDITXS_DEBUG=1</code>) prints per-check timings, return codes and engine decisions to stderr and the daily log.</li>
+<li><code>tests/unit.sh</code> — pure-function unit tests (escaping, permission math, registry filtering, report parsing, diff classification). Safe anywhere.</li>
+<li><code>tests/smoke.sh</code> — end-to-end in a disposable container: audit (asserting read-only), dry-run (asserting zero changes), real harden, baseline diff both directions, rollback with byte-exact restoration.</li>
+<li>CI runs shellcheck + <code>bash -n</code>, the unit tests, and the smoke test in Debian/Ubuntu/Fedora/Arch/openSUSE containers.</li>
+</ul>
+<h2 id="v04-additions">v0.4 additions</h2>
+<p>New engine libraries:</p>
+<ul>
+<li><code>lib/cve.sh</code> — known-vulnerability awareness from the distribution's own security data (Debian debsecan / apt-security suite, dnf updateinfo, zypper patches). Populates <code>CVE_COUNT</code>/<code>CVE_SOURCE</code>/<code>CVE_LIST</code>, surfaced by check <code>VULN-001</code>, the console/HTML banners and <code>auditxs cve</code>.</li>
+<li><code>lib/tools.sh</code> — the <code>auditxs tools</code> subcommand: <code>status</code>, <code>install</code>, <code>scan</code>, <code>vpn</code>. Installs go through the snapshot machinery; scanners (Lynis, rkhunter, tiger, chkrootkit, checksecurity, lsat) are run and their reports collected under <code>/var/lib/auditxs/reports/tools/</code>. CrowdSec and OSSEC/Wazuh, which need third-party installers, are handled with guidance rather than piping remote scripts to a shell.</li>
+</ul>
+<p>Console &amp; report styling:</p>
+<ul>
+<li><code>lib/core.sh</code> gains <code>nala_box</code>/<code>nala_row</code>/<code>nala_end</code>/<code>nala_rule</code> — clean rounded box-drawing output inspired by the <code>nala</code> apt front-end, used by the audit header, per-category section rules and the summary. Falls back to plain output when not on a colour terminal.</li>
+<li><code>lib/report.sh</code> <code>results_html</code> is a self-contained <strong>Material Design 3</strong> report: theme-aware (light/dark), score ring, status chips, per-domain cards, NIST column, and a CVE warning banner when applicable.</li>
+</ul>
+<p>New check categories (all mapped into the five domains): Debian, PHP, Mail (Postfix/Dovecot), DNS (BIND/Unbound), Fail2ban, WebApps (WordPress/Drupal/ Laravel/Roundcube), SecurityTools, Vulnerabilities — plus firewall (ufw logging/gufw), web-server (nginx TLS/HSTS, Varnish), and MySQL (local_infile/accounts) additions. 122 checks total across 26 categories.</p>
+<p>Debian 13 "trixie": <code>lib/distro.sh</code> records <code>DISTRO_VERSION</code>/<code>DISTRO_CODENAME</code>; <code>DEB-002</code> treats Debian 12/13 as supported and flags EOL releases.</p>
+<h2 id="v05-additions">v0.5 additions</h2>
+<p><strong>Fixture-testable checks (<code>AX_ROOT</code>).</strong> <code>lib/core.sh</code> defines <code>AX_ROOT</code> (from <code>AUDITXS_ROOT_PREFIX</code>) and <code>axpath()</code>. Checks that read config files resolve paths through <code>axpath</code> so their <code>audit_&lt;ID&gt;</code> logic can be exercised against a fake <code>/etc</code> tree with no privileges. <code>tests/check_test.sh</code> builds fixtures and asserts PASS/FAIL/WARN outcomes for the Accounts and Filesystem checks and the Debian-release check. New file-reading checks should use <code>axpath</code> to remain testable. Converted so far: Accounts (ACC-*), Filesystem FS-004.</p>
+<p><strong>CIS Benchmark ids + profile levels.</strong> <code>lib/registry.sh</code> holds a central, indicative CIS section map (<code>CIS_OF_CHECK</code>) and a Level-2 set (<code>LEVEL2_CHECK</code>); <code>cis_of</code>/<code>level_of</code> resolve per-check overrides (<code>set_meta &lt;ID&gt; cis|level</code>) first. Surfaced in <code>explain</code>, <code>list</code>, <code>docs/CHECKS.md</code>, and JSON/HTML reports. Filters: <code>--level 1|2</code> (2 includes 1) and <code>--framework cis</code>, applied by <code>selected()</code> so they narrow audit, list and markdown output alike.</p>
+<p><strong>Debian packaging.</strong> <code>packaging/build-deb.sh</code> produces an <code>all</code>-arch <code>.deb</code> with <code>dpkg-deb</code>: the program under <code>/usr/share/auditxs</code>, command symlinks in <code>/usr/bin</code>, <code>man auditxs(8)</code>, a desktop launcher, a conffile <code>/etc/auditxs/auditxs.conf</code>, and postinst/postrm maintainer scripts that create state dirs and preserve snapshots on removal. <code>update-auditxs</code> detects a dpkg-managed install and defers to apt. CI builds the package and installs/runs/purges it in a clean <code>debian:stable</code> container.</p>
+<h2 id="v06--the-web-ui">v0.6 — the web UI</h2>
+<p><code>gui/auditxs-web.py</code> is a Python <strong>standard-library</strong> HTTP server (no framework) that renders a Material Design 3 single-page app and drives the <code>auditxs</code> CLI. It is launched by <code>auditxs web</code> (which sets <code>AUDITXS_BIN</code> to the resolved CLI path and execs python3). It stays a thin front-end: every operation is the same <code>auditxs</code> command run with an argv list.</p>
+<p>Security-critical properties, tested by <code>tests/web_test.sh</code> (in CI):</p>
+<ul>
+<li>binds <code>127.0.0.1</code> only — never a routable address;</li>
+<li>a fresh bearer token per launch, required on every request (<code>X-Auth-Token</code>);</li>
+<li>state-changing routes are POST-only with the token in a header (CSRF) and a loopback <code>Host</code> check;</li>
+<li>CLI invocations use argv lists (never a shell); check/snapshot IDs are validated <code>[A-Za-z0-9-]</code>;</li>
+<li>strict <code>Content-Security-Policy</code> and <code>X-Content-Type-Options</code> on every response.</li>
+</ul>
+<p>Reach a headless server over an SSH tunnel; see docs/WEBUI.md. The zenity GUI remains the zero-dependency desktop fallback.</p>
+<h2 id="fleet-mode-v08--v011">Fleet mode (v0.8 → v0.11)</h2>
+<p><code>lib/fleet.sh</code> turns one machine into a read-only audit controller for many hosts. The data flow is deliberately simple — no agent, no daemon, no custom protocol, just SSH and the stable JSON report format:</p>
+<pre><code>controller                                target host
+──────────                                ───────────
+cmd_fleet
+  ├─ parse hosts/--inventory
+  ├─ per host: _fleet_one ── ssh ───────▶ auditxs audit --format json --quiet
+  │       ▲                                (sudo -n … with --sudo)
+  │       └── JSON summary ◀──────────────┘
+  │       ├─ classify failures → AX6001–AX6007
+  │       ├─ save &lt;host&gt;.json  (name sanitized: [^A-Za-z0-9._-] → _)
+  │       ├─ _fleet_row  → console table row + structured ov[] record
+  │       └─ --remote-report: auditxs report --format html | tee (on host),
+  │                           copy fetched back as &lt;host&gt;.html
+  ├─ _fleet_overview_html → index.html   (aggregated dashboard)
+  └─ exit code: 2 any host errored · 1 any host has FAILs · 0 all clean</code></pre>
+<p>Key invariants:</p>
+<ul>
+<li><strong>Read-only over the wire.</strong> The only remote commands fleet ever runs are <code>auditxs audit</code> and (with <code>--remote-report</code>) <code>auditxs report</code>. Hardening over SSH is a deliberate non-feature.</li>
+<li><strong>Credentials hygiene.</strong> Password auth goes through <code>sshpass -e</code> (environment, never argv, never visible in <code>ps</code>), and <code>SSHPASS</code> is unset right after the loop. Key/agent auth runs <code>BatchMode=yes</code> so it can never hang on a prompt.</li>
+<li><strong>Host-key policy.</strong> <code>accept-new</code> by default (pin on first use, refuse changes); <code>--strict-host-key</code> / <code>--insecure-host-key</code> tighten or disable.</li>
+<li><strong>Every outcome is a record.</strong> <code>_fleet_row</code> appends both the aligned console row and a TAB-separated <code>ov[]</code> record (<code>host, state, pass, fail, warn, score, filename-stem</code>) — the single source the HTML overview renders from, so the console table and the dashboard can never disagree.</li>
+</ul>
+<h3 id="the-overview-dashboard">The overview dashboard</h3>
+<p><code>_fleet_overview_html</code> renders <code>ov[]</code> into a self-contained Material page, <code>&lt;outdir&gt;/index.html</code>: a fleet-average score dial, clean/findings/errored chips, and a per-host table with score bars and <strong>relative</strong> links to the sibling <code>&lt;host&gt;.json</code> / <code>&lt;host&gt;.html</code> files (link emitted only when the file exists). Because links are relative and there are no external assets, the whole run directory can be archived, copied or served as-is. Host names are HTML-escaped; report filenames come from the sanitized stem, so hostile host strings can neither break markup nor traverse paths. The dashboard is covered by unit tests (<code>tests/unit.sh</code>, "fleet HTML overview" section) using a fabricated <code>ov[]</code> — the generator is pure (reads <code>ov[]</code>/<code>$outdir</code>, writes stdout), which is what makes it testable without SSH.</p>
+<footer>
+<div class="brand">🛡️ AuditXS</div>
+<div>Made with <span class="heart">&#10084;</span> from Canada 🍁</div>
+<div>&copy; 2026 <strong>DigitalXS</strong> — Programming &amp; Development ·
+ <a href="https://digitalxs.ca">digitalxs.ca</a> ·
+ <a href="https://github.com/digitalxs/AuditXS">GitHub</a></div>
+</footer>
+</main>
+</div>
+</body>
+</html>

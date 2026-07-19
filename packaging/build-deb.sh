@@ -27,7 +27,7 @@ SHARE="$STAGE/usr/share/auditxs"
 DOC="$STAGE/usr/share/doc/auditxs"
 mkdir -p "$SHARE" "$STAGE/usr/bin" "$STAGE/usr/share/man/man8" \
          "$STAGE/usr/share/applications" "$DOC" "$STAGE/DEBIAN" \
-         "$STAGE/etc/auditxs"
+         "$STAGE/etc/auditxs" "$STAGE/usr/share/polkit-1/actions"
 
 # ---- program tree (no dev artifacts) -------------------------------------
 cp -a "$REPO/auditxs" "$SHARE/"
@@ -43,6 +43,10 @@ ln -s /usr/share/auditxs/scripts/updater.sh "$STAGE/usr/bin/update-auditxs"
 # ---- desktop launcher + man page -----------------------------------------
 cp -a "$REPO/gui/auditxs.desktop" "$STAGE/usr/share/applications/auditxs.desktop"
 gzip -9nc "$REPO/packaging/auditxs.8" > "$STAGE/usr/share/man/man8/auditxs.8.gz"
+
+# ---- polkit policy (keep GUI authentication between actions) --------------
+cp -a "$REPO/packaging/com.digitalxs.auditxs.policy" \
+      "$STAGE/usr/share/polkit-1/actions/com.digitalxs.auditxs.policy"
 
 # ---- documentation --------------------------------------------------------
 cp -a "$REPO/README.md" "$REPO/docs/"*.md "$DOC/" 2>/dev/null || true

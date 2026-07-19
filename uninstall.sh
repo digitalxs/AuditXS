@@ -60,6 +60,9 @@ done
 [ -f /usr/share/applications/auditxs.desktop ] \
     && rm -f /usr/share/applications/auditxs.desktop && ok "removed desktop launcher"
 
+[ -f /usr/share/polkit-1/actions/com.digitalxs.auditxs.policy ] \
+    && rm -f /usr/share/polkit-1/actions/com.digitalxs.auditxs.policy && ok "removed polkit policy"
+
 if [ -d "$INSTALL_DIR" ]; then
     rm -rf "$INSTALL_DIR" && ok "removed $INSTALL_DIR"
 fi

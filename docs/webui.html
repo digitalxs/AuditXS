@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web UI — AuditXS documentation</title>
+<meta name="description" content="AuditXS — transparent, reversible Linux security auditing and hardening. Documentation.">
+<style>
+  :root {
+    --bg:#f6f6fa; --surface:#ffffff; --surface-2:#eef0f6; --on-surface:#1b1b21;
+    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#4b56d2; --primary-c:#fff;
+    --ok:#1e7d46; --err:#ba1a1a; --warn:#a25b00;
+    --ok-c:#e6f4ea; --err-c:#ffe9e7; --warn-c:#fff3e0;
+    --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121318; --surface:#1c1d24; --surface-2:#23252e; --on-surface:#e4e2e9;
+      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#bcc2ff; --primary-c:#1a2277;
+      --ok:#7fd99b; --err:#ffb4ab; --warn:#f5bd6e;
+      --ok-c:#12331f; --err-c:#3d1512; --warn-c:#3a2a12; }
+  }
+  * { box-sizing:border-box; }
+  body { font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif; margin:0;
+    background:var(--bg); color:var(--on-surface); line-height:1.6;
+    -webkit-font-smoothing:antialiased; }
+  a { color:var(--primary); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .layout { display:flex; max-width:78rem; margin:0 auto; min-height:100vh; }
+  nav.side { flex:0 0 15.5rem; padding:1.5rem 1rem 2rem; border-right:1px solid var(--outline);
+    position:sticky; top:0; align-self:flex-start; max-height:100vh; overflow-y:auto; }
+  .brandrow { display:flex; align-items:center; gap:.6rem; margin-bottom:1.2rem; }
+  .logo { width:2.2rem; height:2.2rem; border-radius:.8rem; background:var(--primary);
+    color:var(--primary-c); display:grid; place-items:center; font-weight:700; }
+  .brandrow b { font-size:1.02rem; }
+  .brandrow .v { display:block; color:var(--on-surface-var); font-size:.72rem; }
+  nav.side a.pg { display:block; padding:.42rem .7rem; border-radius:.6rem; font-size:.88rem;
+    color:var(--on-surface); margin:.1rem 0; }
+  nav.side a.pg:hover { background:var(--surface-2); text-decoration:none; }
+  nav.side a.pg.active { background:var(--primary); color:var(--primary-c); font-weight:600; }
+  nav.side .grp { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--on-surface-var); margin:1.1rem .7rem .3rem; }
+  main { flex:1 1 auto; min-width:0; padding:2rem 2.2rem 4rem; }
+  main h1 { font-size:1.7rem; margin:.2rem 0 1rem; line-height:1.25; }
+  main h2 { font-size:1.25rem; margin:2.2rem 0 .6rem; padding-top:.5rem;
+    border-top:1px solid var(--outline); }
+  main h3 { font-size:1.05rem; margin:1.6rem 0 .4rem; }
+  main h4 { font-size:.95rem; margin:1.2rem 0 .3rem; }
+  p { margin:.65rem 0; }
+  pre { background:var(--surface-2); border:1px solid var(--outline); border-radius:.8rem;
+    padding:.9rem 1.1rem; overflow-x:auto; font-size:.84rem; line-height:1.5; }
+  code { font-family:ui-monospace,"Cascadia Code",Menlo,monospace; font-size:.88em;
+    background:var(--surface-2); padding:.08rem .35rem; border-radius:.35rem; }
+  pre code { background:none; padding:0; font-size:1em; }
+  .tablewrap { overflow-x:auto; margin:.8rem 0; border:1px solid var(--outline);
+    border-radius:.8rem; }
+  table { border-collapse:collapse; width:100%; font-size:.86rem; }
+  th,td { text-align:left; padding:.5rem .8rem; border-bottom:1px solid var(--outline);
+    vertical-align:top; }
+  th { background:var(--surface-2); font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--on-surface-var); }
+  tr:last-child td { border-bottom:none; }
+  blockquote { border-left:3px solid var(--primary); margin:.8rem 0; padding:.2rem 1rem;
+    color:var(--on-surface-var); background:var(--surface-2); border-radius:0 .6rem .6rem 0; }
+  ul,ol { padding-left:1.4rem; margin:.5rem 0; }
+  li { margin:.25rem 0; }
+  hr { border:none; border-top:1px solid var(--outline); margin:1.6rem 0; }
+  img { max-width:100%; }
+  .onpage { background:var(--surface); border:1px solid var(--outline); border-radius:.9rem;
+    padding:.8rem 1.1rem; font-size:.84rem; margin:1rem 0 1.4rem; }
+  .onpage b { display:block; margin-bottom:.3rem; font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--on-surface-var); }
+  .onpage a { display:inline-block; margin:.15rem .8rem .15rem 0; }
+  footer { color:var(--on-surface-var); font-size:.78rem; margin-top:3rem;
+    border-top:1px solid var(--outline); padding-top:1.1rem; text-align:center; line-height:1.7; }
+  footer .brand { font-weight:700; color:var(--on-surface); }
+  footer .heart { color:#e0245e; }
+  .menubtn { display:none; }
+  @media (max-width:860px) {
+    .layout { flex-direction:column; }
+    nav.side { position:static; max-height:none; border-right:none;
+      border-bottom:1px solid var(--outline); flex-basis:auto; }
+    main { padding:1.2rem 1.1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.12.0</span></div></div>
+<a class="pg" href="index.html">Documentation home</a>
+<div class="grp">Guides</div>
+<a class="pg" href="usage.html">User manual</a>
+<a class="pg" href="checks.html">Check catalogue</a>
+<a class="pg" href="errors.html">Error catalogue</a>
+<a class="pg" href="architecture.html">Architecture</a>
+<a class="pg" href="security-guide.html">Security guide</a>
+<a class="pg" href="compliance.html">Compliance</a>
+<a class="pg active" href="webui.html">Web UI</a>
+<a class="pg" href="roadmap.html">Roadmap</a>
+<a class="pg" href="changelog.html">Changelog</a>
+<a class="pg" href="dev-guide.html">Developer guide</a>
+<div class="grp">Project</div>
+<a class="pg" href="../index.html">AuditXS home</a>
+<a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
+<main>
+<h1 id="auditxs-web-ui">AuditXS web UI</h1><div class="onpage"><b>On this page</b><a href="#why-a-web-ui-and-who-it-is-for">Why a web UI (and who it is for)</a><a href="#launching">Launching</a><a href="#using-it-on-a-remote-headless-server">Using it on a remote (headless) server</a><a href="#what-you-can-do">What you can do</a><a href="#security-model">Security model</a><a href="#when-to-use-which-interface">When to use which interface</a></div>
+<p>A local, <strong>Material Design 3</strong> web interface for AuditXS. It is a thin front-end over the <code>auditxs</code> command — everything it does is a command you could type — so the transparency and reversibility guarantees are unchanged.</p>
+<h2 id="why-a-web-ui-and-who-it-is-for">Why a web UI (and who it is for)</h2>
+<p>The web UI is the graphical interface for <strong>workstations</strong> — run it and it opens in your browser, with the full audit/harden/rollback workflow behind a Material Design 3 surface.</p>
+<p>It is <strong>disabled on the <code>server</code> profile</strong> by design. Servers are kept to text interfaces only, so a headless box never runs a root web server: use the ncurses terminal UI over a plain SSH session instead —</p>
+<pre class="lang-bash"><code>sudo auditxs tui                 # menu-driven, works over SSH, no browser/tunnel</code></pre>
+<p>— or the CLI directly. If a machine really is a desktop that was installed with the server profile, override for a one-off with <code>--profile workstation</code> (then the tunnel workflow below applies).</p>
+<h2 id="launching">Launching</h2>
+<pre class="lang-bash"><code>sudo auditxs web                 # starts on http://127.0.0.1:9000 and opens a browser
+sudo auditxs web --port 8080     # choose a different port
+sudo auditxs web --no-open       # don&#x27;t auto-open a browser (print the URL only)</code></pre>
+<p>The default port is <strong>9000</strong>; override it any time with <code>--port</code>.</p>
+<p>It requires the <strong>workstation</strong> profile, <code>python3</code> (standard library only — no framework, no pip installs) and root, because auditing reads privileged files such as <code>/etc/shadow</code>.</p>
+<p>On launch it prints a URL that contains a one-time token:</p>
+<pre><code>╭─ AuditXS web UI ───────────────────────────────╮
+│  Open: http://127.0.0.1:9000/?t=&lt;token&gt;
+│  Bound to 127.0.0.1 only. Remote server? Tunnel first:
+│    ssh -L 9000:127.0.0.1:9000 user@host
+│  Stop with Ctrl-C.
+╰────────────────────────────────────────────────╯</code></pre>
+<h2 id="using-it-on-a-remote-headless-server">Using it on a remote (headless) server</h2>
+<p>The server binds <code>127.0.0.1</code> <strong>only</strong> — it is never exposed to the network. Reach it through an SSH tunnel from your workstation:</p>
+<pre class="lang-bash"><code># on the server
+sudo auditxs web --no-open
+
+# on your laptop (new terminal) — forward the local port
+ssh -L 9000:127.0.0.1:9000 user@server
+
+# then open the printed http://127.0.0.1:9000/?t=&lt;token&gt; URL in your browser</code></pre>
+<h2 id="what-you-can-do">What you can do</h2>
+<ul>
+<li><strong>Dashboard</strong> — the hardening score ring, PASS/FAIL/WARN/SKIP chips, and every check grouped by category and domain, with severity, CIS id, level and NIST mapping. A red banner appears if a package has a known CVE.</li>
+<li><strong>Features</strong> — real Material toggle switches, one per fixable control. Flipping an <em>off</em> control <em>on</em> shows the exact <code>explain</code> text first (what will change / how it reverts), then applies it; the change is recorded in a snapshot. Controls already on are locked here — turn them off from Snapshots (a rollback), preserving the reversibility model.</li>
+<li><strong>Snapshots</strong> — every hardening run, with a one-click <strong>Roll back</strong>.</li>
+<li><strong>Tools</strong> — which defensive tools are installed. Install/scan is done from the CLI (<code>sudo auditxs tools install lynis</code>, <code>sudo auditxs tools scan</code>).</li>
+<li><strong>Open report</strong> — the full Material HTML report in a new tab.</li>
+</ul>
+<h2 id="security-model">Security model</h2>
+<p>Because the UI drives root operations, it is built defensively:</p>
+<div class="tablewrap"><table>
+<tr><th>Control</th><th>Behaviour</th></tr>
+<tr><td><strong>Network exposure</strong></td><td>Binds <code>127.0.0.1</code> only, always. It cannot be made to listen on a routable address.</td></tr>
+<tr><td><strong>Authentication</strong></td><td>A fresh random bearer token every launch; required on every request. The launch URL carries it once, then the page sends it as <code>X-Auth-Token</code>.</td></tr>
+<tr><td><strong>CSRF</strong></td><td>State-changing actions are POST-only and require the token in a header (not a cookie/query), and the <code>Host</code> must be loopback.</td></tr>
+<tr><td><strong>Command injection</strong></td><td>Every <code>auditxs</code> call uses an argv list — never a shell. Check IDs and snapshot IDs are validated against <code>[A-Za-z0-9-]</code>.</td></tr>
+<tr><td><strong>Consent</strong></td><td><code>harden</code> is only ever run after you review the change text and confirm.</td></tr>
+<tr><td><strong>Content policy</strong></td><td>A strict <code>Content-Security-Policy</code> (<code>default-src &#x27;self&#x27;</code>) and <code>X-Content-Type-Options: nosniff</code> are sent on every response.</td></tr>
+<tr><td><strong>Least authority</strong></td><td>The server is a front-end; it holds no state and runs the same commands you could run by hand.</td></tr>
+</table></div>
+<p>Do <strong>not</strong> port-forward this UI to <code>0.0.0.0</code> or expose it publicly. If you need multi-user or remote access, put it behind your own authenticated reverse proxy with TLS — but the intended model is localhost + SSH tunnel.</p>
+<h2 id="when-to-use-which-interface">When to use which interface</h2>
+<div class="tablewrap"><table>
+<tr><th></th><th>CLI</th><th>Web UI</th><th>Qt app</th><th>zenity GUI</th></tr>
+<tr><td>Headless server</td><td>✔</td><td>✔ (SSH tunnel)</td><td>✗</td><td>✗</td></tr>
+<tr><td>Workstation</td><td>✔</td><td>✔</td><td>✔</td><td>✔</td></tr>
+<tr><td>Material look, live toggles</td><td>–</td><td>✔</td><td>✔</td><td>–</td></tr>
+<tr><td>Cross-desktop consistent</td><td>n/a</td><td>✔</td><td>✔</td><td>follows GTK theme</td></tr>
+<tr><td>Extra dependencies</td><td>none</td><td>python3</td><td>PySide6/Qt (large)</td><td>zenity</td></tr>
+<tr><td>Automation / scripting</td><td>✔</td><td>–</td><td>–</td><td>–</td></tr>
+</table></div>
+<p>All are front-ends over the same engine; use whichever fits.</p>
+<h3 id="the-native-qt-app-optional">The native Qt app (optional)</h3>
+<p>For a workstation-first <strong>native desktop</strong> app there's an optional Qt/QML front-end (PySide6 + Qt Quick Controls, Material style) with real toggle switches, a dashboard, snapshots and rollback:</p>
+<pre class="lang-bash"><code># install the optional add-on package (pulls in the Qt runtime)
+sudo apt install ./dist/auditxs-gui-qt_*_all.deb   # build with packaging/build-deb-gui-qt.sh
+sudo auditxs qt        # or launch &quot;AuditXS (Qt)&quot; from your desktop menu</code></pre>
+<p>It's kept a <strong>separate package</strong> so the base <code>auditxs</code> and servers never pull in the large Qt runtime. On headless servers, use the web UI instead.</p>
+<footer>
+<div class="brand">🛡️ AuditXS</div>
+<div>Made with <span class="heart">&#10084;</span> from Canada 🍁</div>
+<div>&copy; 2026 <strong>DigitalXS</strong> — Programming &amp; Development ·
+ <a href="https://digitalxs.ca">digitalxs.ca</a> ·
+ <a href="https://github.com/digitalxs/AuditXS">GitHub</a></div>
+</footer>
+</main>
+</div>
+</body>
+</html>

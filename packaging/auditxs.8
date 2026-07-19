@@ -31,6 +31,16 @@ to preview and
 .B \-\-yes
 for automation.
 .RE
+.PP
+The graphical front-ends run unprivileged and elevate individual operations
+via
+.BR pkexec (1).
+An installed polkit policy
+.RI ( com.digitalxs.auditxs.policy ,
+default
+.BR auth_admin_keep )
+remembers the authentication for a few minutes, so consecutive GUI actions
+prompt only once. The CLI relies on sudo's own credential cache.
 .SH COMMANDS
 .TP
 .B audit

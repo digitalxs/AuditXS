@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Error catalogue — AuditXS documentation</title>
+<meta name="description" content="AuditXS — transparent, reversible Linux security auditing and hardening. Documentation.">
+<style>
+  :root {
+    --bg:#f6f6fa; --surface:#ffffff; --surface-2:#eef0f6; --on-surface:#1b1b21;
+    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#4b56d2; --primary-c:#fff;
+    --ok:#1e7d46; --err:#ba1a1a; --warn:#a25b00;
+    --ok-c:#e6f4ea; --err-c:#ffe9e7; --warn-c:#fff3e0;
+    --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121318; --surface:#1c1d24; --surface-2:#23252e; --on-surface:#e4e2e9;
+      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#bcc2ff; --primary-c:#1a2277;
+      --ok:#7fd99b; --err:#ffb4ab; --warn:#f5bd6e;
+      --ok-c:#12331f; --err-c:#3d1512; --warn-c:#3a2a12; }
+  }
+  * { box-sizing:border-box; }
+  body { font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif; margin:0;
+    background:var(--bg); color:var(--on-surface); line-height:1.6;
+    -webkit-font-smoothing:antialiased; }
+  a { color:var(--primary); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .layout { display:flex; max-width:78rem; margin:0 auto; min-height:100vh; }
+  nav.side { flex:0 0 15.5rem; padding:1.5rem 1rem 2rem; border-right:1px solid var(--outline);
+    position:sticky; top:0; align-self:flex-start; max-height:100vh; overflow-y:auto; }
+  .brandrow { display:flex; align-items:center; gap:.6rem; margin-bottom:1.2rem; }
+  .logo { width:2.2rem; height:2.2rem; border-radius:.8rem; background:var(--primary);
+    color:var(--primary-c); display:grid; place-items:center; font-weight:700; }
+  .brandrow b { font-size:1.02rem; }
+  .brandrow .v { display:block; color:var(--on-surface-var); font-size:.72rem; }
+  nav.side a.pg { display:block; padding:.42rem .7rem; border-radius:.6rem; font-size:.88rem;
+    color:var(--on-surface); margin:.1rem 0; }
+  nav.side a.pg:hover { background:var(--surface-2); text-decoration:none; }
+  nav.side a.pg.active { background:var(--primary); color:var(--primary-c); font-weight:600; }
+  nav.side .grp { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--on-surface-var); margin:1.1rem .7rem .3rem; }
+  main { flex:1 1 auto; min-width:0; padding:2rem 2.2rem 4rem; }
+  main h1 { font-size:1.7rem; margin:.2rem 0 1rem; line-height:1.25; }
+  main h2 { font-size:1.25rem; margin:2.2rem 0 .6rem; padding-top:.5rem;
+    border-top:1px solid var(--outline); }
+  main h3 { font-size:1.05rem; margin:1.6rem 0 .4rem; }
+  main h4 { font-size:.95rem; margin:1.2rem 0 .3rem; }
+  p { margin:.65rem 0; }
+  pre { background:var(--surface-2); border:1px solid var(--outline); border-radius:.8rem;
+    padding:.9rem 1.1rem; overflow-x:auto; font-size:.84rem; line-height:1.5; }
+  code { font-family:ui-monospace,"Cascadia Code",Menlo,monospace; font-size:.88em;
+    background:var(--surface-2); padding:.08rem .35rem; border-radius:.35rem; }
+  pre code { background:none; padding:0; font-size:1em; }
+  .tablewrap { overflow-x:auto; margin:.8rem 0; border:1px solid var(--outline);
+    border-radius:.8rem; }
+  table { border-collapse:collapse; width:100%; font-size:.86rem; }
+  th,td { text-align:left; padding:.5rem .8rem; border-bottom:1px solid var(--outline);
+    vertical-align:top; }
+  th { background:var(--surface-2); font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--on-surface-var); }
+  tr:last-child td { border-bottom:none; }
+  blockquote { border-left:3px solid var(--primary); margin:.8rem 0; padding:.2rem 1rem;
+    color:var(--on-surface-var); background:var(--surface-2); border-radius:0 .6rem .6rem 0; }
+  ul,ol { padding-left:1.4rem; margin:.5rem 0; }
+  li { margin:.25rem 0; }
+  hr { border:none; border-top:1px solid var(--outline); margin:1.6rem 0; }
+  img { max-width:100%; }
+  .onpage { background:var(--surface); border:1px solid var(--outline); border-radius:.9rem;
+    padding:.8rem 1.1rem; font-size:.84rem; margin:1rem 0 1.4rem; }
+  .onpage b { display:block; margin-bottom:.3rem; font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--on-surface-var); }
+  .onpage a { display:inline-block; margin:.15rem .8rem .15rem 0; }
+  footer { color:var(--on-surface-var); font-size:.78rem; margin-top:3rem;
+    border-top:1px solid var(--outline); padding-top:1.1rem; text-align:center; line-height:1.7; }
+  footer .brand { font-weight:700; color:var(--on-surface); }
+  footer .heart { color:#e0245e; }
+  .menubtn { display:none; }
+  @media (max-width:860px) {
+    .layout { flex-direction:column; }
+    nav.side { position:static; max-height:none; border-right:none;
+      border-bottom:1px solid var(--outline); flex-basis:auto; }
+    main { padding:1.2rem 1.1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.12.0</span></div></div>
+<a class="pg" href="index.html">Documentation home</a>
+<div class="grp">Guides</div>
+<a class="pg" href="usage.html">User manual</a>
+<a class="pg" href="checks.html">Check catalogue</a>
+<a class="pg active" href="errors.html">Error catalogue</a>
+<a class="pg" href="architecture.html">Architecture</a>
+<a class="pg" href="security-guide.html">Security guide</a>
+<a class="pg" href="compliance.html">Compliance</a>
+<a class="pg" href="webui.html">Web UI</a>
+<a class="pg" href="roadmap.html">Roadmap</a>
+<a class="pg" href="changelog.html">Changelog</a>
+<a class="pg" href="dev-guide.html">Developer guide</a>
+<div class="grp">Project</div>
+<a class="pg" href="../index.html">AuditXS home</a>
+<a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
+<main>
+<h1 id="auditxs-error-catalogue">AuditXS error catalogue</h1>
+<p>Every recoverable failure in AuditXS reports a stable error number (<code>AXnnnn</code>). Look one up on the command line with <code>auditxs errors &lt;code&gt;</code>, or search titles with <code>auditxs errors &lt;term&gt;</code>. Occurrences are recorded in <code>/var/lib/auditxs/errors.log</code> (<code>auditxs errors --log</code>).</p>
+<p>Generated from the catalogue in <code>lib/errors.sh</code> by <code>auditxs errors --markdown</code>.</p>
+<div class="tablewrap"><table>
+<tr><th>Code</th><th>Meaning</th><th>Why it happens</th><th>How to resolve</th></tr>
+<tr><td><code>AX1001</code></td><td>Unsupported or undetected distribution</td><td>AuditXS could not map this system to a supported package family (Debian, Arch, RedHat/Fedora, SUSE).</td><td>Confirm /etc/os-release exists and names a supported distribution or ID_LIKE; run 'auditxs doctor'.</td></tr>
+<tr><td><code>AX1002</code></td><td>Missing required core tool</td><td>A tool the engine depends on (awk, sed, grep, find, stat…) is not installed.</td><td>Install coreutils/gawk/grep/findutils for your distribution; 'auditxs doctor' lists what is missing.</td></tr>
+<tr><td><code>AX1003</code></td><td>Operation requires root privileges</td><td>The requested operation reads or writes privileged state and must run as root.</td><td>Re-run with sudo, e.g. 'sudo auditxs audit'.</td></tr>
+<tr><td><code>AX1004</code></td><td>Invalid or missing profile</td><td>PROFILE is not 'server' or 'workstation', so AuditXS cannot decide which checks apply.</td><td>Set PROFILE in /etc/auditxs/auditxs.conf (run the installer) or pass --profile server</td><td>workstation.</td></tr>
+<tr><td><code>AX1005</code></td><td>State directory not writable</td><td>AuditXS could not create or write under its state directory (snapshots, reports, ledgers).</td><td>Ensure /var/lib/auditxs exists and is writable by root, and that the disk is not full.</td></tr>
+<tr><td><code>AX2001</code></td><td>Check module failed to load</td><td>A file under checks/ could not be sourced (syntax error or missing dependency).</td><td>Run 'bash -n checks/&lt;file&gt;.sh' to find the error; see digitalxs-dev-doc.MD for the check API.</td></tr>
+<tr><td><code>AX2002</code></td><td>Check raised an internal error</td><td>An audit_&lt;ID&gt; function returned an unexpected status or crashed while inspecting the system.</td><td>Re-run with --debug to see the failing check and its output; file an issue with that trace.</td></tr>
+<tr><td><code>AX2003</code></td><td>Report could not be written</td><td>The HTML/JSON/TSV report file could not be created under the reports directory.</td><td>Check that /var/lib/auditxs/reports is writable and the disk has free space.</td></tr>
+<tr><td><code>AX2004</code></td><td>Baseline report unreadable or malformed</td><td>The baseline file passed to --baseline / diff is missing or is not a valid AuditXS JSON report.</td><td>Point at a report produced by 'auditxs report --format json'; re-approve with 'auditxs baseline set'.</td></tr>
+<tr><td><code>AX2005</code></td><td>Unknown check ID</td><td>A check ID that does not exist was referenced (e.g. for a waiver or --check filter).</td><td>List valid IDs with 'auditxs list'; IDs look like SSH-001, FW-002, CON-001.</td></tr>
+<tr><td><code>AX2006</code></td><td>Invalid date</td><td>A date was not in the required YYYY-MM-DD format.</td><td>Use an ISO date, e.g. --until 2026-12-31.</td></tr>
+<tr><td><code>AX3001</code></td><td>Fix failed to apply</td><td>A fix_&lt;ID&gt; function could not complete; the change was not applied.</td><td>Re-run with --debug; review the specific check with 'auditxs explain &lt;ID&gt;'. Nothing was left half-applied.</td></tr>
+<tr><td><code>AX3002</code></td><td>sshd configuration validation failed</td><td>The proposed SSH change did not pass 'sshd -t', so AuditXS restored the previous configuration.</td><td>Inspect /etc/ssh/sshd_config.d/99-auditxs.conf and existing config for conflicts; fix and retry.</td></tr>
+<tr><td><code>AX3003</code></td><td>Firewall change blocked by lockout guard</td><td>Enabling the firewall would have dropped the SSH session because the SSH port was not allowed first.</td><td>Allow the SSH port (the guard normally does this automatically) or run from local console, then retry.</td></tr>
+<tr><td><code>AX3004</code></td><td>Service reload failed after change</td><td>A daemon (sshd, nginx, apache…) did not reload/restart cleanly after a configuration change.</td><td>Check the service status/journal; the change is recorded in the snapshot and can be rolled back.</td></tr>
+<tr><td><code>AX4001</code></td><td>Snapshot could not be created</td><td>AuditXS could not create the snapshot directory or manifest before making a change, so it refused to proceed.</td><td>Ensure /var/lib/auditxs/snapshots is writable and the disk is not full; nothing was changed.</td></tr>
+<tr><td><code>AX4002</code></td><td>Snapshot manifest write failed</td><td>A change could not be recorded in the snapshot manifest, so the change was not carried out (reversibility first).</td><td>Check disk space and permissions on /var/lib/auditxs/snapshots.</td></tr>
+<tr><td><code>AX4003</code></td><td>Rollback target not found</td><td>The snapshot id requested for rollback does not exist.</td><td>List snapshots with 'auditxs snapshots' and pass a valid id (or 'latest').</td></tr>
+<tr><td><code>AX4004</code></td><td>Rollback could not restore an item</td><td>One recorded action could not be reverted (a file was removed, permissions changed externally, etc.).</td><td>Review the rollback log; restore the item manually from the snapshot directory if needed.</td></tr>
+<tr><td><code>AX5001</code></td><td>Package installation failed</td><td>The distribution package manager could not install a requested package.</td><td>Update your package indexes, check network/repository access, and retry 'auditxs tools install &lt;name&gt;'.</td></tr>
+<tr><td><code>AX5002</code></td><td>Unknown security tool requested</td><td>The tool name passed to 'tools install' is not one AuditXS knows how to install.</td><td>Run 'auditxs tools install' with no name to see the known list.</td></tr>
+<tr><td><code>AX5003</code></td><td>External scanner reported errors</td><td>An installed scanner (Lynis, rkhunter, ClamAV, OpenSCAP…) exited non-zero; its findings are still saved.</td><td>Read the saved report under /var/lib/auditxs/reports/tools/ — a non-zero exit is often findings, not a crash.</td></tr>
+<tr><td><code>AX5004</code></td><td>SCAP content not found</td><td>OpenSCAP was asked to scan but no SCAP Security Guide (SSG) content is installed.</td><td>Install the 'scap-security-guide'/'ssg-*' content package, then re-run 'auditxs tools scan openscap'.</td></tr>
+<tr><td><code>AX6001</code></td><td>Cannot reach host</td><td>The remote host did not accept a TCP/SSH connection (down, wrong address/port, or firewalled).</td><td>Verify the hostname/IP and port, that sshd is running, and that a firewall is not blocking you.</td></tr>
+<tr><td><code>AX6002</code></td><td>SSH authentication failed</td><td>The remote host rejected the credentials (wrong user, key not authorised, or bad password).</td><td>Check the username; authorise your key with 'ssh-copy-id', or re-check the password. Prefer key auth.</td></tr>
+<tr><td><code>AX6003</code></td><td>Host key verification failed</td><td>The remote host key is unknown or has changed, so AuditXS refused to connect (possible MITM).</td><td>Verify the host key out-of-band and add it to known_hosts. Only use --insecure-host-key on trusted networks.</td></tr>
+<tr><td><code>AX6004</code></td><td>Password auth needs sshpass</td><td>Password authentication was requested but 'sshpass' (used to feed the password to ssh) is not installed.</td><td>Install sshpass, or better, switch to key authentication (--key) which needs no extra tooling.</td></tr>
+<tr><td><code>AX6005</code></td><td>Remote auditxs not available</td><td>'auditxs' was not found on the remote host, so it cannot run an audit there.</td><td>Install AuditXS on the remote host (or use --sudo if it is installed but needs root), then retry.</td></tr>
+<tr><td><code>AX6006</code></td><td>Remote audit returned no result</td><td>The remote command produced no parseable JSON audit result.</td><td>Re-run with --debug to see the raw remote output; confirm the remote 'auditxs audit' works when run directly.</td></tr>
+<tr><td><code>AX6007</code></td><td>Remote command timed out</td><td>The remote host did not finish the audit within the timeout.</td><td>Raise --timeout, or check load/connectivity on that host.</td></tr>
+<tr><td><code>AX6008</code></td><td>Inventory unreadable or empty</td><td>The --inventory file could not be read or contained no hosts.</td><td>Provide a readable file with one host (user@host) per line, or pass hosts with --hosts.</td></tr>
+<tr><td><code>AX7001</code></td><td>Unknown output format</td><td>An unsupported value was passed to --format.</td><td>Use one of: text, json, tsv, html, sarif, csv.</td></tr>
+<tr><td><code>AX8001</code></td><td>Alert delivery failed</td><td>AuditXS could not deliver a drift/CVE alert to the configured sink (webhook or email).</td><td>Check the sink URL/address and connectivity; test with 'auditxs alert test'.</td></tr>
+<tr><td><code>AX8002</code></td><td>No alert sink configured</td><td>An alert was requested but no webhook or email destination is configured.</td><td>Set ALERT_WEBHOOK and/or ALERT_EMAIL in /etc/auditxs/auditxs.conf (see 'auditxs alert').</td></tr>
+<tr><td><code>AX9000</code></td><td>Unspecified error</td><td>An error occurred that does not yet have a dedicated code.</td><td>Re-run with --debug and include the trace when reporting the issue.</td></tr>
+<tr><td><code>AX9001</code></td><td>Unknown error code referenced</td><td>Code path reported an error number that is not defined in the catalogue (this is a bug).</td><td>Please report it at https://github.com/digitalxs/AuditXS/issues.</td></tr>
+</table></div>
+<footer>
+<div class="brand">🛡️ AuditXS</div>
+<div>Made with <span class="heart">&#10084;</span> from Canada 🍁</div>
+<div>&copy; 2026 <strong>DigitalXS</strong> — Programming &amp; Development ·
+ <a href="https://digitalxs.ca">digitalxs.ca</a> ·
+ <a href="https://github.com/digitalxs/AuditXS">GitHub</a></div>
+</footer>
+</main>
+</div>
+</body>
+</html>

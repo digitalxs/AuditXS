@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>User manual — AuditXS documentation</title>
+<meta name="description" content="AuditXS — transparent, reversible Linux security auditing and hardening. Documentation.">
+<style>
+  :root {
+    --bg:#f6f6fa; --surface:#ffffff; --surface-2:#eef0f6; --on-surface:#1b1b21;
+    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#4b56d2; --primary-c:#fff;
+    --ok:#1e7d46; --err:#ba1a1a; --warn:#a25b00;
+    --ok-c:#e6f4ea; --err-c:#ffe9e7; --warn-c:#fff3e0;
+    --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121318; --surface:#1c1d24; --surface-2:#23252e; --on-surface:#e4e2e9;
+      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#bcc2ff; --primary-c:#1a2277;
+      --ok:#7fd99b; --err:#ffb4ab; --warn:#f5bd6e;
+      --ok-c:#12331f; --err-c:#3d1512; --warn-c:#3a2a12; }
+  }
+  * { box-sizing:border-box; }
+  body { font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif; margin:0;
+    background:var(--bg); color:var(--on-surface); line-height:1.6;
+    -webkit-font-smoothing:antialiased; }
+  a { color:var(--primary); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .layout { display:flex; max-width:78rem; margin:0 auto; min-height:100vh; }
+  nav.side { flex:0 0 15.5rem; padding:1.5rem 1rem 2rem; border-right:1px solid var(--outline);
+    position:sticky; top:0; align-self:flex-start; max-height:100vh; overflow-y:auto; }
+  .brandrow { display:flex; align-items:center; gap:.6rem; margin-bottom:1.2rem; }
+  .logo { width:2.2rem; height:2.2rem; border-radius:.8rem; background:var(--primary);
+    color:var(--primary-c); display:grid; place-items:center; font-weight:700; }
+  .brandrow b { font-size:1.02rem; }
+  .brandrow .v { display:block; color:var(--on-surface-var); font-size:.72rem; }
+  nav.side a.pg { display:block; padding:.42rem .7rem; border-radius:.6rem; font-size:.88rem;
+    color:var(--on-surface); margin:.1rem 0; }
+  nav.side a.pg:hover { background:var(--surface-2); text-decoration:none; }
+  nav.side a.pg.active { background:var(--primary); color:var(--primary-c); font-weight:600; }
+  nav.side .grp { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--on-surface-var); margin:1.1rem .7rem .3rem; }
+  main { flex:1 1 auto; min-width:0; padding:2rem 2.2rem 4rem; }
+  main h1 { font-size:1.7rem; margin:.2rem 0 1rem; line-height:1.25; }
+  main h2 { font-size:1.25rem; margin:2.2rem 0 .6rem; padding-top:.5rem;
+    border-top:1px solid var(--outline); }
+  main h3 { font-size:1.05rem; margin:1.6rem 0 .4rem; }
+  main h4 { font-size:.95rem; margin:1.2rem 0 .3rem; }
+  p { margin:.65rem 0; }
+  pre { background:var(--surface-2); border:1px solid var(--outline); border-radius:.8rem;
+    padding:.9rem 1.1rem; overflow-x:auto; font-size:.84rem; line-height:1.5; }
+  code { font-family:ui-monospace,"Cascadia Code",Menlo,monospace; font-size:.88em;
+    background:var(--surface-2); padding:.08rem .35rem; border-radius:.35rem; }
+  pre code { background:none; padding:0; font-size:1em; }
+  .tablewrap { overflow-x:auto; margin:.8rem 0; border:1px solid var(--outline);
+    border-radius:.8rem; }
+  table { border-collapse:collapse; width:100%; font-size:.86rem; }
+  th,td { text-align:left; padding:.5rem .8rem; border-bottom:1px solid var(--outline);
+    vertical-align:top; }
+  th { background:var(--surface-2); font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--on-surface-var); }
+  tr:last-child td { border-bottom:none; }
+  blockquote { border-left:3px solid var(--primary); margin:.8rem 0; padding:.2rem 1rem;
+    color:var(--on-surface-var); background:var(--surface-2); border-radius:0 .6rem .6rem 0; }
+  ul,ol { padding-left:1.4rem; margin:.5rem 0; }
+  li { margin:.25rem 0; }
+  hr { border:none; border-top:1px solid var(--outline); margin:1.6rem 0; }
+  img { max-width:100%; }
+  .onpage { background:var(--surface); border:1px solid var(--outline); border-radius:.9rem;
+    padding:.8rem 1.1rem; font-size:.84rem; margin:1rem 0 1.4rem; }
+  .onpage b { display:block; margin-bottom:.3rem; font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--on-surface-var); }
+  .onpage a { display:inline-block; margin:.15rem .8rem .15rem 0; }
+  footer { color:var(--on-surface-var); font-size:.78rem; margin-top:3rem;
+    border-top:1px solid var(--outline); padding-top:1.1rem; text-align:center; line-height:1.7; }
+  footer .brand { font-weight:700; color:var(--on-surface); }
+  footer .heart { color:#e0245e; }
+  .menubtn { display:none; }
+  @media (max-width:860px) {
+    .layout { flex-direction:column; }
+    nav.side { position:static; max-height:none; border-right:none;
+      border-bottom:1px solid var(--outline); flex-basis:auto; }
+    main { padding:1.2rem 1.1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.12.0</span></div></div>
+<a class="pg" href="index.html">Documentation home</a>
+<div class="grp">Guides</div>
+<a class="pg active" href="usage.html">User manual</a>
+<a class="pg" href="checks.html">Check catalogue</a>
+<a class="pg" href="errors.html">Error catalogue</a>
+<a class="pg" href="architecture.html">Architecture</a>
+<a class="pg" href="security-guide.html">Security guide</a>
+<a class="pg" href="compliance.html">Compliance</a>
+<a class="pg" href="webui.html">Web UI</a>
+<a class="pg" href="roadmap.html">Roadmap</a>
+<a class="pg" href="changelog.html">Changelog</a>
+<a class="pg" href="dev-guide.html">Developer guide</a>
+<div class="grp">Project</div>
+<a class="pg" href="../index.html">AuditXS home</a>
+<a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
+<main>
+<h1 id="auditxs-user-manual">AuditXS user manual</h1><div class="onpage"><b>On this page</b><a href="#contents">Contents</a><a href="#concepts">Concepts</a><a href="#installation">Installation</a><a href="#auditing">Auditing</a><a href="#hardening">Hardening</a><a href="#rollback">Rollback</a><a href="#baselines--drift-detection">Baselines &amp; drift detection</a><a href="#scheduled-audits">Scheduled audits</a><a href="#vulnerability-cve-warnings">Vulnerability (CVE) warnings</a><a href="#security-tooling">Security tooling</a><a href="#fleet-mode--auditing-many-hosts-over-ssh">Fleet mode — auditing many hosts over SSH</a><a href="#error-numbers">Error numbers</a><a href="#maintenance-doctor">Maintenance (doctor)</a><a href="#interfaces-by-profile">Interfaces by profile</a><a href="#the-terminal-ui-ncurses">The terminal UI (ncurses)</a><a href="#the-web-ui-workstation-profile">The web UI (workstation profile)</a><a href="#the-gui-workstation-profile">The GUI (workstation profile)</a><a href="#privileges--credential-caching">Privileges &amp; credential caching</a><a href="#debugging">Debugging</a><a href="#files--directories">Files &amp; directories</a><a href="#exit-codes">Exit codes</a></div>
+<p>AuditXS audits Linux systems against fundamental security baselines and — only with your explicit consent — hardens them with fully reversible changes. This manual covers the CLI, the GUI, and the operational workflows. See <a href="compliance.html">COMPLIANCE.md</a> for framework alignment and <a href="checks.html">CHECKS.md</a> for every check's documentation.</p>
+<h2 id="contents">Contents</h2>
+<ol>
+<li><a href="#concepts">Concepts</a></li>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#auditing">Auditing</a></li>
+<li><a href="#hardening">Hardening</a></li>
+<li><a href="#rollback">Rollback</a></li>
+<li><a href="#baselines--drift-detection">Baselines &amp; drift detection</a></li>
+<li><a href="#scheduled-audits">Scheduled audits</a></li>
+<li><a href="#maintenance-doctor">Maintenance (doctor)</a></li>
+<li><a href="#the-gui-workstation-profile">The GUI</a></li>
+<li><a href="#privileges--credential-caching">Privileges &amp; credential caching</a></li>
+<li><a href="#debugging">Debugging</a></li>
+<li><a href="#files--directories">Files &amp; directories</a></li>
+<li><a href="#exit-codes">Exit codes</a></li>
+</ol>
+<h2 id="concepts">Concepts</h2>
+<ul>
+<li><strong>Check</strong> — one auditable statement about the system (e.g. <code>SSH-001 — SSH root login is disabled</code>). Every check documents what it inspects, why it matters, what its fix changes and how that is reverted: <code>auditxs explain SSH-001</code>.</li>
+<li><strong>Status</strong> — <code>PASS</code>, <code>FAIL</code> (finding; a fix is offered when the check provides one), <code>WARN</code> (needs human judgement — never auto-fixed), <code>SKIP</code> (not applicable: software absent or wrong profile).</li>
+<li><strong>Profile</strong> — <code>server</code> or <code>workstation</code>, chosen at install time (<code>/etc/auditxs/auditxs.conf</code>), overridable per run with <code>--profile</code>.</li>
+<li><strong>Category / Domain</strong> — checks are grouped in categories (SSH, Kernel, …) which roll up into five assessment domains: Server Hardening, OS Hardening, Network Security, Application Hardening, Database Hardening.</li>
+<li><strong>Snapshot</strong> — the recorded pre-change state (file copies + action manifest) created automatically by the first change of a <code>harden</code> run.</li>
+<li><strong>Baseline</strong> — an approved audit report used to detect drift.</li>
+</ul>
+<h2 id="installation">Installation</h2>
+<pre class="lang-bash"><code>git clone https://github.com/digitalxs/AuditXS.git
+cd AuditXS
+sudo ./setup.sh                    # interactive: mode + Server/Workstation
+sudo ./setup.sh --server -y        # non-interactive server install
+sudo ./setup.sh --workstation -y --no-gui
+sudo ./setup.sh --refresh          # repair/update files, keep configuration
+sudo update-auditxs                # update an existing installation
+sudo /opt/auditxs/uninstall.sh    # remove (asks before deleting snapshots)</code></pre>
+<h2 id="auditing">Auditing</h2>
+<p>Audits are <strong>strictly read-only</strong> — nothing on the system changes.</p>
+<pre class="lang-bash"><code>sudo auditxs audit                          # everything applicable to the profile
+sudo auditxs audit --category SSH           # one category
+sudo auditxs audit --domain &quot;Database&quot;      # one assessment domain
+sudo auditxs audit --check SSH-001 --check FW-002
+sudo auditxs audit --profile server         # override the configured profile
+sudo auditxs audit --format json            # machine-readable to stdout (also: tsv, html)</code></pre>
+<p>Every console audit saves timestamped HTML and JSON reports under <code>/var/lib/auditxs/reports/</code> (plus <code>latest.json</code> / <code>latest.html</code>) and ends with a severity-weighted hardening score (0–100).</p>
+<p>The <strong>HTML report is interactive</strong> (while staying a single, self-contained file you can archive or email):</p>
+<ul>
+<li><strong>Show only findings</strong> — a toggle in the score card hides every passed, skipped and waived check, so the report shows just the FAILs and WARNs; categories with nothing left to show disappear too. Flip it back to see the full evidence trail.</li>
+<li><strong>Fix it / How to fix buttons</strong> — every FAIL and WARN row carries a button. For a failing check with an automatic, reversible fix it reveals (and copies to the clipboard) the exact command — <code>sudo auditxs harden --check &lt;ID&gt;</code> — which audits just that check and offers its fix with the usual consent and snapshot. For warnings and manual-fix items it gives <code>auditxs explain &lt;ID&gt;</code>, the documented remediation guidance. A static report never executes anything itself — the buttons hand you the command, and AuditXS still asks before changing the system.</li>
+</ul>
+<p>To read the catalogue without running anything:</p>
+<pre class="lang-bash"><code>auditxs list                # table of all checks
+auditxs list --markdown     # full documentation (source of docs/CHECKS.md)
+auditxs explain FW-002      # one check in depth, including NIST CSF mapping</code></pre>
+<h2 id="hardening">Hardening</h2>
+<pre class="lang-bash"><code>sudo auditxs harden --dry-run     # preview: every intended command/file, zero changes
+sudo auditxs harden               # interactive: each fix explained, then confirmed
+sudo auditxs harden --category SSH
+sudo auditxs harden --check NET-002 --yes   # non-interactive (automation)</code></pre>
+<p>For each failing check with an automatic fix, AuditXS shows what is checked and why, exactly what the fix changes, and how it is reverted — then asks. After applying, the check is re-audited and the honest result reported. All changes of one run land in a single snapshot.</p>
+<p>Checks whose remediation is irreversible or judgement-heavy (package upgrades, sudoers NOPASSWD entries, database settings, MFA enrolment…) are <strong>report-only</strong>: they explain the manual path and never touch the system.</p>
+<h2 id="rollback">Rollback</h2>
+<pre class="lang-bash"><code>sudo auditxs snapshots            # list snapshots (id, date, actions, state)
+sudo auditxs rollback latest      # undo the most recent hardening run
+sudo auditxs rollback 20260712-211102</code></pre>
+<p>Rollback shows the full plan (every recorded action, reverted in reverse order), asks for confirmation, restores files byte-for-byte, re-applies recorded permissions/sysctl/service states, offers to remove packages AuditXS installed, then validates and reloads affected daemons (sshd is re-validated with <code>sshd -t</code> before reload). The global ledger <code>/var/lib/auditxs/changes.log</code> records everything ever changed, including rollbacks.</p>
+<h2 id="baselines--drift-detection">Baselines &amp; drift detection</h2>
+<p>Capture a known-good state and detect any regression from it:</p>
+<pre class="lang-bash"><code>sudo auditxs audit                     # produce a report
+sudo auditxs baseline set              # approve the latest report as baseline
+auditxs baseline show                  # inspect the approved baseline
+sudo auditxs audit --baseline /etc/auditxs/baseline.json   # compare inline
+sudo auditxs diff /etc/auditxs/baseline.json               # compare latest report</code></pre>
+<p><code>auditxs diff</code> exits <strong>1 when any check regressed</strong>, so it can gate CI pipelines or fire monitoring alerts. Improvements, regressions and scope changes are listed separately with the score delta.</p>
+<p>Port-level drift: approve the expected listening ports once and <code>NET-004</code> fails whenever anything new starts listening — see <code>auditxs explain NET-004</code>.</p>
+<h2 id="scheduled-audits">Scheduled audits</h2>
+<pre class="lang-bash"><code>sudo auditxs schedule enable    # daily read-only audit via systemd timer
+auditxs schedule status
+sudo auditxs schedule disable</code></pre>
+<p>The timer runs <code>auditxs schedule run</code>: a quiet audit (reports saved as usual) followed by a comparison against the approved baseline. A regression makes the service run <strong>fail</strong>, which any systemd-based monitoring picks up (<code>systemctl status auditxs-audit.service</code>, journal, OnFailure hooks). Without systemd, add a cron entry: <code>0 3 * * * /usr/local/bin/auditxs schedule run</code>.</p>
+<h2 id="vulnerability-cve-warnings">Vulnerability (CVE) warnings</h2>
+<pre class="lang-bash"><code>sudo auditxs cve                  # warn about installed packages with a known CVE</code></pre>
+<p>Uses the distribution's own security data (Debian: <code>debsecan</code> or the security apt suite; Fedora: <code>dnf updateinfo</code>; openSUSE: <code>zypper patches</code>). Exits non-zero when vulnerable packages are found. The same signal appears automatically at the end of every <code>audit</code> (console banner + check <code>VULN-001</code> + HTML report banner + log) and in the GUI after an audit. For a precise per-CVE list on Debian, <code>sudo auditxs tools install debsecan</code>.</p>
+<h2 id="security-tooling">Security tooling</h2>
+<pre class="lang-bash"><code>sudo auditxs tools status         # which defensive tools are installed
+sudo auditxs tools install lynis  # guided, reversible install (also: rkhunter,
+                                  # aide, debsecan, suricata, crowdsec, fail2ban…)
+sudo auditxs tools scan           # run installed scanners, collect their reports
+auditxs tools vpn                 # review WireGuard / OpenVPN configuration</code></pre>
+<p>Scanner reports are saved under <code>/var/lib/auditxs/reports/tools/&lt;timestamp&gt;/</code>. CrowdSec and OSSEC/Wazuh require third-party installers — AuditXS prints the official steps rather than piping a remote script into your shell.</p>
+<h2 id="fleet-mode--auditing-many-hosts-over-ssh">Fleet mode — auditing many hosts over SSH</h2>
+<pre class="lang-bash"><code>auditxs fleet web01 db01 app03            # audit three hosts (uses your SSH agent/keys)
+auditxs fleet web01 --user admin --key ~/.ssh/id_ed25519 --sudo
+auditxs fleet --inventory hosts.txt --ask-pass   # one password for all hosts (needs sshpass)</code></pre>
+<p>Fleet mode runs a <strong>read-only</strong> <code>auditxs audit</code> on each host and prints an aggregated score table, saving each host's JSON — plus an <strong>aggregated HTML overview dashboard</strong> (<code>index.html</code>) — under <code>/var/lib/auditxs/reports/fleet/&lt;timestamp&gt;/</code>. It <strong>never</strong> hardens over SSH — review each report and harden that host locally. Each remote host must have AuditXS installed; fleet never pushes code.</p>
+<div class="tablewrap"><table>
+<tr><th>Option</th><th>Meaning</th></tr>
+<tr><td><code>--hosts a,b,c</code> / positional</td><td>hosts to audit (<code>user@host</code> or <code>host</code>)</td></tr>
+<tr><td><code>--inventory &lt;file&gt;</code></td><td>read hosts from a file (one <code>user@host</code> per line, <code>#</code> comments)</td></tr>
+<tr><td><code>--user &lt;name&gt;</code></td><td>default SSH user for hosts written without <code>user@</code></td></tr>
+<tr><td><code>--key &lt;file&gt;</code></td><td>SSH private key (key auth is preferred)</td></tr>
+<tr><td><code>--ask-pass</code></td><td>prompt once for a password, used for all hosts (via <code>sshpass</code>)</td></tr>
+<tr><td><code>--port &lt;n&gt;</code></td><td>SSH port (default 22) · <code>--sudo</code> runs the remote audit via <code>sudo -n</code></td></tr>
+<tr><td><code>--timeout &lt;sec&gt;</code></td><td>per-host timeout (default 120) · <code>--output &lt;dir&gt;</code> where reports go</td></tr>
+<tr><td><code>--remote-report</code></td><td>also generate a full HTML report <strong>on each audited host</strong> (<code>/var/lib/auditxs/reports/</code>) and fetch a copy back</td></tr>
+<tr><td><code>--strict-host-key</code> / <code>--insecure-host-key</code></td><td>tighten or disable host-key checking</td></tr>
+</table></div>
+<p><strong>Authentication</strong> prefers keys; password auth passes the password to <code>sshpass</code> through the environment, never the command line. <strong>Host keys</strong> are verified (trust-on-first-use, refusing changed keys). <strong>Exit codes</strong>: <code>2</code> if any host could not be audited, <code>1</code> if some host has failing checks, <code>0</code> if all clean. Any failure prints a stable error number (see below).</p>
+<h3 id="a-complete-walkthrough">A complete walkthrough</h3>
+<p>This sets up a small fleet (three servers) for recurring audits from one controller machine.</p>
+<p><strong>1. Install AuditXS on every target.</strong> Fleet never pushes code — each host runs its own installed copy:</p>
+<pre class="lang-bash"><code>ssh admin@web01 &#x27;git clone https://github.com/digitalxs/AuditXS &amp;&amp; sudo AuditXS/setup.sh&#x27;
+# or install the .deb on Debian/Ubuntu targets</code></pre>
+<p><strong>2. Create an audit user and key.</strong> A dedicated user keeps the access auditable and the key non-interactive:</p>
+<pre class="lang-bash"><code>ssh-keygen -t ed25519 -f ~/.ssh/auditxs_fleet -C &quot;auditxs fleet&quot;
+for h in web01 db01 mail01; do ssh-copy-id -i ~/.ssh/auditxs_fleet admin@$h; done</code></pre>
+<p><strong>3. Allow the remote audit to run as root</strong> (full results need root — without it, privileged checks come back SKIP/WARN and scores read lower than reality). On each target add a narrow sudoers rule:</p>
+<pre><code># /etc/sudoers.d/auditxs-fleet  (visudo -f)
+admin ALL=(root) NOPASSWD: /usr/local/bin/auditxs</code></pre>
+<p><strong>4. Write an inventory</strong> — one <code>user@host</code> per line, <code>#</code> comments allowed:</p>
+<pre><code># fleet.txt — production
+admin@web01
+admin@db01
+admin@mail01     # mail relay</code></pre>
+<p><strong>5. Run the fleet audit:</strong></p>
+<pre class="lang-bash"><code>auditxs fleet --inventory fleet.txt --key ~/.ssh/auditxs_fleet --sudo --remote-report</code></pre>
+<p>Each host is audited read-only in turn; you get a per-host result line, then the aggregated summary table, and the reports listed below. Re-run any time — each run gets its own timestamped directory, so history is preserved.</p>
+<p><strong>6. Review and act.</strong> Open the overview dashboard (next section), drill into a host's report, then fix findings <em>on that host</em> with <code>sudo auditxs harden</code>. For drift detection between runs, compare a host's JSON from two runs:</p>
+<pre class="lang-bash"><code>auditxs diff /var/lib/auditxs/reports/fleet/&lt;old&gt;/web01.json \
+             /var/lib/auditxs/reports/fleet/&lt;new&gt;/web01.json</code></pre>
+<h3 id="the-fleet-overview-dashboard">The fleet overview dashboard</h3>
+<p>Every run writes an aggregated <strong>HTML overview</strong> to <code>/var/lib/auditxs/reports/fleet/&lt;timestamp&gt;/index.html</code> (also printed at the end of the run). It is a single self-contained page — no external assets, safe to archive or email — showing:</p>
+<ul>
+<li>the <strong>fleet-average hardening score</strong> as a dial, and chips counting hosts that are clean / have findings / could not be audited;</li>
+<li>a <strong>per-host table</strong>: state, pass/fail/warn counts, a score bar, and links to that host's saved <code>JSON</code> (and <code>HTML</code> with <code>--remote-report</code>) reports — the links are relative, so the directory can be copied elsewhere intact;</li>
+<li>the standing reminder that fleet mode changed nothing, and that hardening happens per-host after review.</li>
+</ul>
+<h3 id="troubleshooting-a-fleet-run">Troubleshooting a fleet run</h3>
+<p>Every per-host failure is classified to a stable error number shown in the summary; <code>auditxs errors &lt;code&gt;</code> explains any of them.</p>
+<div class="tablewrap"><table>
+<tr><th>State in table</th><th>Code</th><th>Typical cause</th></tr>
+<tr><td><code>UNREACHABLE</code></td><td>AX6001</td><td>host down, wrong name/port, firewall</td></tr>
+<tr><td><code>AUTHFAIL</code></td><td>AX6002</td><td>wrong user, key not installed, password wrong</td></tr>
+<tr><td><code>HOSTKEY</code></td><td>AX6003</td><td>host key changed (reinstall — or MITM; verify!)</td></tr>
+<tr><td><code>NO-AUDITXS</code></td><td>AX6005</td><td>AuditXS not installed on the target</td></tr>
+<tr><td><code>NO-RESULT</code></td><td>AX6006</td><td>remote audit produced no JSON (try <code>--sudo</code>)</td></tr>
+<tr><td><code>TIMEOUT</code></td><td>AX6007</td><td>slow host/link — raise <code>--timeout</code></td></tr>
+</table></div>
+<h2 id="error-numbers">Error numbers</h2>
+<p>Every recoverable failure reports a unique <code>AXnnnn</code> code with a plain explanation and fix, on the console and in <code>/var/lib/auditxs/errors.log</code>.</p>
+<pre class="lang-bash"><code>auditxs errors            # the whole catalogue (the &quot;database&quot;)
+auditxs errors AX6002     # explain one code
+auditxs errors ssh        # search titles/descriptions
+auditxs errors log        # recent occurrences on this host</code></pre>
+<p>The full catalogue is also in <a href="errors.html">ERRORS.md</a> (regenerate with <code>auditxs errors --markdown</code>).</p>
+<h2 id="maintenance-doctor">Maintenance (doctor)</h2>
+<pre class="lang-bash"><code>auditxs doctor        # as root, also verifies snapshot integrity</code></pre>
+<p>Doctor verifies the installation (commands, registered checks), required and feature tooling, configuration (profile, baseline, port allowlist), snapshot integrity (manifest structure and saved file copies), state size, the change ledger, and the scheduled-audit timer. Exit code 1 means at least one real problem was found.</p>
+<h2 id="interfaces-by-profile">Interfaces by profile</h2>
+<p>AuditXS deliberately limits its interfaces by profile. Servers get <strong>text interfaces only</strong> — the CLI and an ncurses terminal UI — so a headless box never runs a browser, an X client, or a root web server. Workstations may use any interface.</p>
+<div class="tablewrap"><table>
+<tr><th>Interface</th><th>Command</th><th>Server</th><th>Workstation</th></tr>
+<tr><td>Command line</td><td><code>auditxs audit</code> / <code>harden</code> / …</td><td>✔</td><td>✔</td></tr>
+<tr><td>Terminal UI (ncurses)</td><td><code>sudo auditxs tui</code></td><td>✔</td><td>✔</td></tr>
+<tr><td>Localhost web UI</td><td><code>sudo auditxs web</code></td><td>–</td><td>✔</td></tr>
+<tr><td>Native desktop app (Qt)</td><td><code>sudo auditxs qt</code></td><td>–</td><td>✔</td></tr>
+<tr><td>Graphical launcher (zenity)</td><td><code>auditxs-gui</code></td><td>–</td><td>✔</td></tr>
+</table></div>
+<p><code>web</code>, <code>qt</code> and <code>auditxs-gui</code> refuse to start on the server profile and point you at <code>sudo auditxs tui</code>. Check the active profile with <code>auditxs profile</code>; override per-run with <code>--profile workstation</code> (or edit <code>/etc/auditxs/auditxs.conf</code>).</p>
+<h2 id="the-terminal-ui-ncurses">The terminal UI (ncurses)</h2>
+<pre class="lang-bash"><code>sudo auditxs tui                 # menu-driven interface in the terminal</code></pre>
+<p>The recommended interface for servers: it runs entirely in the terminal over a plain SSH session — no browser, no tunnel, no X, no root web server. It is a thin front-end over the CLI (whiptail, or <code>dialog</code> as a fallback) and offers the full workflow — audit, turn controls on/off, roll back, CVE check, install/run security tools, generate a report, doctor — with the same mandatory <em>review before every change</em> screen as the CLI. Available on workstations too.</p>
+<h2 id="the-web-ui-workstation-profile">The web UI (workstation profile)</h2>
+<pre class="lang-bash"><code>sudo auditxs web                 # Material Design web UI on http://127.0.0.1:9000
+sudo auditxs web --port 9000 --no-open</code></pre>
+<p>A localhost-only, token-authenticated Material Design 3 interface (Python standard library — no framework). Disabled on the server profile (use the terminal UI over SSH instead). Full details and the security model: <a href="webui.html">WEBUI.md</a>.</p>
+<h2 id="the-gui-workstation-profile">The GUI (workstation profile)</h2>
+<p><code>auditxs-gui</code> is a thin wrapper over the CLI — everything it does is a visible <code>auditxs</code> command, elevated per-operation via pkexec so you see an authentication prompt exactly when privileges are used. Like the web and Qt interfaces it is disabled on the server profile.</p>
+<p><strong>Which window you get.</strong> When the Qt app (<code>auditxs-gui-qt</code>, PySide6) is installed, <code>auditxs-gui</code> opens the <strong>windowed Qt interface</strong> — a single application window with its own title bar and full window controls (minimize, maximize/restore, move, resize). Without PySide6 it falls back to the classic <strong>zenity</strong> dialogs. zenity dialogs are drawn by your window manager and cannot carry their own min/max buttons (on GNOME's default layout the WM shows only a close button), which is why the windowed Qt app is preferred when available. Force one or the other:</p>
+<pre class="lang-bash"><code>AUDITXS_GUI=qt      auditxs-gui      # require the windowed Qt app
+AUDITXS_GUI=zenity  auditxs-gui      # use the classic zenity dialogs</code></pre>
+<p>The Qt window runs unprivileged and elevates each action with pkexec, so it displays normally on both X11 and Wayland. The zenity flow (below) behaves the same way.</p>
+<ul>
+<li><strong>Audit</strong> — read-only audit with a sortable results table; a CVE warning pops up afterwards if vulnerable packages are found.</li>
+<li><strong>Features</strong> — the on/off toggle view: every security control with its live ON/OFF state. Tick an off control and apply to turn it on (with the mandatory review screen); turn controls off again via Rollback.</li>
+<li><strong>Harden</strong> — pick fixes from a checklist, review <em>exactly what will change</em> (mandatory review screen), apply, see the full change log.</li>
+<li><strong>Tools</strong> — install security tools, run scanners, review VPN config.</li>
+<li><strong>Report</strong> — generate and open the Material-style HTML report.</li>
+<li><strong>Rollback</strong> — pick a snapshot, see it reverted.</li>
+<li><strong>Baseline</strong> — approve the latest audit for drift alerts.</li>
+<li><strong>Doctor / Catalogue / About</strong>.</li>
+</ul>
+<p>The console output uses a clean <strong>nala-style</strong> boxed layout; the HTML report uses <strong>Material Design 3</strong> (theme-aware light/dark, score ring, status chips). The zenity GUI itself follows your desktop's GTK theme.</p>
+<h2 id="privileges--credential-caching">Privileges &amp; credential caching</h2>
+<p>You should only have to authenticate <strong>once per working session</strong>, not once per action:</p>
+<ul>
+<li><strong>CLI</strong> — a single command run (<code>sudo auditxs harden</code>) authenticates once for the whole run, however many fixes you apply. Between commands, sudo's own credential cache applies (15 minutes by default per terminal), so consecutive <code>sudo auditxs …</code> commands do not re-prompt. Adjust with <code>timestamp_timeout</code> in sudoers if your policy allows a longer window.</li>
+<li><strong>GUIs (Qt, zenity)</strong> — the graphical front-ends run unprivileged and elevate each individual operation with <strong>pkexec</strong>. AuditXS installs a polkit policy (<code>com.digitalxs.auditxs.policy</code>, action <code>com.digitalxs.auditxs.run</code>) whose default is <strong><code>auth_admin_keep</code></strong>: the first elevated action prompts, and polkit then remembers the authorization for the active desktop session (about five minutes, the polkit default), so a burst of consecutive GUI actions asks for your password once. The policy is installed by <code>setup.sh</code> and by the <code>.deb</code>, and removed on uninstall. It applies only to the exact installed AuditXS binary paths (<code>/opt/auditxs/auditxs</code>, <code>/usr/share/auditxs/auditxs</code>) — running from a development checkout keeps the stricter prompt-every-time default.</li>
+<li><strong>Web UI and terminal UI</strong> — <code>sudo auditxs web</code> / <code>sudo auditxs tui</code> authenticate once at launch and keep running with that privilege; there are no further prompts for the life of the session.</li>
+</ul>
+<p>This design keeps the security property that matters — privileges are only ever exercised through the consented AuditXS entry points — while removing repeated password prompts inside one burst of work.</p>
+<h2 id="debugging">Debugging</h2>
+<pre class="lang-bash"><code>sudo auditxs audit --debug        # per-check timings, return codes, decisions
+AUDITXS_DEBUG=1 sudo auditxs harden --dry-run</code></pre>
+<p>Debug output goes to stderr and to the daily log (<code>/var/log/auditxs/auditxs-YYYYMMDD.log</code>). Every executed command, file write and snapshot action is logged even without debug mode.</p>
+<h2 id="files--directories">Files &amp; directories</h2>
+<div class="tablewrap"><table>
+<tr><th>Path</th><th>Purpose</th></tr>
+<tr><td><code>/opt/auditxs</code></td><td>the program</td></tr>
+<tr><td><code>/usr/local/bin/auditxs</code>, <code>auditxs-gui</code>, <code>update-auditxs</code></td><td>commands</td></tr>
+<tr><td><code>/etc/auditxs/auditxs.conf</code></td><td>profile configuration</td></tr>
+<tr><td><code>/etc/auditxs/baseline.json</code></td><td>approved baseline (optional)</td></tr>
+<tr><td><code>/etc/auditxs/allowed-ports.conf</code></td><td>approved listening ports (optional, NET-004)</td></tr>
+<tr><td><code>/var/lib/auditxs/snapshots/</code></td><td>rollback snapshots</td></tr>
+<tr><td><code>/var/lib/auditxs/reports/</code></td><td>HTML/JSON audit reports</td></tr>
+<tr><td><code>/var/lib/auditxs/changes.log</code></td><td>append-only ledger of every change</td></tr>
+<tr><td><code>/var/log/auditxs/</code></td><td>daily logs, installer logs</td></tr>
+<tr><td>files written by fixes</td><td>always labelled: <code>sysctl.d/99-auditxs-*</code>, <code>sshd_config.d/99-auditxs.conf</code>, <code>sudoers.d/99-auditxs</code>, <code>modprobe.d/99-auditxs-*</code>, …</td></tr>
+</table></div>
+<h2 id="exit-codes">Exit codes</h2>
+<div class="tablewrap"><table>
+<tr><th>Command</th><th>0</th><th>1</th></tr>
+<tr><td><code>audit</code></td><td>audit completed (findings do not affect the exit code)</td><td>usage/runtime error</td></tr>
+<tr><td><code>harden</code></td><td>run completed</td><td>usage/runtime error</td></tr>
+<tr><td><code>diff</code></td><td>no regressions</td><td>regressions found (or error)</td></tr>
+<tr><td><code>schedule run</code></td><td>audit ok, no drift</td><td>regression vs baseline (alerts monitoring)</td></tr>
+<tr><td><code>doctor</code></td><td>no problems</td><td>problems found</td></tr>
+<tr><td><code>rollback</code></td><td>rolled back</td><td>cancelled or error</td></tr>
+</table></div>
+<footer>
+<div class="brand">🛡️ AuditXS</div>
+<div>Made with <span class="heart">&#10084;</span> from Canada 🍁</div>
+<div>&copy; 2026 <strong>DigitalXS</strong> — Programming &amp; Development ·
+ <a href="https://digitalxs.ca">digitalxs.ca</a> ·
+ <a href="https://github.com/digitalxs/AuditXS">GitHub</a></div>
+</footer>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AuditXS — transparent, reversible Linux security auditing</title>
+<meta name="description" content="AuditXS audits Linux systems against professional security baselines and hardens them with fully reversible, consented changes. Free and open source, by DigitalXS.">
+<style>
+  :root {
+    --bg:#f6f6fa; --surface:#ffffff; --surface-2:#eef0f6; --on-surface:#1b1b21;
+    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#4b56d2; --primary-c:#fff;
+    --ok:#1e7d46; --ok-c:#e6f4ea;
+    --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121318; --surface:#1c1d24; --surface-2:#23252e; --on-surface:#e4e2e9;
+      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#bcc2ff; --primary-c:#1a2277;
+      --ok:#7fd99b; --ok-c:#12331f; }
+  }
+  * { box-sizing:border-box; }
+  body { font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif; margin:0;
+    background:var(--bg); color:var(--on-surface); line-height:1.6;
+    -webkit-font-smoothing:antialiased; }
+  a { color:var(--primary); text-decoration:none; }
+  .wrap { max-width:64rem; margin:0 auto; padding:0 1.25rem 4rem; }
+  header.top { display:flex; align-items:center; gap:.7rem; padding:1.2rem 0; }
+  .logo { width:2.4rem; height:2.4rem; border-radius:.85rem; background:var(--primary);
+    color:var(--primary-c); display:grid; place-items:center; font-weight:700; font-size:1.1rem; }
+  header.top b { font-size:1.1rem; }
+  header.top .links { margin-left:auto; display:flex; gap:1.1rem; font-size:.9rem; font-weight:600; }
+  .hero { text-align:center; padding:3.2rem 0 2.4rem; }
+  .hero .shield { font-size:3.2rem; line-height:1; }
+  .hero h1 { font-size:2.3rem; margin:.6rem 0 .4rem; letter-spacing:-.02em; }
+  .hero h1 .x { color:var(--primary); }
+  .hero p.tag { font-size:1.12rem; color:var(--on-surface-var); max-width:38rem; margin:0 auto; }
+  .cta { display:flex; gap:.8rem; justify-content:center; margin-top:1.6rem; flex-wrap:wrap; }
+  .btn { display:inline-block; padding:.7rem 1.5rem; border-radius:2rem; font-weight:700;
+    font-size:.95rem; }
+  .btn.primary { background:var(--primary); color:var(--primary-c); box-shadow:var(--shadow); }
+  .btn.ghost { border:1px solid var(--outline); color:var(--on-surface); background:var(--surface); }
+  .btn:hover { filter:brightness(1.06); }
+  .badges { display:flex; gap:.5rem; justify-content:center; margin-top:1.2rem; flex-wrap:wrap; }
+  .b { font-size:.74rem; font-weight:700; padding:.3rem .7rem; border-radius:2rem;
+    background:var(--surface-2); color:var(--on-surface-var); border:1px solid var(--outline); }
+  .b.ok { background:var(--ok-c); color:var(--ok); border-color:transparent; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(17rem,1fr));
+    gap:1rem; margin:2.5rem 0; }
+  .f { background:var(--surface); border:1px solid var(--outline); border-radius:1.1rem;
+    padding:1.2rem 1.3rem; box-shadow:var(--shadow); }
+  .f .ic { font-size:1.5rem; }
+  .f b { display:block; margin:.4rem 0 .25rem; font-size:1rem; }
+  .f p { margin:0; font-size:.87rem; color:var(--on-surface-var); }
+  h2.sec { text-align:center; font-size:1.45rem; margin:3rem 0 .4rem; }
+  p.secsub { text-align:center; color:var(--on-surface-var); margin:0 0 1.2rem; }
+  pre.install { background:var(--surface-2); border:1px solid var(--outline);
+    border-radius:.9rem; padding:1rem 1.2rem; overflow-x:auto; font-size:.9rem;
+    max-width:34rem; margin:0 auto; line-height:1.7; }
+  pre.install .c { color:var(--on-surface-var); }
+  code { font-family:ui-monospace,"Cascadia Code",Menlo,monospace; }
+  .docs-band { background:var(--surface); border:1px solid var(--outline);
+    border-radius:1.2rem; box-shadow:var(--shadow); padding:1.6rem 1.8rem; margin:2.6rem 0;
+    display:flex; align-items:center; gap:1.2rem; flex-wrap:wrap; }
+  .docs-band .txt { flex:1 1 20rem; }
+  .docs-band b { font-size:1.08rem; }
+  .docs-band p { margin:.3rem 0 0; font-size:.9rem; color:var(--on-surface-var); }
+  footer { color:var(--on-surface-var); font-size:.78rem; margin-top:3rem;
+    border-top:1px solid var(--outline); padding-top:1.2rem; text-align:center; line-height:1.8; }
+  footer .brand { font-weight:700; font-size:.95rem; color:var(--on-surface); }
+  footer .heart { color:#e0245e; }
+  @media (max-width:640px){ .hero h1{font-size:1.8rem} .hero{padding-top:2rem} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="logo">A</div><b>AuditXS</b>
+  <nav class="links">
+    <a href="docs/index.html">Documentation</a>
+    <a href="https://github.com/digitalxs/AuditXS">GitHub</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="shield">🛡️</div>
+  <h1>Audit<span class="x">XS</span></h1>
+  <p class="tag">Transparent, reversible Linux security auditing and hardening.
+  Professional baselines, every change explained, every change undoable.</p>
+  <div class="cta">
+    <a class="btn primary" href="docs/index.html">Read the documentation</a>
+    <a class="btn ghost" href="https://github.com/digitalxs/AuditXS">View on GitHub</a>
+  </div>
+  <div class="badges">
+    <span class="b ok">v0.12.0</span>
+    <span class="b">GPL-3.0</span>
+    <span class="b">122 checks · 26 categories</span>
+    <span class="b">CIS · STIG aligned</span>
+    <span class="b">NIST CSF 2.0 mapped</span>
+  </div>
+</section>
+
+<div class="grid">
+  <div class="f"><span class="ic">🔎</span><b>Read-only audits</b>
+    <p>An audit never changes anything. You get a severity-weighted score, a Material
+    HTML report and machine-readable JSON, SARIF and CSV.</p></div>
+  <div class="f"><span class="ic">↩️</span><b>Fully reversible hardening</b>
+    <p>Every fix is explained first, applied only with consent, snapshotted before it
+    touches anything, and undone by <code>auditxs rollback</code>.</p></div>
+  <div class="f"><span class="ic">🧪</span><b>Validate-or-restore</b>
+    <p>Changes to critical daemons (sshd, sudoers) are syntax-checked and auto-reverted
+    on failure — with SSH and firewall lockout guards.</p></div>
+  <div class="f"><span class="ic">🖧</span><b>Fleet mode over SSH</b>
+    <p>Audit many hosts read-only from one machine: aggregated dashboard, per-host
+    reports, CI-friendly exit codes. Never hardens remotely.</p></div>
+  <div class="f"><span class="ic">📊</span><b>Baselines &amp; drift</b>
+    <p>Approve a baseline, schedule daily audits, and get webhook or e-mail alerts the
+    moment configuration drifts or a CVE lands.</p></div>
+  <div class="f"><span class="ic">🖥️</span><b>Every interface</b>
+    <p>CLI, ncurses terminal UI for servers, localhost web UI, native Qt desktop app
+    and a zenity GUI — same engine, same consent model.</p></div>
+</div>
+
+<h2 class="sec">Install in a minute</h2>
+<p class="secsub">Debian · Ubuntu · Pop!_OS · Arch · Fedora · openSUSE</p>
+<pre class="install"><code><span class="c"># clone and install</span>
+git clone https://github.com/digitalxs/AuditXS.git
+cd AuditXS
+sudo ./setup.sh
+
+<span class="c"># first audit — read-only, with report and score</span>
+sudo auditxs audit</code></pre>
+
+<div class="docs-band">
+  <div class="txt">
+    <b>Everything is documented.</b>
+    <p>The user manual, the full check and error catalogues, architecture, compliance
+    mappings, the security guide and the developer guide — all in one place.</p>
+  </div>
+  <a class="btn primary" href="docs/index.html">Browse the docs</a>
+</div>
+
+<footer>
+  <div class="brand">🛡️ AuditXS</div>
+  <div>Made with <span class="heart">&#10084;</span> from Canada 🍁</div>
+  <div>&copy; 2026 <strong>DigitalXS</strong> — Programming &amp; Development ·
+    <a href="https://digitalxs.ca">digitalxs.ca</a> ·
+    <a href="mailto:luis@digitalxs.ca">luis@digitalxs.ca</a></div>
+</footer>
+
+</div>
+</body>
+</html>

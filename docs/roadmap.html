@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap — AuditXS documentation</title>
+<meta name="description" content="AuditXS — transparent, reversible Linux security auditing and hardening. Documentation.">
+<style>
+  :root {
+    --bg:#f6f6fa; --surface:#ffffff; --surface-2:#eef0f6; --on-surface:#1b1b21;
+    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#4b56d2; --primary-c:#fff;
+    --ok:#1e7d46; --err:#ba1a1a; --warn:#a25b00;
+    --ok-c:#e6f4ea; --err-c:#ffe9e7; --warn-c:#fff3e0;
+    --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#121318; --surface:#1c1d24; --surface-2:#23252e; --on-surface:#e4e2e9;
+      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#bcc2ff; --primary-c:#1a2277;
+      --ok:#7fd99b; --err:#ffb4ab; --warn:#f5bd6e;
+      --ok-c:#12331f; --err-c:#3d1512; --warn-c:#3a2a12; }
+  }
+  * { box-sizing:border-box; }
+  body { font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif; margin:0;
+    background:var(--bg); color:var(--on-surface); line-height:1.6;
+    -webkit-font-smoothing:antialiased; }
+  a { color:var(--primary); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .layout { display:flex; max-width:78rem; margin:0 auto; min-height:100vh; }
+  nav.side { flex:0 0 15.5rem; padding:1.5rem 1rem 2rem; border-right:1px solid var(--outline);
+    position:sticky; top:0; align-self:flex-start; max-height:100vh; overflow-y:auto; }
+  .brandrow { display:flex; align-items:center; gap:.6rem; margin-bottom:1.2rem; }
+  .logo { width:2.2rem; height:2.2rem; border-radius:.8rem; background:var(--primary);
+    color:var(--primary-c); display:grid; place-items:center; font-weight:700; }
+  .brandrow b { font-size:1.02rem; }
+  .brandrow .v { display:block; color:var(--on-surface-var); font-size:.72rem; }
+  nav.side a.pg { display:block; padding:.42rem .7rem; border-radius:.6rem; font-size:.88rem;
+    color:var(--on-surface); margin:.1rem 0; }
+  nav.side a.pg:hover { background:var(--surface-2); text-decoration:none; }
+  nav.side a.pg.active { background:var(--primary); color:var(--primary-c); font-weight:600; }
+  nav.side .grp { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--on-surface-var); margin:1.1rem .7rem .3rem; }
+  main { flex:1 1 auto; min-width:0; padding:2rem 2.2rem 4rem; }
+  main h1 { font-size:1.7rem; margin:.2rem 0 1rem; line-height:1.25; }
+  main h2 { font-size:1.25rem; margin:2.2rem 0 .6rem; padding-top:.5rem;
+    border-top:1px solid var(--outline); }
+  main h3 { font-size:1.05rem; margin:1.6rem 0 .4rem; }
+  main h4 { font-size:.95rem; margin:1.2rem 0 .3rem; }
+  p { margin:.65rem 0; }
+  pre { background:var(--surface-2); border:1px solid var(--outline); border-radius:.8rem;
+    padding:.9rem 1.1rem; overflow-x:auto; font-size:.84rem; line-height:1.5; }
+  code { font-family:ui-monospace,"Cascadia Code",Menlo,monospace; font-size:.88em;
+    background:var(--surface-2); padding:.08rem .35rem; border-radius:.35rem; }
+  pre code { background:none; padding:0; font-size:1em; }
+  .tablewrap { overflow-x:auto; margin:.8rem 0; border:1px solid var(--outline);
+    border-radius:.8rem; }
+  table { border-collapse:collapse; width:100%; font-size:.86rem; }
+  th,td { text-align:left; padding:.5rem .8rem; border-bottom:1px solid var(--outline);
+    vertical-align:top; }
+  th { background:var(--surface-2); font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.04em; color:var(--on-surface-var); }
+  tr:last-child td { border-bottom:none; }
+  blockquote { border-left:3px solid var(--primary); margin:.8rem 0; padding:.2rem 1rem;
+    color:var(--on-surface-var); background:var(--surface-2); border-radius:0 .6rem .6rem 0; }
+  ul,ol { padding-left:1.4rem; margin:.5rem 0; }
+  li { margin:.25rem 0; }
+  hr { border:none; border-top:1px solid var(--outline); margin:1.6rem 0; }
+  img { max-width:100%; }
+  .onpage { background:var(--surface); border:1px solid var(--outline); border-radius:.9rem;
+    padding:.8rem 1.1rem; font-size:.84rem; margin:1rem 0 1.4rem; }
+  .onpage b { display:block; margin-bottom:.3rem; font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--on-surface-var); }
+  .onpage a { display:inline-block; margin:.15rem .8rem .15rem 0; }
+  footer { color:var(--on-surface-var); font-size:.78rem; margin-top:3rem;
+    border-top:1px solid var(--outline); padding-top:1.1rem; text-align:center; line-height:1.7; }
+  footer .brand { font-weight:700; color:var(--on-surface); }
+  footer .heart { color:#e0245e; }
+  .menubtn { display:none; }
+  @media (max-width:860px) {
+    .layout { flex-direction:column; }
+    nav.side { position:static; max-height:none; border-right:none;
+      border-bottom:1px solid var(--outline); flex-basis:auto; }
+    main { padding:1.2rem 1.1rem 3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.12.0</span></div></div>
+<a class="pg" href="index.html">Documentation home</a>
+<div class="grp">Guides</div>
+<a class="pg" href="usage.html">User manual</a>
+<a class="pg" href="checks.html">Check catalogue</a>
+<a class="pg" href="errors.html">Error catalogue</a>
+<a class="pg" href="architecture.html">Architecture</a>
+<a class="pg" href="security-guide.html">Security guide</a>
+<a class="pg" href="compliance.html">Compliance</a>
+<a class="pg" href="webui.html">Web UI</a>
+<a class="pg active" href="roadmap.html">Roadmap</a>
+<a class="pg" href="changelog.html">Changelog</a>
+<a class="pg" href="dev-guide.html">Developer guide</a>
+<div class="grp">Project</div>
+<a class="pg" href="../index.html">AuditXS home</a>
+<a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
+<main>
+<h1 id="auditxs-roadmap--must-have-features-and-professional-practice">AuditXS roadmap — must-have features and professional practice</h1><div class="onpage"><b>On this page</b><a href="#already-implemented-the-non-negotiables">Already implemented (the non-negotiables)</a><a href="#shipped-in-v012">Shipped in v0.12</a><a href="#shipped-in-v011">Shipped in v0.11</a><a href="#shipped-in-v010">Shipped in v0.10</a><a href="#shipped-in-v09">Shipped in v0.9</a><a href="#shipped-in-v08">Shipped in v0.8</a><a href="#shipped-in-v07">Shipped in v0.7</a><a href="#shipped-in-v06">Shipped in v0.6</a><a href="#shipped-in-v05">Shipped in v0.5</a><a href="#shipped-in-v04">Shipped in v0.4</a><a href="#next-high-value-in-order">Next (high value, in order)</a><a href="#deliberate-non-goals">Deliberate non-goals</a><a href="#complementary-tooling-defence-in-depth">Complementary tooling (defence in depth)</a></div>
+<p>This is the considered feature advice behind AuditXS's direction: what a professional baseline-hardening tool must have (and why), what it should gain next, and what it should deliberately <em>never</em> do. Ordered by value.</p>
+<h2 id="already-implemented-the-non-negotiables">Already implemented (the non-negotiables)</h2>
+<p>These are the table stakes for trustworthy hardening tooling — the reason they shipped first:</p>
+<ol>
+<li><strong>Read-only audit by default</strong> — assessment must never mutate state.</li>
+<li><strong>Full reversibility</strong> — snapshots + manifest + rollback. A hardening tool without undo is an outage generator.</li>
+<li><strong>Per-change transparency and consent</strong> — explain → confirm → verify, dry-run previews, labelled drop-in files, append-only change ledger.</li>
+<li><strong>Validate-or-restore for critical daemons</strong> — sshd/sudoers/nginx/ apache changes are syntax-checked and auto-reverted on failure; SSH/firewall lockout guards.</li>
+<li><strong>Profiles</strong> (server/workstation) — context decides what is a finding.</li>
+<li><strong>Drift detection</strong> — approved baseline + <code>diff</code> with CI-friendly exit codes, port allowlist (NET-004), scheduled audits alerting via systemd.</li>
+<li><strong>Framework mapping</strong> (NIST CSF 2.0, CIS/STIG alignment), <strong>unit + end-to-end tests in CI</strong>, <strong>debug mode</strong>, <strong>doctor</strong> self-diagnostics.</li>
+</ol>
+<h2 id="shipped-in-v012">Shipped in v0.12</h2>
+<ul>
+<li><strong>Single-prompt GUI authentication</strong>: an installed polkit policy (<code>auth_admin_keep</code>) keeps the pkexec authorization for the active session, so consecutive Qt/zenity actions ask for the password once; documented for every interface in the manual's <em>Privileges &amp; credential caching</em> section.</li>
+<li><strong>Documentation website + landing page</strong>: <code>scripts/build-site.py</code> renders all guides into branded, self-contained HTML under <code>docs/</code> with a hub page, and generates the project landing <code>index.html</code> — publishable as-is at auditxs.digitalxs.ca. Built and validated in CI.</li>
+</ul>
+<h2 id="shipped-in-v011">Shipped in v0.11</h2>
+<ul>
+<li><strong>Interactive HTML report</strong> <em>(v0.11.1)</em>: a "show only findings" toggle (hides PASS/SKIP/WAIVE rows and empty categories) and per-finding <strong>Fix it / How to fix</strong> buttons that reveal and copy the exact remediation command (<code>harden --check &lt;ID&gt;</code> / <code>explain &lt;ID&gt;</code>) — the report stays a static, self-contained file and never executes anything itself.</li>
+<li><strong>Fleet overview dashboard</strong>: every fleet run writes an aggregated, self-contained <code>index.html</code> next to the per-host reports — fleet-average score dial, clean/findings/errored chips, per-host score bars, relative links to each host's JSON/HTML. This completes the "aggregating JSON reports into one HTML overview" half of the multi-host roadmap item.</li>
+<li><strong>Fleet walkthrough &amp; docs</strong>: end-to-end setup guide in USAGE.md (audit user, sudoers, inventory, drift-diff, troubleshooting table), fleet section in ARCHITECTURE.md, and the dashboard coding workflow in the developer guide.</li>
+</ul>
+<h2 id="shipped-in-v010">Shipped in v0.10</h2>
+<ul>
+<li><strong>Qt runtime preflight</strong> <em>(v0.10.1)</em>: <code>auditxs qt</code> detects a missing PySide6 / QtQuick module set and offers to install the right packages for the running distribution (terminal prompt or zenity dialog, elevating with pkexec/sudo), falling back to web/tui guidance if declined — no more raw <code>ImportError</code> on a fresh workstation.</li>
+<li><strong>Accepted-risk waivers</strong> (<code>auditxs waive/unwaive/waivers</code>): findings render as WAIVED with a justification + optional expiry; represented as SARIF suppressions and excluded from the score.</li>
+<li><strong>SARIF 2.1.0 + CSV export</strong> (<code>report --format sarif|csv</code>) for GitHub code scanning and dashboards.</li>
+<li><strong>New coverage</strong> (17 checks → 122 total across 26 categories): <strong>Containers</strong> (Docker/Podman: TCP/TLS exposure, userns-remap, no <code>--privileged</code>, docker-group, live-restore), <strong>Boot</strong> (GRUB password, Secure Boot, kernel lockdown), <strong>TLS</strong> certificate expiry, <strong>PAM</strong> account lockout (faillock) + password history, coredump restriction, USBGuard presence, scheduled-scan presence, mail DKIM/DMARC, PostgreSQL/MySQL TLS enforcement.</li>
+<li><strong>Drift &amp; CVE alerting</strong> (<code>auditxs alert</code>): webhook (Slack-compatible) and/or email sinks fired from scheduled audits.</li>
+<li><strong>Graphical installer</strong> (<code>install-gui.sh</code>): a branded zenity install wizard.</li>
+<li>New error codes AX2005/2006/7001/8001/8002, wired into the new subsystems.</li>
+</ul>
+<h2 id="shipped-in-v09">Shipped in v0.9</h2>
+<ul>
+<li><strong>GUI branding &amp; polish</strong> <em>(v0.9.1)</em>: gradient brand logo and "by DigitalXS" in the web UI top bar; a consistent footer across the web UI, Qt app, HTML report and zenity About — 🛡️ AuditXS · Made with ❤ from Canada 🍁 · © 2026 DigitalXS — Programming &amp; Development.</li>
+<li><strong>Web-stack &amp; CMS coverage</strong> (14 new checks, now 105 total across 23 categories):
+<ul>
+<li><strong>nginx</strong> — obsolete TLS (SSLv3/TLS 1.0/1.1) and HSTS (NGX-001/002).</li>
+<li><strong>Varnish</strong> — admin-interface binding and secret-file permissions (VRN-001/002).</li>
+<li>New <strong>WebApps</strong> category — <strong>WordPress</strong> (wp-config perms, WP_DEBUG), <strong>Drupal</strong> (settings.php perms), <strong>Laravel</strong> (<code>.env</code> perms, <code>APP_DEBUG</code>/<code>APP_ENV</code>), <strong>Roundcube</strong> (config perms, installer).</li>
+<li><strong>BIND</strong> — zone-transfer (AXFR) restriction and DNSSEC validation (BND-003/004).</li>
+<li><strong>Network</strong> — promiscuous-mode interfaces and NTP time-sync (NET-005/006).</li>
+</ul></li>
+<li><strong>Fleet <code>--remote-report</code></strong>: leave a full HTML report on each audited host (and fetch a copy to the controller).</li>
+</ul>
+<h2 id="shipped-in-v08">Shipped in v0.8</h2>
+<ul>
+<li><strong>Dedicated Fail2ban category</strong> <em>(v0.8.2)</em>: four checks beyond the SSH-008 brute-force check — service enabled at boot (F2B-001), ban-policy sanity (F2B-002), a recidive jail for repeat offenders (F2B-003, with a reversible fix), and <code>ignoreip</code> breadth (F2B-004). Fixture-tested.</li>
+<li><strong>Web UI default port is now 9000</strong> <em>(v0.8.1)</em> (was 8787); override any time with <code>auditxs web --port N</code>.</li>
+<li><strong>Fleet mode</strong> (<code>auditxs fleet</code>): read-only audits across many hosts over SSH (key or password auth via sshpass), aggregated score table + per-host JSON, CI-friendly exit codes. Never hardens over SSH by design.</li>
+<li><strong>Error-code system</strong>: every recoverable failure reports a stable <code>AXnnnn</code> number with a plain why/fix, logged to <code>/var/lib/auditxs/errors.log</code>; browsable with <code>auditxs errors</code> and generated into <code>docs/ERRORS.md</code>.</li>
+<li><strong>Trust &amp; distribution</strong>: <code>.deb</code> builds now emit a SHA256 checksum; a tag-triggered <code>release.yml</code> publishes a signed GitHub Release (GPG when a key secret is configured), and <code>scripts/release.sh</code> prepares releases locally. The root <code>VERSION</code> file is now the single source of truth (fixes a version/​package drift).</li>
+<li><strong>Developer guide</strong> <code>digitalxs-dev-doc.MD</code>: architecture, code map, check API, debugging, testing, release process and GitHub workflow.</li>
+</ul>
+<h2 id="shipped-in-v07">Shipped in v0.7</h2>
+<ul>
+<li><strong>Native window chrome for the Qt app</strong> <em>(v0.7.1)</em>. The desktop app is now a frameless window with its own Material title bar: in-app minimize / maximize-restore / close buttons (drawn as shapes, no glyph-font dependency), drag-to-move (<code>startSystemMove</code>), double-click-to-maximize and edge/corner resize (<code>startSystemResize</code>). An offscreen <code>tests/qml_test.py</code> loads the QML and exercises the window controls in CI.</li>
+<li><strong><code>auditxs-gui</code> prefers the windowed app</strong> <em>(v0.7.2)</em>. On a workstation the graphical launcher opens the Qt window (with the controls above) whenever PySide6 is present, falling back to the zenity dialogs otherwise (<code>AUDITXS_GUI=qt|zenity</code> overrides). The Qt app now runs unprivileged and elevates each action with pkexec — matching the zenity model — so it displays on both X11 and Wayland.</li>
+<li><strong>Profile-gated interfaces.</strong> Servers are restricted to text interfaces — the CLI and a new <strong>ncurses terminal UI</strong> (<code>auditxs tui</code>, whiptail/dialog) that runs over a plain SSH session; the web UI, Qt app and zenity GUI are workstation-only and refuse to start on a server. No browser or root web server ever runs on a headless box.</li>
+<li><strong>Expanded security-tool integration.</strong> <code>auditxs tools</code> now inventories, installs and runs a broader, capability-grouped set: <strong>ClamAV</strong> (malware), <strong>OpenSCAP</strong> (SCAP/SSG CIS/STIG evaluation), <strong>auditd</strong>, <strong>osquery</strong>, <strong>Trivy</strong>, <strong>USBGuard</strong>, <strong>Firejail</strong>, <strong>arpwatch</strong>, <strong>Logwatch</strong> and process accounting — alongside the existing Lynis/rkhunter/AIDE/CrowdSec/ Suricata, all through one reversible interface with per-tool post-install setup guidance.</li>
+</ul>
+<h2 id="shipped-in-v06">Shipped in v0.6</h2>
+<ul>
+<li><strong>Localhost web UI</strong> (<code>auditxs web</code>): a Material Design 3 single-page app served by the Python standard library — loopback-only bind, ephemeral token auth, CSRF header, strict CSP, argv-only subprocess calls.</li>
+<li><strong>Native Qt/QML desktop app</strong> as the optional <code>auditxs-gui-qt</code> package, with a headless data-layer selftest in CI.</li>
+</ul>
+<h2 id="shipped-in-v05">Shipped in v0.5</h2>
+<ul>
+<li><strong>CIS Benchmark ids + Level 1/2</strong> on every mappable check, with <code>--level</code> and <code>--framework cis</code> filters (surfaced in explain/list/reports).</li>
+<li><strong>Fixture-testable checks</strong> via an <code>AX_ROOT</code> path prefix; <code>tests/check_test.sh</code> exercises real <code>audit_*</code> logic (Accounts, Filesystem, Debian) in CI.</li>
+<li><strong>Debian <code>.deb</code> package</strong> (<code>packaging/build-deb.sh</code>) with man page, desktop launcher and conffile; built + install-tested in CI.</li>
+</ul>
+<h2 id="shipped-in-v04">Shipped in v0.4</h2>
+<ul>
+<li>Debian 13 "trixie" awareness and Debian-family checks (APT signature enforcement, release EOL, needrestart).</li>
+<li>Service hardening: PHP, MySQL/MariaDB (config + accounts), Apache security headers &amp; directory listing, ufw logging/gufw, Postfix + Dovecot, BIND + Unbound.</li>
+<li><strong>CVE / known-vulnerability warnings</strong> from distribution security data, surfaced on console, log, HTML report and GUI (<code>auditxs cve</code>, <code>VULN-001</code>).</li>
+<li><strong>Security-tool integration</strong> (<code>auditxs tools</code>): install/scan Lynis, rkhunter, Tiger, chkrootkit, checksecurity, lsat, AIDE; set up CrowdSec / Suricata; VPN (WireGuard/OpenVPN) config review. File-integrity (AIDE) and IDS/IPS presence checks (<code>SEC-001..004</code>).</li>
+<li><strong>nala-style console</strong> output and a <strong>Material Design 3</strong> HTML report.</li>
+</ul>
+<h2 id="next-high-value-in-order">Next (high value, in order)</h2>
+<ol>
+<li><strong>Scheduled AIDE verification</strong> — a timer that runs <code>aide --check</code> and feeds tampering findings back into the audit (install/presence already covered by SEC-003).</li>
+<li><strong>PDF/signed reports</strong> — assessors want tamper-evident evidence; render the HTML report to PDF and sign report archives (minisign).</li>
+<li><strong>MFA enrolment helper</strong> — guided, opt-in <code>auditxs mfa enrol</code> wizard (google-authenticator/pam_u2f) that configures PAM+sshd only after a verified second-factor login in a parallel session.</li>
+<li><strong>Package-manager hook</strong> — post-transaction hook re-running the port allowlist and services checks, catching drift the moment software is installed rather than at the next scheduled audit.</li>
+<li><strong>Shell completion</strong> — bash/zsh/fish completions for operator ergonomics (the <code>auditxs(8)</code> man page ships with the .deb as of v0.5).</li>
+<li><strong>Broaden <code>AX_ROOT</code> coverage</strong> — convert the remaining file-reading checks (SSH drop-ins, sysctl readers, service configs) to <code>axpath</code> so the fixture test suite can cover every module.</li>
+<li><strong>Localization</strong> of check explanations (the metadata layer already separates text from logic).</li>
+</ol>
+<h2 id="deliberate-non-goals">Deliberate non-goals</h2>
+<ul>
+<li><strong>No irreversible automation.</strong> Package upgrades, partitioning, MAC enablement, database schema/config changes stay report-only forever.</li>
+<li><strong>No agent, no daemon, no cloud.</strong> AuditXS stays a transparent local tool; scheduling uses the system's own timer infrastructure.</li>
+<li><strong>No exploit/scan functionality.</strong> AuditXS hardens configurations; it is not a vulnerability scanner. Pair it with dedicated scanners (OpenVAS/Greenbone, Trivy) and complementary auditors (Lynis).</li>
+<li><strong>No opaque scoring.</strong> The score stays a simple severity-weighted PASS/FAIL ratio that anyone can recompute from the report.</li>
+</ul>
+<h2 id="complementary-tooling-defence-in-depth">Complementary tooling (defence in depth)</h2>
+<p>AuditXS covers configuration hardening. A complete posture adds: vulnerability scanning (Greenbone/Trivy), EDR/antimalware where mandated, central log shipping (journald → Loki/ELK/rsyslog relay), backup with tested restores, and for fleets a configuration-management source of truth (Ansible) — AuditXS then acts as the independent verifier of what is actually running.</p>
+<footer>
+<div class="brand">🛡️ AuditXS</div>
+<div>Made with <span class="heart">&#10084;</span> from Canada 🍁</div>
+<div>&copy; 2026 <strong>DigitalXS</strong> — Programming &amp; Development ·
+ <a href="https://digitalxs.ca">digitalxs.ca</a> ·
+ <a href="https://github.com/digitalxs/AuditXS">GitHub</a></div>
+</footer>
+</main>
+</div>
+</body>
+</html>

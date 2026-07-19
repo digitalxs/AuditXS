@@ -44,6 +44,12 @@ jobs:
           sudo apt-get install -y -q libegl1 libgl1 libxkbcommon0 libdbus-1-3
           python3 -m pip install --quiet PySide6-Essentials
           AUDITXS_BIN="$PWD/auditxs" python3 tests/qml_test.py
+      - name: Build the documentation site
+        run: |
+          python3 -m py_compile scripts/build-site.py
+          python3 scripts/build-site.py
+          test -s index.html && test -s docs/index.html && test -s docs/usage.html
+          python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('packaging/com.digitalxs.auditxs.policy')"
 
   package:
     name: Build & install .deb

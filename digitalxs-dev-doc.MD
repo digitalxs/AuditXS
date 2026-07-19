@@ -87,9 +87,11 @@ uninstall.sh            uninstaller (protects snapshots)
 scripts/
   updater.sh            'update-auditxs' command
   release.sh            local release prep (build + checksum + optional sign + tag)
+  build-site.py         static docs website generator (docs/*.html + index.html)
 packaging/
   build-deb.sh          builds the .deb + SHA256 checksum
   auditxs.8             man page
+  com.digitalxs.auditxs.policy   polkit policy (GUI auth kept between actions)
 tests/                  unit.sh, check_test.sh, web_test.sh, qml_test.py, smoke.sh
 .github/workflows/
   ci.yml                lint + tests + .deb build + 5-distro smoke matrix
@@ -437,8 +439,12 @@ To cut a release:
 # 1. Bump the version and note what changed
 echo "0.8.1" > VERSION
 $EDITOR docs/ROADMAP.md          # add a "Shipped in vX.Y.Z" line
+$EDITOR CHANGELOG.md             # add the release notes
 ./auditxs list --markdown > docs/CHECKS.md   # if checks changed
 ./auditxs errors --markdown > docs/ERRORS.md # if error codes changed
+python3 scripts/build-site.py    # regenerate the HTML docs site + landing page
+                                 # (docs/*.html, docs/index.html, index.html —
+                                 #  published at https://auditxs.digitalxs.ca)
 
 # 2. Verify + build + checksum locally (also runs the test gate)
 ./scripts/release.sh             # add --sign to GPG-sign, --tag to tag locally
