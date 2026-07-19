@@ -35,7 +35,10 @@ for automation.
 .TP
 .B audit
 Run all applicable checks (read-only). Saves HTML and JSON reports and prints
-a severity-weighted hardening score and a CVE warning banner.
+a severity-weighted hardening score and a CVE warning banner. The HTML report
+is interactive: a "show only findings" toggle hides passed/skipped/waived
+checks, and every FAIL/WARN row carries a "Fix it" / "How to fix" button that
+reveals and copies the exact remediation command.
 .TP
 .B harden
 Review failed checks and apply fixes one by one, with consent.

@@ -196,6 +196,23 @@ tt "overview no link when absent" no grep -q 'href="db01.html"'      <<<"$fov"
 tt "overview escapes hostnames" yes grep -q 'bad&lt;host&gt;'        <<<"$fov"
 unset outdir ov fov
 
+# ---- HTML report interactivity (lib/report.sh) ---------------------------
+# Fabricate a tiny result set: SSH-001 has an auto fix (FAIL → "Fix it"),
+# SSH-003 WARN → "How to fix", SSH-002 PASS → no button at all.
+RESULT_STATUS=(); RESULT_DETAIL=()
+RESULT_STATUS[SSH-001]=FAIL; RESULT_DETAIL[SSH-001]="root login permitted"
+RESULT_STATUS[SSH-002]=PASS; RESULT_DETAIL[SSH-002]=""
+RESULT_STATUS[SSH-003]=WARN; RESULT_DETAIL[SSH-003]="check manually"
+SCORE=50 N_PASS=1 N_FAIL=1 N_WARN=1 N_SKIP=0 PROFILE=server
+rhtml=$(results_html)
+tt "report findings toggle present"   yes grep -q 'id="onlyfind"' <<<"$rhtml"
+tt "report rows carry data-st"        yes grep -q '<tr data-st="PASS">' <<<"$rhtml"
+tt "report Fix-it on fixable FAIL"    yes grep -q 'data-cmd="sudo auditxs harden --check SSH-001">Fix it' <<<"$rhtml"
+tt "report How-to-fix on WARN"        yes grep -q 'data-cmd="auditxs explain SSH-003">How to fix' <<<"$rhtml"
+tt "report no button on PASS"         no  grep -q 'check SSH-002' <<<"$rhtml"
+tt "report filter script present"     yes grep -q 'applyFilter' <<<"$rhtml"
+unset rhtml
+
 # ---- Qt runtime preflight (dispatcher helpers) ---------------------------
 # The helpers live in the `auditxs` dispatcher, not a lib; pull just that block.
 eval "$(awk '/^# -+ Qt runtime deps/{f=1} f; /^ensure_qt_runtime\(\)/{g=1} g&&/^}/{f=0}' auditxs)"

@@ -129,7 +129,7 @@ results_json() {
 # severity-weighted score, a CVE warning banner when applicable, and per-check
 # status/severity/NIST/finding.
 results_html() {
-    local id st cat="" fixable score_color cve_banner=""
+    local id st cat="" fixable score_color cve_banner="" fixcmd fixlabel
     case $SCORE in
         [0-9]|[0-3][0-9]|4[0-9]) score_color="var(--err)" ;;
         5[0-9]|6[0-9]|7[0-4])    score_color="var(--warn)" ;;
@@ -224,6 +224,23 @@ results_html() {
   footer .copy strong { color:var(--on-surface); }
   footer a { color:var(--primary); text-decoration:none; font-weight:600; }
   code { background:var(--surface-2); padding:.1rem .35rem; border-radius:.35rem; font-size:.82em; }
+  .togglebar { display:flex; align-items:center; gap:.6rem; margin-top:.9rem;
+    font-size:.85rem; font-weight:600; cursor:pointer; user-select:none; }
+  .switch { position:relative; display:inline-block; width:2.6rem; height:1.4rem; flex:0 0 auto; }
+  .switch input { opacity:0; width:0; height:0; }
+  .slider { position:absolute; inset:0; background:var(--surface-2);
+    border:1px solid var(--outline); border-radius:2rem; transition:.2s; cursor:pointer; }
+  .slider:before { content:""; position:absolute; height:1rem; width:1rem; left:.15rem;
+    top:.13rem; background:var(--on-surface-var); border-radius:50%; transition:.2s; }
+  .switch input:checked + .slider { background:var(--primary); border-color:var(--primary); }
+  .switch input:checked + .slider:before { transform:translateX(1.2rem); background:var(--primary-c); }
+  .fixbtn { margin-top:.4rem; display:inline-flex; align-items:center; gap:.3rem;
+    border:1px solid var(--outline); background:var(--surface-2); color:var(--primary);
+    font-weight:700; font-size:.72rem; padding:.25rem .6rem; border-radius:.6rem;
+    cursor:pointer; font-family:inherit; }
+  .fixbtn:hover { background:var(--primary); color:var(--primary-c); border-color:var(--primary); }
+  .fixcmd { display:block; margin-top:.3rem; font-size:.78rem; width:fit-content; }
+  .fixcmd[hidden] { display:none; }
   @media (max-width:640px){ .hero{gap:1rem} .score{width:6.5rem;height:6.5rem}
     .score>div{width:5rem;height:5rem} }
 </style>
@@ -251,6 +268,8 @@ $cve_banner
       <span class="chip skip">● $N_SKIP skipped</span>
       $waive_chip
     </div>
+    <label class="togglebar"><span class="switch"><input type="checkbox" id="onlyfind"><span class="slider"></span></span>
+      Show only findings <span class="sub">(hide passed, skipped and waived checks)</span></label>
   </div>
 </div>
 
@@ -264,15 +283,26 @@ HTMLHEAD
         if [ "${CHECK_CATEGORY[$id]}" != "$cat" ]; then
             [ -n "$cat" ] && printf '</table></div></div>\n'
             cat=${CHECK_CATEGORY[$id]}
-            printf '<h2>%s <small>— %s domain</small></h2>\n<div class="card" style="padding:.5rem .5rem"><div class="tablewrap"><table>\n<tr><th>Status</th><th>Check</th><th>Sev</th><th>L</th><th>Fix</th><th>CIS</th><th>NIST CSF</th></tr>\n' \
+            printf '<h2 class="cat">%s <small>— %s domain</small></h2>\n<div class="card catcard" style="padding:.5rem .5rem"><div class="tablewrap"><table>\n<tr><th>Status</th><th>Check</th><th>Sev</th><th>L</th><th>Fix</th><th>CIS</th><th>NIST CSF</th></tr>\n' \
                 "$(html_escape "$cat")" "$(html_escape "$(domain_of "$cat")")"
         fi
         st=${RESULT_STATUS[$id]}
         if has_fix "$id"; then fixable=auto; else fixable=manual; fi
-        printf '<tr><td><span class="badge %s">%s</span></td><td><span class="cid">%s</span> %s' \
-            "$st" "$st" "$id" "$(html_escape "${CHECK_TITLE[$id]}")"
+        printf '<tr data-st="%s"><td><span class="badge %s">%s</span></td><td><span class="cid">%s</span> %s' \
+            "$st" "$st" "$st" "$id" "$(html_escape "${CHECK_TITLE[$id]}")"
         if [ -n "${RESULT_DETAIL[$id]}" ]; then
             printf '<div class="detail">%s</div>' "$(html_escape "${RESULT_DETAIL[$id]}")"
+        fi
+        # "Fix it" on findings: the report is a static page, so the button
+        # reveals + copies the exact command rather than pretending to run it.
+        if [ "$st" = FAIL ] || [ "$st" = WARN ]; then
+            if [ "$st" = FAIL ] && has_fix "$id"; then
+                fixcmd="sudo auditxs harden --check $id"; fixlabel="Fix it"
+            else
+                fixcmd="auditxs explain $id"; fixlabel="How to fix"
+            fi
+            printf '<button type="button" class="fixbtn" data-cmd="%s">%s</button><code class="fixcmd" hidden>%s</code>' \
+                "$fixcmd" "$fixlabel" "$fixcmd"
         fi
         printf '</td><td>%s</td><td>%s</td><td>%s</td><td class="nist">%s</td><td class="nist">%s</td></tr>\n' \
             "${CHECK_SEVERITY[$id]}" "$(level_of "$id")" "$fixable" \
@@ -289,6 +319,48 @@ HTMLHEAD
 <div class="copy">&copy; 2026 <strong>DigitalXS</strong> — Programming &amp; Development · <a href="https://digitalxs.ca">digitalxs.ca</a></div>
 </footer>
 </div>
+<script>
+(function () {
+  "use strict";
+  // "Show only findings" — hide PASS/SKIP/WAIVE rows, and any category whose
+  // rows are all hidden. The report stays a static, self-contained file.
+  var toggle = document.getElementById("onlyfind");
+  function applyFilter() {
+    var only = toggle && toggle.checked;
+    document.querySelectorAll("tr[data-st]").forEach(function (row) {
+      var st = row.getAttribute("data-st");
+      row.style.display = (only && st !== "FAIL" && st !== "WARN") ? "none" : "";
+    });
+    document.querySelectorAll(".catcard").forEach(function (card) {
+      var anyVisible = false;
+      card.querySelectorAll("tr[data-st]").forEach(function (row) {
+        if (row.style.display !== "none") anyVisible = true;
+      });
+      card.style.display = anyVisible ? "" : "none";
+      var heading = card.previousElementSibling;
+      if (heading && heading.classList.contains("cat"))
+        heading.style.display = anyVisible ? "" : "none";
+    });
+  }
+  if (toggle) toggle.addEventListener("change", applyFilter);
+  // "Fix it" / "How to fix" — reveal the exact command and copy it to the
+  // clipboard (a static page cannot run commands; auditxs asks for consent).
+  document.querySelectorAll(".fixbtn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var code = btn.nextElementSibling;
+      var cmd = btn.getAttribute("data-cmd");
+      if (code) code.hidden = !code.hidden;
+      if (code && !code.hidden && navigator.clipboard && cmd) {
+        navigator.clipboard.writeText(cmd).then(function () {
+          var old = btn.textContent;
+          btn.textContent = "Copied ✓";
+          setTimeout(function () { btn.textContent = old; }, 1200);
+        }).catch(function () { /* command stays visible for manual copy */ });
+      }
+    });
+  });
+})();
+</script>
 </body>
 </html>
 HTMLFOOT

@@ -8,7 +8,7 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.11.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.11.1-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![Checks](https://img.shields.io/badge/checks-122-8957e5)](docs/CHECKS.md)
@@ -133,7 +133,11 @@ sudo auditxs audit --debug             verbose diagnostics (timings, decisions)
 Every audit prints a severity-weighted **hardening score (0–100)** and saves
 timestamped HTML + JSON reports under `/var/lib/auditxs/reports/`. The console
 uses a clean **nala-style** boxed layout; the HTML report is **Material Design
-3** (theme-aware, score ring, status chips, per-domain cards). A **CVE warning
+3** (theme-aware, score ring, status chips, per-domain cards) and
+**interactive**: a *show only findings* toggle hides everything but the FAILs
+and WARNs, and each finding carries a **Fix it / How to fix** button that
+reveals and copies its exact remediation command — while the report stays a
+single static file that never executes anything. A **CVE warning
 banner** appears on the console, in the log, in the report and in the GUI when
 an installed package has a known vulnerability with a fix available.
 

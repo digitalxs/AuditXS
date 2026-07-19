@@ -7,6 +7,22 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.11.1]
+
+### Added
+- **Interactive HTML report** (still a single self-contained file):
+  - a **"Show only findings" toggle** in the score card hides every passed,
+    skipped and waived check — and any now-empty category — so the report
+    shows just the FAILs and WARNs;
+  - a **"Fix it" button** on every failing check with an automatic fix,
+    revealing and copying the exact command
+    (`sudo auditxs harden --check <ID>`), and a **"How to fix"** button
+    (`auditxs explain <ID>`) on warnings and manual-fix items. The static
+    report never executes anything — the buttons hand over the command and
+    AuditXS still asks for consent before changing the system.
+  - Both behaviours are covered by unit tests and were exercised end-to-end
+    in headless Chromium.
+
 ## [0.11.0]
 
 ### Added

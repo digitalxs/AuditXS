@@ -25,6 +25,11 @@ they shipped first:
 
 ## Shipped in v0.11
 
+- **Interactive HTML report** *(v0.11.1)*: a "show only findings" toggle
+  (hides PASS/SKIP/WAIVE rows and empty categories) and per-finding
+  **Fix it / How to fix** buttons that reveal and copy the exact remediation
+  command (`harden --check <ID>` / `explain <ID>`) — the report stays a
+  static, self-contained file and never executes anything itself.
 - **Fleet overview dashboard**: every fleet run writes an aggregated,
   self-contained `index.html` next to the per-host reports — fleet-average
   score dial, clean/findings/errored chips, per-host score bars, relative

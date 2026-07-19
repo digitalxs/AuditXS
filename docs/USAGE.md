@@ -70,6 +70,22 @@ Every console audit saves timestamped HTML and JSON reports under
 `/var/lib/auditxs/reports/` (plus `latest.json` / `latest.html`) and ends
 with a severity-weighted hardening score (0–100).
 
+The **HTML report is interactive** (while staying a single, self-contained
+file you can archive or email):
+
+- **Show only findings** — a toggle in the score card hides every passed,
+  skipped and waived check, so the report shows just the FAILs and WARNs;
+  categories with nothing left to show disappear too. Flip it back to see
+  the full evidence trail.
+- **Fix it / How to fix buttons** — every FAIL and WARN row carries a button.
+  For a failing check with an automatic, reversible fix it reveals (and copies
+  to the clipboard) the exact command — `sudo auditxs harden --check <ID>` —
+  which audits just that check and offers its fix with the usual consent and
+  snapshot. For warnings and manual-fix items it gives
+  `auditxs explain <ID>`, the documented remediation guidance. A static
+  report never executes anything itself — the buttons hand you the command,
+  and AuditXS still asks before changing the system.
+
 To read the catalogue without running anything:
 
 ```bash
