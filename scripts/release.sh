@@ -41,6 +41,8 @@ say "Preparing AuditXS release $TAG"
 
 [ "$(./auditxs version)" = "AuditXS v$VERSION" ] \
     || die "VERSION ($VERSION) does not match 'auditxs version' ($(./auditxs version)). Fix the single source of truth (VERSION)."
+grep -q "Current version: v$VERSION" README.md \
+    || die "README.md does not show 'Current version: v$VERSION' — update the README version line and badge."
 
 if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null 2>&1; then
     die "Tag $TAG already exists. Bump VERSION for a new release."

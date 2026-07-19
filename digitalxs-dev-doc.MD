@@ -438,6 +438,8 @@ To cut a release:
 ```bash
 # 1. Bump the version and note what changed
 echo "0.8.1" > VERSION
+$EDITOR README.md                # update the "Current version" line + version badge
+                                 # (a unit test and release.sh both fail if stale)
 $EDITOR docs/ROADMAP.md          # add a "Shipped in vX.Y.Z" line
 $EDITOR CHANGELOG.md             # add the release notes
 ./auditxs list --markdown > docs/CHECKS.md   # if checks changed

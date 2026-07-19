@@ -196,6 +196,13 @@ tt "overview no link when absent" no grep -q 'href="db01.html"'      <<<"$fov"
 tt "overview escapes hostnames" yes grep -q 'bad&lt;host&gt;'        <<<"$fov"
 unset outdir ov fov
 
+# ---- version consistency --------------------------------------------------
+# The README must always show the current version (badge + visible text line).
+_ver=$(tr -d '[:space:]' < VERSION)
+tt "README shows current version text"  yes grep -q "Current version: v${_ver}" README.md
+tt "README version badge is current"    yes grep -q "badge/version-${_ver}-" README.md
+t  "engine reads the VERSION file"      "$_ver" "$AUDITXS_VERSION"
+
 # ---- HTML report interactivity (lib/report.sh) ---------------------------
 # Fabricate a tiny result set: SSH-001 has an auto fix (FAIL → "Fix it"),
 # SSH-003 WARN → "How to fix", SSH-002 PASS → no button at all.

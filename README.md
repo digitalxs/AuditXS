@@ -14,6 +14,8 @@ one explained, consented, reversible change at a time.*
 [![Checks](https://img.shields.io/badge/checks-122-8957e5)](docs/CHECKS.md)
 [![Frameworks](https://img.shields.io/badge/NIST%20CSF%202.0%20·%20CIS%20·%20STIG-informational)](docs/COMPLIANCE.md)
 
+**Current version: v0.12.0** — see the [changelog](CHANGELOG.md)
+
 **Debian** · **Ubuntu** · **Pop!\_OS** · **Arch** · **Fedora** · **openSUSE** *(and derivatives)*
 
 [Quick start](#-quick-start) · [Usage](#-usage) · [Profiles &amp; interfaces](#-profiles--interfaces) · [Coverage](#-what-is-covered) · [Documentation](#-documentation)
