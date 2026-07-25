@@ -442,23 +442,43 @@ ApplicationWindow {
                         }
                     }
                 }
+                Label { text: "Login"; font.pixelSize: 11; opacity: 0.6; Layout.leftMargin: 12 }
                 RowLayout {
                     Layout.leftMargin: 12; Layout.rightMargin: 12
                     TextField {
                         id: fleetKey; Layout.fillWidth: true
-                        placeholderText: "SSH key path (empty = ssh-agent / default keys)"
+                        placeholderText: "SSH key path (empty → use a password)"
                         onEditingFinished: saveFleet()
                     }
-                    CheckBox { id: fleetSudo; text: "sudo on hosts"; checked: true; onClicked: saveFleet() }
+                    TextField {
+                        id: fleetPass; Layout.fillWidth: true
+                        placeholderText: "SSH login password (optional)"
+                        echoMode: TextInput.Password
+                    }
+                }
+                Label { text: "Privilege on the host"; font.pixelSize: 11; opacity: 0.6; Layout.leftMargin: 12 }
+                RowLayout {
+                    Layout.leftMargin: 12; Layout.rightMargin: 12
+                    TextField {
+                        id: fleetSudoPass; Layout.fillWidth: true
+                        placeholderText: "sudo password (empty = passwordless sudo)"
+                        echoMode: TextInput.Password
+                    }
+                    CheckBox { id: fleetSudo; text: "use sudo"; checked: true; onClicked: saveFleet() }
+                }
+                Label {
+                    Layout.leftMargin: 12; Layout.rightMargin: 12; Layout.fillWidth: true
+                    wrapMode: Text.WordWrap; font.pixelSize: 11; opacity: 0.6
+                    text: "Passwords are used only for this run — never saved. Leave the sudo password empty if the host has passwordless sudo."
                 }
                 RowLayout {
                     Layout.leftMargin: 12; Layout.rightMargin: 12; Layout.bottomMargin: 10
                     Button {
                         text: "Audit fleet"; highlighted: true
-                        enabled: fleetModel.count > 0 && !win.opRunning && !win.auditRunning
+                        enabled: fleetModel.count > 0 && !win.busy
                         onClicked: {
                             saveFleet();
-                            if (backend.fleetAudit()) {
+                            if (backend.fleetAudit(fleetPass.text, fleetSudoPass.text)) {
                                 win.opRunning = true; win.opPct = 0;
                                 win.opLabel = "Fleet audit"; win.opShowDialog = true;
                                 win.opAfterFleet = true;

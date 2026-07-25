@@ -95,8 +95,8 @@ class StubBackend(QObject):
     def fleetSave(self, cfg):
         return self.fleetConfig()
 
-    @Slot(result=bool)
-    def fleetAudit(self):
+    @Slot(str, str, result=bool)
+    def fleetAudit(self, ssh_pass, sudo_pass):
         return True
 
     @Slot(result=str)

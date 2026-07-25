@@ -68,11 +68,20 @@ FLEET_HOSTS_PATH = "/var/lib/auditxs/fleet-hosts"
 FLEET_LAST_DIR = {"path": ""}
 
 # --------------------------------------------------------------- CLI bridge
-def run_auditxs(args, timeout=180):
-    """Run `auditxs <args>` with no shell; return (rc, stdout, stderr)."""
+def run_auditxs(args, timeout=180, env_extra=None):
+    """Run `auditxs <args>` with no shell; return (rc, stdout, stderr).
+
+    env_extra (e.g. fleet passwords) is merged into the child environment only
+    — never placed on the command line — and never logged.
+    """
     cmd = [AUDITXS] + args
+    env = None
+    if env_extra:
+        env = dict(os.environ)
+        env.update(env_extra)
     try:
-        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
+                           env=env)
         return p.returncode, p.stdout, p.stderr
     except subprocess.TimeoutExpired:
         return 124, "", "timed out"
@@ -209,6 +218,8 @@ footer.brand .links{margin-top:.15rem;font-size:.76rem}
 body{padding-bottom:3rem}
 .fleethosts{width:100%;min-height:9rem;background:var(--surface2);border:1px solid var(--outline);
  border-radius:.6rem;color:var(--on);font-family:ui-monospace,monospace;font-size:.85rem;padding:.6rem}
+.fld{flex:1;min-width:14rem;background:var(--surface2);border:1px solid var(--outline);
+ border-radius:.5rem;color:var(--on);padding:.45rem .6rem;font-size:.85rem}
 </style></head><body>
 <div class="appbar">
   <div class="logo" aria-hidden="true">A</div>
@@ -407,9 +418,18 @@ async function renderFleet(){
    One <span class="mono">user@host</span> per line, <span class="mono">#</span> comments allowed.
    Key authentication uses the server's own SSH keys.</div>
   <textarea class="fleethosts" id="fleetHosts" placeholder="admin@web01\nadmin@db01   # database">${esc(hosts)}</textarea>
+  <div class="sect" style="font-size:.8rem">Login</div>
+  <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center">
+   <input id="fleetKey" class="mono fld" placeholder="SSH key path (leave empty to use a password →)">
+   <input id="fleetPass" type="password" class="mono fld" placeholder="SSH login password (optional)" autocomplete="off">
+  </div>
+  <div class="sect" style="font-size:.8rem">Privilege on the host</div>
+  <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center">
+   <input id="fleetSudoPass" type="password" class="mono fld" placeholder="sudo password (for interactive sudo)" autocomplete="off">
+   <label style="font-size:.85rem"><input type="checkbox" id="fleetSudo" checked> use sudo (uncheck only if already root)</label>
+  </div>
+  <div class="note" style="font-size:.78rem">Passwords are used only for this run — never saved. Leave the sudo password empty if the host has passwordless sudo (<span class="mono">NOPASSWD</span>).</div>
   <div style="display:flex;gap:.6rem;margin-top:.7rem;flex-wrap:wrap;align-items:center">
-   <input id="fleetKey" class="mono" style="flex:1;min-width:14rem;background:var(--surface2);border:1px solid var(--outline);border-radius:.5rem;color:var(--on);padding:.45rem .6rem" placeholder="SSH key path (empty = default keys)">
-   <label style="font-size:.85rem"><input type="checkbox" id="fleetSudo" checked> sudo on hosts</label>
    <button class="btn" id="fleetSave">Save hosts</button>
    <button class="btn primary" id="fleetRun">Audit fleet</button>
    <a class="btn" id="fleetOverview" style="display:none" target="_blank" rel="noopener">Open overview</a>
@@ -420,7 +440,7 @@ async function renderFleet(){
  $("#fleetRun").onclick=async()=>{
   try{await api("/api/fleet/hosts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({hosts:$("#fleetHosts").value})});}catch(e){}
   $("#fleetRun").innerHTML='<span class="spin"></span>';progressStart();
-  try{const d=await api("/api/fleet/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:$("#fleetKey").value.trim(),sudo:$("#fleetSudo").checked})});
+  try{const d=await api("/api/fleet/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:$("#fleetKey").value.trim(),sudo:$("#fleetSudo").checked,ssh_pass:$("#fleetPass").value,sudo_pass:$("#fleetSudoPass").value})});
    const o=$("#fleetOut");o.style.display="block";o.textContent=d.output||"(no output)";
    if(d.overview){const a=$("#fleetOverview");a.style.display="";a.href="/api/fleet/overview?t="+encodeURIComponent(TOKEN);}
    toast(d.rc===0?"Fleet audit complete — all clean":"Fleet audit finished (rc "+d.rc+") — see output");}
@@ -584,6 +604,8 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == "/api/fleet/run":
             key = body.get("key", "")
             sudo = bool(body.get("sudo", True))
+            ssh_pass = body.get("ssh_pass", "")     # SSH login password (optional)
+            sudo_pass = body.get("sudo_pass", "")   # remote sudo password (optional)
             if key and not OP_ARG.fullmatch(key):
                 return self._json({"error": "bad key path"}, 400)
             if not os.path.exists(FLEET_HOSTS_PATH):
@@ -597,9 +619,17 @@ class Handler(BaseHTTPRequestHandler):
                     "--progress-file", PROGRESS_PATH]
             if key:
                 args += ["--key", key]
-            if sudo:
+            # Credentials go through the environment (never the command line).
+            env_extra = {}
+            if ssh_pass:
+                args += ["--ask-pass"]
+                env_extra["AUDITXS_SSH_PASS"] = ssh_pass
+            if sudo_pass:
+                args += ["--ask-sudo-pass"]
+                env_extra["AUDITXS_SUDO_PASS"] = sudo_pass
+            elif sudo:
                 args += ["--sudo"]
-            rc, out, err = run_auditxs(args, timeout=1800)
+            rc, out, err = run_auditxs(args, timeout=1800, env_extra=env_extra or None)
             FLEET_LAST_DIR["path"] = outdir
             return self._json({"rc": rc, "output": strip_ansi(out + ("\n" + err if err else "")),
                                "overview": os.path.exists(os.path.join(outdir, "index.html"))})

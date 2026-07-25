@@ -209,8 +209,25 @@ official steps rather than piping a remote script into your shell.
 ```bash
 auditxs fleet web01 db01 app03            # audit three hosts (uses your SSH agent/keys)
 auditxs fleet web01 --user admin --key ~/.ssh/id_ed25519 --sudo
-auditxs fleet --inventory hosts.txt --ask-pass   # one password for all hosts (needs sshpass)
+auditxs fleet --inventory hosts.txt --ask-pass   # SSH login password for all hosts (needs sshpass)
+
+# Log in over SSH, then use sudo with a password on the host (no passwordless
+# sudo needed) — prompts once for the SSH password and once for the sudo password:
+auditxs fleet --inventory hosts.txt --user admin --ask-pass --ask-sudo-pass
+
+# SSH key login + sudo password (the most common setup):
+auditxs fleet --inventory hosts.txt --key ~/.ssh/id_ed25519 --ask-sudo-pass
 ```
+
+**Authenticating to the host and to root.** `--ask-pass` prompts once for the
+SSH *login* password (needs `sshpass`); `--ask-sudo-pass` prompts once for the
+remote *sudo* password and feeds it to `sudo -S` over the SSH channel's stdin —
+so it never appears in the process list on either machine, and you do **not**
+need passwordless sudo on the hosts. `--sudo` alone still works when the login
+user has passwordless sudo (`NOPASSWD`). All three GUIs expose the same
+credentials on their Fleet screen (SSH key **or** password, plus an optional
+sudo password); passwords entered there are used only for that run and never
+saved.
 
 Fleet mode runs a **read-only** `auditxs audit` on each host and prints an
 aggregated score table, saving each host's JSON — plus an **aggregated HTML
@@ -225,8 +242,10 @@ AuditXS installed; fleet never pushes code.
 | `--inventory <file>` | read hosts from a file (one `user@host` per line, `#` comments) |
 | `--user <name>` | default SSH user for hosts written without `user@` |
 | `--key <file>` | SSH private key (key auth is preferred) |
-| `--ask-pass` | prompt once for a password, used for all hosts (via `sshpass`) |
-| `--port <n>` | SSH port (default 22) · `--sudo` runs the remote audit via `sudo -n` |
+| `--ask-pass` | prompt once for the **SSH login** password, used for all hosts (via `sshpass`) |
+| `--sudo` | run the remote audit via **passwordless** sudo (`sudo -n`) |
+| `--ask-sudo-pass` | prompt once for the remote **sudo** password; fed to `sudo -S` over SSH (never on the command line) |
+| `--port <n>` | SSH port (default 22) |
 | `--timeout <sec>` | per-host timeout (default 120) · `--output <dir>` where reports go |
 | `--remote-report` | also generate a full HTML report **on each audited host** (`/var/lib/auditxs/reports/`) and fetch a copy back |
 | `--strict-host-key` / `--insecure-host-key` | tighten or disable host-key checking |

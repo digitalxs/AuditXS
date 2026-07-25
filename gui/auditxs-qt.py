@@ -123,11 +123,19 @@ def _elevate(cmd):
     return cmd
 
 
-def run_auditxs(args, timeout=240):
+def run_auditxs(args, timeout=240, env_extra=None):
     bin_ = os.environ.get("AUDITXS_BIN", "auditxs")
     cmd = _elevate([bin_] + list(args))
+    env = None
+    if env_extra:
+        # Credentials (e.g. fleet passwords) travel in the child environment,
+        # never on the command line. pkexec would strip them, but fleet is not
+        # an elevated subcommand, so the environment is preserved.
+        env = dict(os.environ)
+        env.update(env_extra)
     try:
-        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
+                           env=env)
         return p.returncode, p.stdout, p.stderr
     except subprocess.TimeoutExpired:
         return 124, "", "timed out"
@@ -289,6 +297,9 @@ def run_gui():
         # opStart → poll opState until running=false; output is in the state.
         @Slot(str, result=bool)
         def opStart(self, args_json):
+            return self._op_start(args_json, None)
+
+        def _op_start(self, args_json, env_extra):
             if getattr(self, "_op_thread", None) and self._op_thread.is_alive():
                 return False
             try:
@@ -305,7 +316,8 @@ def run_gui():
 
             def _worker():
                 rc, out, err = run_auditxs(
-                    args + ["--progress-file", PROGRESS_FILE], timeout=1800)
+                    args + ["--progress-file", PROGRESS_FILE], timeout=1800,
+                    env_extra=env_extra)
                 text = strip_ansi(out)
                 if rc != 0 and err:
                     text += "\n[exit %d] %s" % (rc, strip_ansi(err)[-800:])
@@ -369,8 +381,10 @@ def run_gui():
             except (ValueError, OSError):
                 return json.dumps(fleet_config())
 
-        @Slot(result=bool)
-        def fleetAudit(self):
+        # Audit the saved fleet. ssh_pass / sudo_pass are entered per-run and
+        # passed through the environment (never persisted, never on argv).
+        @Slot(str, str, result=bool)
+        def fleetAudit(self, ssh_pass, sudo_pass):
             cfg = fleet_config()
             if not cfg["hosts"]:
                 return False
@@ -381,9 +395,16 @@ def run_gui():
             args = ["fleet", "--inventory", FLEET_HOSTS, "--output", outdir]
             if cfg["key"]:
                 args += ["--key", cfg["key"]]
-            if cfg["sudo"]:
+            env_extra = {}
+            if ssh_pass:
+                args += ["--ask-pass"]
+                env_extra["AUDITXS_SSH_PASS"] = ssh_pass
+            if sudo_pass:
+                args += ["--ask-sudo-pass"]
+                env_extra["AUDITXS_SUDO_PASS"] = sudo_pass
+            elif cfg["sudo"]:
                 args += ["--sudo"]
-            return self.opStart(json.dumps(args))
+            return self._op_start(json.dumps(args), env_extra or None)
 
         @Slot(result=str)
         def fleetOverview(self):

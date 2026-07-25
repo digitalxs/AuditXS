@@ -28,7 +28,8 @@ FLEET_REPORT_DIR_ROOT="/var/lib/auditxs/reports/fleet"
 cmd_fleet() {
     local -a hosts=() _h=()
     local inventory="" user="" key="" port=22 timeout=120
-    local use_sudo=0 ask_pass=0 shk="accept-new" outdir="" remote_report=0
+    local use_sudo=0 ask_pass=0 ask_sudo_pass=0 shk="accept-new" outdir="" remote_report=0
+    local sudo_mode=none
 
     while [ $# -gt 0 ]; do
         case $1 in
@@ -40,6 +41,7 @@ cmd_fleet() {
             --timeout)    timeout=${2:-120}; shift ;;
             --output)     outdir=${2:-}; shift ;;
             --sudo)       use_sudo=1 ;;
+            --ask-sudo-pass|--sudo-pass) ask_sudo_pass=1 ;;
             --remote-report) remote_report=1 ;;
             --ask-pass)   ask_pass=1 ;;
             --strict-host-key)   shk=yes ;;
@@ -67,15 +69,43 @@ Example: ${BOLD}auditxs fleet web01 db01 --user admin --key ~/.ssh/id_ed25519 --
 
     # Validate tooling for the chosen auth mode.
     have ssh || die "fleet requires the 'ssh' client (openssh-client)."
+    # Passwords can be supplied non-interactively via the environment (how the
+    # GUIs pass them, since they have no tty): AUDITXS_SSH_PASS for the SSH
+    # login, AUDITXS_SUDO_PASS for the remote sudo. Otherwise we prompt. Either
+    # way the value is consumed here and the env vars are cleared immediately so
+    # they never leak to the ssh/sshpass child processes.
     local sshpass_pre=()
     if [ "$ask_pass" = 1 ]; then
         have sshpass || { ax_error AX6004; return 2; }
-        local _pw
-        printf '%s' "SSH password (used for all hosts): " >&2
-        read -rs _pw; printf '\n' >&2
-        export SSHPASS="$_pw"; _pw=""
+        if [ -n "${AUDITXS_SSH_PASS+x}" ]; then
+            export SSHPASS="$AUDITXS_SSH_PASS"
+        else
+            local _pw
+            printf '%s' "SSH login password (used for all hosts): " >&2
+            read -rs _pw; printf '\n' >&2
+            export SSHPASS="$_pw"; _pw=""
+        fi
         sshpass_pre=(sshpass -e)
     fi
+    unset AUDITXS_SSH_PASS
+
+    # Remote privilege escalation. --ask-sudo-pass feeds the remote sudo
+    # password to `sudo -S` over the SSH channel's stdin (never on the command
+    # line, so it never appears in 'ps'). --sudo without a password assumes
+    # passwordless sudo (sudo -n). FLEET_SUDO_PW is cleared right after the run.
+    FLEET_SUDO_PW=""
+    if [ "$ask_sudo_pass" = 1 ]; then
+        sudo_mode=pass
+        if [ -n "${AUDITXS_SUDO_PASS+x}" ]; then
+            FLEET_SUDO_PW="$AUDITXS_SUDO_PASS"
+        else
+            printf '%s' "Remote sudo password (used for all hosts): " >&2
+            read -rs FLEET_SUDO_PW; printf '\n' >&2
+        fi
+    elif [ "$use_sudo" = 1 ]; then
+        sudo_mode=nopass
+    fi
+    unset AUDITXS_SUDO_PASS
     [ "$shk" = no ] && warn "Host-key checking is DISABLED (--insecure-host-key). Only do this on a trusted network."
 
     # Where to save the per-host JSON reports.
@@ -100,8 +130,9 @@ Example: ${BOLD}auditxs fleet web01 db01 --user admin --key ~/.ssh/id_ed25519 --
     done
     FLEET_PROGRESS=""
 
-    # Clear the password from the environment as soon as we are done with it.
+    # Clear the passwords as soon as we are done with them.
     [ "$ask_pass" = 1 ] && unset SSHPASS
+    FLEET_SUDO_PW=""; unset FLEET_SUDO_PW
 
     # Summary table.
     hr
@@ -127,6 +158,21 @@ Example: ${BOLD}auditxs fleet web01 db01 --user admin --key ~/.ssh/id_ed25519 --
     return 0
 }
 
+# _fleet_run <target> <remote-cmd> — run the remote command over SSH. In
+# password-sudo mode it feeds the sudo password to the remote `sudo -S` on the
+# SSH channel's stdin using a shell builtin (printf), so the password never
+# appears in the process list on either side. Reads ssh_opts/sshpass_pre/
+# timeout/sudo_mode/FLEET_SUDO_PW from the enclosing fleet call (dynamic scope).
+_fleet_run() {
+    local target=$1 cmd=$2
+    if [ "$sudo_mode" = pass ]; then
+        printf '%s\n' "$FLEET_SUDO_PW" \
+            | timeout "$timeout" "${sshpass_pre[@]}" ssh "${ssh_opts[@]}" "$target" "$cmd"
+    else
+        timeout "$timeout" "${sshpass_pre[@]}" ssh "${ssh_opts[@]}" "$target" "$cmd" </dev/null
+    fi
+}
+
 # Run one host (updates rows/errored/with_fails in the caller's scope).
 _fleet_one() {
     local target=$1
@@ -143,18 +189,29 @@ _fleet_one() {
     fi
     [ "$shk" = no ] && ssh_opts+=(-o "UserKnownHostsFile=/dev/null" -o "GlobalKnownHostsFile=/dev/null")
 
+    # Build the remote command for the chosen sudo mode. In password mode the
+    # audit runs under `sudo -S` reading the password from stdin (see _fleet_run).
     local remote="auditxs audit --format json --quiet"
-    [ "$use_sudo" = 1 ] && remote="sudo -n $remote"
+    case $sudo_mode in
+        nopass) remote="sudo -n $remote" ;;
+        pass)   remote="sudo -S -p '' $remote" ;;
+    esac
 
     info "Auditing ${BOLD}$target${RC} ${DIM}${FLEET_PROGRESS:-}${RC} …"
     local out err rc
-    out=$(timeout "$timeout" "${sshpass_pre[@]}" ssh "${ssh_opts[@]}" "$target" "$remote" 2>"$outdir/.stderr")
+    out=$(_fleet_run "$target" "$remote" 2>"$outdir/.stderr")
     rc=$?
     err=$(cat "$outdir/.stderr" 2>/dev/null); rm -f "$outdir/.stderr"
 
     # Interpret failures with a specific error number.
     if [ "$rc" -eq 124 ]; then
         ax_error AX6007 "host=$host timeout=${timeout}s"; _fleet_row "$host" "TIMEOUT" - - - -; errored=$((errored+1)); return
+    fi
+    # Remote sudo rejected the password / user not permitted (distinct from SSH
+    # auth). Checked before the generic SSH-auth match so the message is right.
+    if printf '%s' "$err" | grep -qiE 'incorrect password|sorry, try again|sudo:.*(password|not allowed|no tty|a terminal is required)|is not in the sudoers'; then
+        ax_error AX6009 "host=$host${err:+ | ${err%%$'\n'*}}"
+        _fleet_row "$host" "SUDO-FAIL" - - - -; errored=$((errored+1)); return
     fi
     if [ "$rc" -eq 255 ] || { [ -z "$out" ] && [ "$rc" -ne 0 ]; }; then
         local code=AX6001 state=UNREACHABLE
@@ -194,17 +251,21 @@ _fleet_one() {
 # /var/lib/auditxs/reports/) and fetch a copy to the controller's output dir.
 _fleet_remote_report() {
     local target=$1 host=$2 safe=$3
-    local gen="auditxs report --format html --quiet"
-    local tee_cmd="tee /var/lib/auditxs/reports/auditxs-report.html"
-    if [ "$use_sudo" = 1 ]; then gen="sudo -n $gen"; tee_cmd="sudo -n $tee_cmd"; fi
+    # A single sudo wraps the whole report|tee pipeline, so password-mode sudo
+    # authenticates once (the piped password) and the pipeline runs as root.
+    local pipeline="auditxs report --format html --quiet | tee /var/lib/auditxs/reports/auditxs-report.html"
+    local rcmd="$pipeline"
+    case $sudo_mode in
+        pass)   rcmd="sudo -S -p '' sh -c '$pipeline'" ;;
+        nopass) rcmd="sudo -n sh -c '$pipeline'" ;;
+    esac
     local html
-    html=$(timeout "$timeout" "${sshpass_pre[@]}" ssh "${ssh_opts[@]}" "$target" \
-              "$gen | $tee_cmd" 2>/dev/null)
+    html=$(_fleet_run "$target" "$rcmd" 2>/dev/null)
     if printf '%s' "$html" | grep -q '<html'; then
         printf '%s\n' "$html" > "$outdir/$safe.html"
         say "    ${DIM}full report saved on $host at /var/lib/auditxs/reports/auditxs-report.html (copy: $outdir/$safe.html)${RC}"
     else
-        warn "Could not generate the remote report on $host (needs root; try --sudo)."
+        warn "Could not generate the remote report on $host (needs root; try --sudo or --ask-sudo-pass)."
     fi
 }
 

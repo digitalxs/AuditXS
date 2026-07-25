@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.14.1</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.15.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -138,6 +138,7 @@
 <tr><td><code>AX6006</code></td><td>Remote audit returned no result</td><td>The remote command produced no parseable JSON audit result.</td><td>Re-run with --debug to see the raw remote output; confirm the remote 'auditxs audit' works when run directly.</td></tr>
 <tr><td><code>AX6007</code></td><td>Remote command timed out</td><td>The remote host did not finish the audit within the timeout.</td><td>Raise --timeout, or check load/connectivity on that host.</td></tr>
 <tr><td><code>AX6008</code></td><td>Inventory unreadable or empty</td><td>The --inventory file could not be read or contained no hosts.</td><td>Provide a readable file with one host (user@host) per line, or pass hosts with --hosts.</td></tr>
+<tr><td><code>AX6009</code></td><td>Remote sudo authentication failed</td><td>The remote 'sudo' rejected the password, or the login user is not allowed to run auditxs via sudo.</td><td>Check the sudo password (--ask-sudo-pass), and that the SSH user may run 'auditxs' with sudo on that host (a sudoers rule).</td></tr>
 <tr><td><code>AX7001</code></td><td>Unknown output format</td><td>An unsupported value was passed to --format.</td><td>Use one of: text, json, tsv, html, sarif, csv.</td></tr>
 <tr><td><code>AX8001</code></td><td>Alert delivery failed</td><td>AuditXS could not deliver a drift/CVE alert to the configured sink (webhook or email).</td><td>Check the sink URL/address and connectivity; test with 'auditxs alert test'.</td></tr>
 <tr><td><code>AX8002</code></td><td>No alert sink configured</td><td>An alert was requested but no webhook or email destination is configured.</td><td>Set ALERT_WEBHOOK and/or ALERT_EMAIL in /etc/auditxs/auditxs.conf (see 'auditxs alert').</td></tr>

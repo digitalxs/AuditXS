@@ -97,8 +97,18 @@ never hardens over SSH. Key authentication is preferred; password auth uses
 .BR sshpass .
 Options include
 .BR --hosts ", " --inventory ", " --user ", " --key ", " --ask-pass ", "
-.BR --sudo ", " --port ", " --timeout ", " --output ", " --remote-report
-"and the host-key controls."
+.BR --sudo ", " --ask-sudo-pass ", " --port ", " --timeout ", " --output ", "
+.BR --remote-report " and the host-key controls."
+.B --ask-pass
+prompts once for the SSH login password (needs
+.BR sshpass );
+.B --ask-sudo-pass
+prompts once for the remote sudo password and feeds it to
+.B "sudo -S"
+over the SSH channel (never on the command line).
+.B --sudo
+alone assumes passwordless sudo
+.RB ( "sudo -n" ).
 Per-host JSON reports and an aggregated HTML overview dashboard
 .RI ( index.html )
 are saved under

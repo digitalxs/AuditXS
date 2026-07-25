@@ -37,6 +37,7 @@ Generated from the catalogue in `lib/errors.sh` by `auditxs errors --markdown`.
 | `AX6006` | Remote audit returned no result | The remote command produced no parseable JSON audit result. | Re-run with --debug to see the raw remote output; confirm the remote 'auditxs audit' works when run directly. |
 | `AX6007` | Remote command timed out | The remote host did not finish the audit within the timeout. | Raise --timeout, or check load/connectivity on that host. |
 | `AX6008` | Inventory unreadable or empty | The --inventory file could not be read or contained no hosts. | Provide a readable file with one host (user@host) per line, or pass hosts with --hosts. |
+| `AX6009` | Remote sudo authentication failed | The remote 'sudo' rejected the password, or the login user is not allowed to run auditxs via sudo. | Check the sudo password (--ask-sudo-pass), and that the SSH user may run 'auditxs' with sudo on that host (a sudoers rule). |
 | `AX7001` | Unknown output format | An unsupported value was passed to --format. | Use one of: text, json, tsv, html, sarif, csv. |
 | `AX8001` | Alert delivery failed | AuditXS could not deliver a drift/CVE alert to the configured sink (webhook or email). | Check the sink URL/address and connectivity; test with 'auditxs alert test'. |
 | `AX8002` | No alert sink configured | An alert was requested but no webhook or email destination is configured. | Set ALERT_WEBHOOK and/or ALERT_EMAIL in /etc/auditxs/auditxs.conf (see 'auditxs alert'). |

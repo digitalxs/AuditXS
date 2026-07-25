@@ -89,9 +89,10 @@ ${BOLD}FLEET OPTIONS${RC} (auditxs fleet — read-only audit over SSH)
   --inventory <file>             Read hosts from a file (one user@host per line)
   --user <name>                  Default SSH user for hosts without user@
   --key <file>                   SSH private key (key auth is preferred)
-  --ask-pass                     Prompt once for an SSH password (needs sshpass)
+  --ask-pass                     Prompt once for an SSH login password (needs sshpass)
   --port <n>                     SSH port (default 22)
-  --sudo                         Run the remote audit via sudo -n
+  --sudo                         Run the remote audit via passwordless sudo (sudo -n)
+  --ask-sudo-pass                Prompt once for the remote sudo password (sudo -S)
   --timeout <sec>                Per-host timeout (default 120)
   --output <dir>                 Where to save per-host JSON reports
   --remote-report                Also leave a full HTML report on each host
@@ -300,7 +301,7 @@ main() {
             # fleet-mode options — passed through to 'auditxs fleet'
             --hosts|--inventory|--user|--key|--timeout|--output|--until)
                          ARGS+=("$1" "${2:?"$1 needs a value"}"); shift ;;
-            --sudo|--ask-pass|--strict-host-key|--insecure-host-key|--remote-report)
+            --sudo|--ask-pass|--ask-sudo-pass|--sudo-pass|--strict-host-key|--insecure-host-key|--remote-report)
                          ARGS+=("$1") ;;
             -*)          die "Unknown option: $1 (see 'auditxs help')" ;;
             *)           ARGS+=("$1") ;;

@@ -7,6 +7,24 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.15.0]
+
+### Added
+- **SSH login + interactive sudo for fleet audits.** You can now scan remote
+  hosts by logging in over SSH and using `sudo` **with a password** — no
+  passwordless sudo required.
+  - `auditxs fleet --ask-pass` prompts once for the SSH login password;
+    `--ask-sudo-pass` prompts once for the remote sudo password and feeds it to
+    `sudo -S` over the SSH channel's stdin, so it never appears in the process
+    list on either machine. `--sudo` alone still means passwordless sudo.
+  - The credentials are exposed on the **Fleet screen of all three GUIs** (Qt,
+    web, zenity): SSH key **or** login password, plus an optional sudo
+    password. Passwords are used only for that run and never saved; the GUIs
+    pass them to the engine through the environment (`AUDITXS_SSH_PASS` /
+    `AUDITXS_SUDO_PASS`), never on the command line.
+  - New error `AX6009` (remote sudo authentication failed) distinguishes a
+    rejected sudo password / missing sudoers rule from an SSH auth failure.
+
 ## [0.14.1]
 
 ### Fixed

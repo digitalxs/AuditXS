@@ -421,20 +421,28 @@ _fleet_cfg_write() { # <key> <sudo> <hosts…>
 }
 
 run_fleet_gui() {
+    # Passwords are session-only (held in memory, never written to the config).
+    local ssh_pw="" sudo_pw=""
     while true; do
         local hosts key sudo_on
         mapfile -t hosts < <(_fleet_cfg_hosts)
         key=$(_fleet_cfg_key); sudo_on=$(_fleet_cfg_sudo)
+        local login_desc; login_desc=${key:+key} ; login_desc=${login_desc:-${ssh_pw:+password}} ; login_desc=${login_desc:-agent/default}
+        local sudo_desc="off"
+        [ "$sudo_on" = 1 ] && sudo_desc="passwordless"
+        [ -n "$sudo_pw" ] && sudo_desc="password set"
         local sel
         sel=$(zenity --list --title "AuditXS — Fleet (read-only over SSH)" \
-            --text "Hosts: <b>${#hosts[@]}</b> · key: <b>${key:-agent/default}</b> · sudo: <b>$([ "$sudo_on" = 1 ] && echo on || echo off)</b>\nFleet audits are read-only — hardening stays per-host. Every host needs AuditXS installed." \
+            --text "Hosts: <b>${#hosts[@]}</b> · login: <b>$login_desc</b> · sudo: <b>$sudo_desc</b>\nFleet audits are read-only — hardening stays per-host. Every host needs AuditXS installed." \
             --column "Action" --column "Description" \
-            "Audit now"   "Audit every host and open the overview dashboard" \
-            "Add host"    "Add a host (user@host)" \
-            "Remove host" "Remove a host from the inventory" \
-            "SSH key"     "Choose the SSH private key (empty = agent/default)" \
-            "Toggle sudo" "Run the remote audit with sudo -n (full results)" \
-            --width 640 --height 420 2>/dev/null) || return 0
+            "Audit now"    "Audit every host and open the overview dashboard" \
+            "Add host"     "Add a host (user@host)" \
+            "Remove host"  "Remove a host from the inventory" \
+            "SSH key"      "Choose an SSH private key (clears the SSH password)" \
+            "SSH password" "Set an SSH login password for this session" \
+            "sudo password" "Set the remote sudo password for this session" \
+            "Toggle sudo"  "Use sudo on the hosts (full results)" \
+            --width 660 --height 470 2>/dev/null) || return 0
         case $sel in
             "Add host")
                 local h
@@ -453,7 +461,12 @@ run_fleet_gui() {
             "SSH key")
                 local k
                 k=$(zenity --file-selection --title "Select the SSH private key (Cancel = agent/default)" 2>/dev/null) || k=""
+                ssh_pw=""      # a key and a login password are mutually exclusive
                 _fleet_cfg_write "$k" "$sudo_on" ${hosts[@]+"${hosts[@]}"} ;;
+            "SSH password")
+                ssh_pw=$(zenity --password --title "AuditXS — SSH login password" 2>/dev/null) || continue ;;
+            "sudo password")
+                sudo_pw=$(zenity --password --title "AuditXS — remote sudo password" 2>/dev/null) || continue ;;
             "Toggle sudo")
                 _fleet_cfg_write "$key" "$([ "$sudo_on" = 1 ] && echo 0 || echo 1)" ${hosts[@]+"${hosts[@]}"} ;;
             "Audit now")
@@ -464,9 +477,12 @@ run_fleet_gui() {
                 outdir="$FLEET_OUT_ROOT/$(date +%Y%m%d-%H%M%S)"; mkdir -p "$outdir"
                 local -a fcmd=("$AUDITXS_BIN" fleet --inventory "$FLEET_HOSTS_FILE" --output "$outdir" --progress-file "$prog")
                 [ -n "$key" ] && fcmd+=(--key "$key")
-                [ "$sudo_on" = 1 ] && fcmd+=(--sudo)
+                [ -n "$ssh_pw" ]  && fcmd+=(--ask-pass)
+                if [ -n "$sudo_pw" ]; then fcmd+=(--ask-sudo-pass)
+                elif [ "$sudo_on" = 1 ]; then fcmd+=(--sudo); fi
                 : > "$prog"
-                ( "${fcmd[@]}" > "$flog" 2>&1 ) &
+                # Passwords go to the child via the environment, never on argv.
+                ( AUDITXS_SSH_PASS="$ssh_pw" AUDITXS_SUDO_PASS="$sudo_pw" "${fcmd[@]}" > "$flog" 2>&1 ) &
                 local fpid=$!
                 progress_feed "$fpid" "$prog" | zenity --progress --title "AuditXS — fleet audit" \
                     --text "Auditing ${#hosts[@]} host(s) over SSH (read-only)…" \

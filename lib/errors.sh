@@ -134,6 +134,9 @@ _ax_def AX6007 "Remote command timed out" \
 _ax_def AX6008 "Inventory unreadable or empty" \
     "The --inventory file could not be read or contained no hosts." \
     "Provide a readable file with one host (user@host) per line, or pass hosts with --hosts."
+_ax_def AX6009 "Remote sudo authentication failed" \
+    "The remote 'sudo' rejected the password, or the login user is not allowed to run auditxs via sudo." \
+    "Check the sudo password (--ask-sudo-pass), and that the SSH user may run 'auditxs' with sudo on that host (a sudoers rule)."
 
 # ---- AX7xxx — reporting ---------------------------------------------------
 _ax_def AX7001 "Unknown output format" \

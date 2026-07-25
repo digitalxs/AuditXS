@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.14.1</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.15.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg active" href="usage.html">User manual</a>
@@ -196,7 +196,15 @@ auditxs tools vpn                 # review WireGuard / OpenVPN configuration</co
 <h2 id="fleet-mode--auditing-many-hosts-over-ssh">Fleet mode — auditing many hosts over SSH</h2>
 <pre class="lang-bash"><code>auditxs fleet web01 db01 app03            # audit three hosts (uses your SSH agent/keys)
 auditxs fleet web01 --user admin --key ~/.ssh/id_ed25519 --sudo
-auditxs fleet --inventory hosts.txt --ask-pass   # one password for all hosts (needs sshpass)</code></pre>
+auditxs fleet --inventory hosts.txt --ask-pass   # SSH login password for all hosts (needs sshpass)
+
+# Log in over SSH, then use sudo with a password on the host (no passwordless
+# sudo needed) — prompts once for the SSH password and once for the sudo password:
+auditxs fleet --inventory hosts.txt --user admin --ask-pass --ask-sudo-pass
+
+# SSH key login + sudo password (the most common setup):
+auditxs fleet --inventory hosts.txt --key ~/.ssh/id_ed25519 --ask-sudo-pass</code></pre>
+<p><strong>Authenticating to the host and to root.</strong> <code>--ask-pass</code> prompts once for the SSH <em>login</em> password (needs <code>sshpass</code>); <code>--ask-sudo-pass</code> prompts once for the remote <em>sudo</em> password and feeds it to <code>sudo -S</code> over the SSH channel's stdin — so it never appears in the process list on either machine, and you do <strong>not</strong> need passwordless sudo on the hosts. <code>--sudo</code> alone still works when the login user has passwordless sudo (<code>NOPASSWD</code>). All three GUIs expose the same credentials on their Fleet screen (SSH key <strong>or</strong> password, plus an optional sudo password); passwords entered there are used only for that run and never saved.</p>
 <p>Fleet mode runs a <strong>read-only</strong> <code>auditxs audit</code> on each host and prints an aggregated score table, saving each host's JSON — plus an <strong>aggregated HTML overview dashboard</strong> (<code>index.html</code>) — under <code>/var/lib/auditxs/reports/fleet/&lt;timestamp&gt;/</code>. It <strong>never</strong> hardens over SSH — review each report and harden that host locally. Each remote host must have AuditXS installed; fleet never pushes code.</p>
 <div class="tablewrap"><table>
 <tr><th>Option</th><th>Meaning</th></tr>
@@ -204,8 +212,10 @@ auditxs fleet --inventory hosts.txt --ask-pass   # one password for all hosts (n
 <tr><td><code>--inventory &lt;file&gt;</code></td><td>read hosts from a file (one <code>user@host</code> per line, <code>#</code> comments)</td></tr>
 <tr><td><code>--user &lt;name&gt;</code></td><td>default SSH user for hosts written without <code>user@</code></td></tr>
 <tr><td><code>--key &lt;file&gt;</code></td><td>SSH private key (key auth is preferred)</td></tr>
-<tr><td><code>--ask-pass</code></td><td>prompt once for a password, used for all hosts (via <code>sshpass</code>)</td></tr>
-<tr><td><code>--port &lt;n&gt;</code></td><td>SSH port (default 22) · <code>--sudo</code> runs the remote audit via <code>sudo -n</code></td></tr>
+<tr><td><code>--ask-pass</code></td><td>prompt once for the <strong>SSH login</strong> password, used for all hosts (via <code>sshpass</code>)</td></tr>
+<tr><td><code>--sudo</code></td><td>run the remote audit via <strong>passwordless</strong> sudo (<code>sudo -n</code>)</td></tr>
+<tr><td><code>--ask-sudo-pass</code></td><td>prompt once for the remote <strong>sudo</strong> password; fed to <code>sudo -S</code> over SSH (never on the command line)</td></tr>
+<tr><td><code>--port &lt;n&gt;</code></td><td>SSH port (default 22)</td></tr>
 <tr><td><code>--timeout &lt;sec&gt;</code></td><td>per-host timeout (default 120) · <code>--output &lt;dir&gt;</code> where reports go</td></tr>
 <tr><td><code>--remote-report</code></td><td>also generate a full HTML report <strong>on each audited host</strong> (<code>/var/lib/auditxs/reports/</code>) and fetch a copy back</td></tr>
 <tr><td><code>--strict-host-key</code> / <code>--insecure-host-key</code></td><td>tighten or disable host-key checking</td></tr>
