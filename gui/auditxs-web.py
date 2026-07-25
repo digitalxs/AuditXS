@@ -37,6 +37,7 @@ AUDITXS = os.environ.get("AUDITXS_BIN", "auditxs")
 TOKEN = secrets.token_urlsafe(24)
 PROFILE = os.environ.get("AUDITXS_PROFILE", "")   # empty → let auditxs decide
 VERSION = "?"
+BIND = "127.0.0.1"                                 # bind address (see --bind)
 
 # Progress file for long operations (audit): the CLI writes "PCT DONE TOTAL ID"
 # via --progress-file; GET /api/progress serves it so the SPA can render a
@@ -242,6 +243,7 @@ body{padding-bottom:3rem}
     <div class="tab" data-tab="snapshots">Snapshots</div>
     <div class="tab" data-tab="tools">Tools</div>
     <div class="tab" data-tab="fleet">Fleet</div>
+    <div class="tab" data-tab="web">Web</div>
   </div>
   <div class="pwrap" id="pwrap">
     <div class="pbar"><div id="pfill"></div></div>
@@ -327,6 +329,7 @@ function render(){
  else if(TAB==="snapshots")renderSnaps();
  else if(TAB==="tools")renderTools();
  else if(TAB==="fleet")renderFleet();
+ else if(TAB==="web")renderWeb();
 }
 function groupByCat(list){const g={};list.forEach(r=>{(g[r.category]=g[r.category]||[]).push(r);});return g;}
 
@@ -434,6 +437,51 @@ async function toolAction(tool,action,btn){
  catch(e){toast(tool+" "+action+" failed: "+e.message);}
  progressStop(); await renderTools();
 }
+async function renderWeb(){
+ $("#view").innerHTML='<div class="empty"><span class="spin"></span> loading…</div>';
+ let s={active:false,bind:"127.0.0.1",port:"9000",remote:false,systemd:true};
+ try{s=await api("/api/webservice");}catch(e){}
+ const banner = !s.systemd ? '<div class="note" style="font-weight:600">systemd is not available on this host — the on/off switch needs systemd.</div>'
+   : (s.active
+      ? '<div class="chip pass" style="font-size:.9rem">● ON — '+esc(s.bind)+':'+esc(s.port)+(s.remote?' (REMOTE — reachable from the network)':' (local only)')+'</div>'
+      : '<div class="chip" style="font-size:.9rem">○ OFF</div>');
+ const remoteWarn = (s.active && s.remote)
+   ? '<div class="note" style="color:#b26a00">Exposed to the network. Anyone who can reach this port and holds the token can run privileged operations on this host.</div>' : '';
+ $("#view").innerHTML=`<div class="card">
+  <div class="sect" style="margin-top:0">Web UI — on/off switch (local or remote)</div>
+  <div class="note">Turn the AuditXS web UI on or off as a background service.
+   <b>Local</b> binds to 127.0.0.1 (reach it over an SSH tunnel). <b>Remote</b> exposes it to
+   the network — the access token is then the only credential, so put TLS / a reverse proxy in
+   front and firewall the port.</div>
+  <div style="margin:.6rem 0">${banner}</div>
+  ${remoteWarn}
+  <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:.6rem">
+   <label style="font-size:.85rem">Port <input id="webPort" class="mono fld" style="width:6rem" value="${esc(s.port||'9000')}"></label>
+   <label style="font-size:.85rem"><input type="checkbox" id="webRemote" ${s.remote?'checked':''}> reachable from the network (remote)</label>
+  </div>
+  <div style="display:flex;gap:.6rem;margin-top:.7rem;flex-wrap:wrap;align-items:center">
+   <button class="btn primary" id="webEnable" ${s.systemd?'':'disabled'}>${s.active?'Restart / apply':'Turn ON'}</button>
+   <button class="btn" id="webDisable" ${s.active?'':'disabled'}>Turn OFF</button>
+   <button class="btn" id="webToken">Show token</button>
+   <button class="btn" id="webRotate" ${s.active?'':'disabled'}>Rotate token</button>
+  </div>
+  <pre id="webOut" style="display:none;white-space:pre-wrap;font-size:.78rem;background:var(--surface2);padding:.8rem;border-radius:.6rem;margin-top:.8rem;max-height:20rem;overflow:auto"></pre>
+ </div>`;
+ const showOut=(t)=>{const o=$("#webOut");o.style.display="block";o.textContent=t||"(no output)";};
+ const call=async(payload,busyBtn,label)=>{
+  const b=$(busyBtn);const old=b.innerHTML;b.innerHTML='<span class="spin"></span>';
+  try{const d=await api("/api/webservice",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+   showOut(d.log);toast(label);}
+  catch(e){toast("Failed: "+e.message);b.innerHTML=old;return;}
+  renderWeb();};
+ $("#webEnable").onclick=()=>{
+  const remote=$("#webRemote").checked;
+  if(remote && !confirm("Expose the web UI to the NETWORK on port "+$("#webPort").value+"?\\n\\nThe web UI runs privileged operations. Anyone who can reach this port and holds the token controls this host. Put TLS / a reverse proxy in front and firewall the port."))return;
+  call({action:"enable",port:$("#webPort").value.trim(),remote:remote},"#webEnable","Web service enabled");};
+ $("#webDisable").onclick=()=>call({action:"disable"},"#webDisable","Web service disabled");
+ $("#webToken").onclick=()=>call({action:"token"},"#webToken","Access token");
+ $("#webRotate").onclick=()=>call({action:"token",reset:true},"#webRotate","Token rotated");
+}
 async function renderFleet(){
  $("#view").innerHTML='<div class="empty"><span class="spin"></span> loading…</div>';
  let hosts="";try{const d=await api("/api/fleet/hosts");hosts=d.hosts||"";}catch(e){}
@@ -506,8 +554,14 @@ class Handler(BaseHTTPRequestHandler):
         return secrets.compare_digest(supplied or "", TOKEN)
 
     def _same_origin(self):
-        host = (self.headers.get("Host") or "").split(":")[0]
-        return host in ("127.0.0.1", "localhost")
+        # Loopback bind (the default): enforce a loopback Host header — a strong
+        # CSRF defence. When explicitly bound to a routable address (the opt-in
+        # remote mode), the bearer token is the authenticator and the Host is
+        # the server's own name/IP, so we accept it (deploy behind TLS).
+        if BIND in ("127.0.0.1", "localhost"):
+            host = (self.headers.get("Host") or "").split(":")[0]
+            return host in ("127.0.0.1", "localhost")
+        return True
 
     def _send(self, code, body, ctype="application/json"):
         data = body.encode() if isinstance(body, str) else body
@@ -552,6 +606,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(self._cve())
         if u.path == "/api/tools":
             return self._json(self._tools())
+        if u.path == "/api/webservice":
+            return self._json(self._webservice())
         if u.path == "/api/report":
             rc, out, _ = run_auditxs(["report", "--format", "html"] + profile_args() + ["--quiet"])
             return self._send(200, out, "text/html; charset=utf-8")
@@ -606,6 +662,26 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"error": "bad action"}, 400)
             rc, out, err = run_auditxs(["tools", action, tool], timeout=1800)
             return self._json({"rc": rc, "log": strip_ansi(out + ("\n" + err if err else ""))})
+        if u.path == "/api/webservice":
+            action = body.get("action", "")
+            if action == "enable":
+                args = ["webservice", "enable"]
+                port = str(body.get("port", "")).strip()
+                if port:
+                    if not port.isdigit():
+                        return self._json({"error": "bad port"}, 400)
+                    args += ["--port", port]
+                if bool(body.get("remote", False)):
+                    args += ["--remote"]
+            elif action == "disable":
+                args = ["webservice", "disable"]
+            elif action == "token":
+                args = ["webservice", "token"] + (["--reset"] if body.get("reset") else [])
+            else:
+                return self._json({"error": "bad action"}, 400)
+            rc, out, err = run_auditxs(args, timeout=120)
+            return self._json({"rc": rc, "log": strip_ansi(out + ("\n" + err if err else "")),
+                               "state": self._webservice()})
         if u.path == "/api/quit":
             # Clean shutdown for the Electron desktop shell (token-gated here in
             # do_POST). Stop from a worker thread so this response completes.
@@ -723,6 +799,27 @@ class Handler(BaseHTTPRequestHandler):
                 tools.append({"name": parts[0], "installed": parts[1] == "installed"})
         return {"tools": tools}
 
+    def _webservice(self):
+        # Parse 'webservice status' into structured state for the SPA switch.
+        # The "State:"/"Bind:" lines are printed only when systemd is present,
+        # so their presence is the reliable systemd signal (the "No systemd"
+        # notice goes to stderr).
+        rc, out, err = run_auditxs(["webservice", "status"])
+        txt = strip_ansi(out)
+        st = {"active": False, "bind": "127.0.0.1", "port": "9000",
+              "remote": False, "systemd": False}
+        for line in txt.splitlines():
+            s = line.strip()
+            if s.startswith("State:"):
+                st["systemd"] = True
+                st["active"] = s.split(":", 1)[1].strip().startswith("active")
+            elif s.startswith("Bind:"):
+                st["remote"] = "REMOTE" in s
+                hp = s.split()[1] if len(s.split()) > 1 else ""
+                if ":" in hp:
+                    st["bind"], st["port"] = hp.rsplit(":", 1)
+        return st
+
 
 def _osname():
     try:
@@ -737,31 +834,61 @@ def _osname():
 
 # ------------------------------------------------------------------- main
 def main():
-    global VERSION
+    global VERSION, TOKEN, BIND
     port = 9000
     do_open = True
+    bind = "127.0.0.1"
+    token_file = None
     args = sys.argv[1:]
     i = 0
     while i < len(args):
         if args[i] == "--port" and i + 1 < len(args):
             port = int(args[i + 1]); i += 2; continue
+        if args[i] == "--bind" and i + 1 < len(args):
+            bind = args[i + 1]; i += 2; continue
+        if args[i] == "--token-file" and i + 1 < len(args):
+            token_file = args[i + 1]; i += 2; continue
         if args[i] == "--no-open":
             do_open = False; i += 1; continue
         i += 1
 
+    # Persistent token for service mode: read it if present, else create it
+    # (root-only). A stable token lets a user reconnect to a running service.
+    if token_file:
+        try:
+            with open(token_file) as f:
+                t = f.read().strip()
+            if t:
+                TOKEN = t
+        except OSError:
+            try:
+                with open(token_file, "w") as f:
+                    f.write(TOKEN)
+                os.chmod(token_file, 0o600)
+            except OSError:
+                pass
+
+    BIND = bind
     rc, out, _ = run_auditxs(["version"])
     VERSION = (out.strip().split()[-1].lstrip("v") if out.strip() else "?")
 
-    # SECURITY: loopback only, always.
-    httpd = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    httpd = ThreadingHTTPServer((bind, port), Handler)
     global SERVER
     SERVER = httpd
-    url = f"http://127.0.0.1:{port}/?t={TOKEN}"
+    loopback = bind in ("127.0.0.1", "localhost")
+    host_for_url = "127.0.0.1" if loopback else bind
+    url = f"http://{host_for_url}:{port}/?t={TOKEN}"
     line = "─" * 66
     print(f"\n\033[36m╭─\033[0m \033[1mAuditXS web UI\033[0m \033[36m{line[:48]}╮\033[0m")
     print(f"\033[36m│\033[0m  Open: \033[1m{url}\033[0m")
-    print(f"\033[36m│\033[0m  Bound to 127.0.0.1 only. Remote server? Tunnel first:")
-    print(f"\033[36m│\033[0m    ssh -L {port}:127.0.0.1:{port} user@host")
+    if loopback:
+        print(f"\033[36m│\033[0m  Bound to 127.0.0.1 only. Remote server? Tunnel first:")
+        print(f"\033[36m│\033[0m    ssh -L {port}:127.0.0.1:{port} user@host")
+    else:
+        print(f"\033[33m│  ⚠ REMOTE ACCESS: bound to {bind}:{port} — reachable from the network.\033[0m")
+        print(f"\033[33m│  The bearer token is the only credential; put TLS/a reverse proxy\033[0m")
+        print(f"\033[33m│  in front and restrict access by firewall. Anyone with the token\033[0m")
+        print(f"\033[33m│  can run privileged operations on this host.\033[0m")
     print(f"\033[36m│\033[0m  Stop with Ctrl-C.")
     print(f"\033[36m╰{line}╯\033[0m\n")
     sys.stdout.flush()   # ensure the URL/token is visible immediately, even when

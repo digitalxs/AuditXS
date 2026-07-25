@@ -7,6 +7,35 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.20.0]
+
+### Added
+- **Web UI on/off switch — local or remote.** The web UI can now run as a
+  managed background service instead of only a foreground command:
+  - `auditxs webservice enable` turns it on as a systemd service
+    (`auditxs-web.service`) that starts at boot. It binds to `127.0.0.1` by
+    default — reach it over an SSH tunnel.
+  - `auditxs webservice enable --remote` (or `--bind ADDR`) exposes it to the
+    network (`0.0.0.0`). This is a deliberate, loudly warned opt-in: the web UI
+    drives privileged operations, so a stable bearer **access token** is
+    required on every request and AuditXS tells you to put TLS / a reverse
+    proxy in front and firewall the port.
+  - `auditxs webservice status` shows whether it is on, the bind address/port
+    and the access-token URL; `auditxs webservice disable` turns it off and
+    removes the unit; `auditxs webservice token [--reset]` shows or rotates the
+    token (rotating restarts the service).
+  - The token lives in a root-only file (`/etc/auditxs/web-token`, `0600`) so a
+    running service keeps a stable credential you can reconnect with.
+  - **On/off switch in every GUI.** A new **Web** tab in the Qt and web apps and
+    a **WebService** entry in the zenity menu turn the service on/off, choose
+    local vs. remote, and show/rotate the token — with the remote-exposure
+    warning gated behind an explicit confirmation.
+  - `auditxs web` gained `--bind ADDR`, `--token-file PATH` and `--service`;
+    in `--service` mode it runs headless (no desktop-session requirement) and
+    reads/creates the persistent token.
+  - New error **AX8003** (*Web service management failed*) and token-gated web
+    routes `GET`/`POST /api/webservice`.
+
 ## [0.19.0]
 
 ### Added

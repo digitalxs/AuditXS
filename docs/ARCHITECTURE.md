@@ -145,6 +145,11 @@ New engine libraries:
   their reports collected under `/var/lib/auditxs/reports/tools/`. CrowdSec
   and OSSEC/Wazuh, which need third-party installers, are handled with
   guidance rather than piping remote scripts to a shell.
+- `lib/webservice.sh` — the `auditxs webservice` on/off switch: manages a
+  `systemd` unit (`auditxs-web.service`) that runs `auditxs web --service`,
+  toggling the web UI on/off, local or (warned) remote. Holds the stable
+  root-only access token in `/etc/auditxs/web-token` (`0600`). `auditxs web`
+  gained `--bind`/`--token-file`/`--service` to support headless operation.
 
 Console & report styling:
 

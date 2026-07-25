@@ -589,6 +589,51 @@ run_update_gui() {
         --filename "$log" --width 840 --height 560 2>/dev/null
 }
 
+run_webservice_gui() {
+    # On/off switch for the web UI as a background systemd service — local or,
+    # as an explicit warned opt-in, reachable from the network.
+    while true; do
+        local status
+        status=$(elevate "$AUDITXS_BIN" webservice status 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+        local action
+        action=$(zenity --list --title "AuditXS — web service" \
+            --text "$(printf '%s' "$status" | sed 's/&/\&amp;/g; s/</\&lt;/g')\n\nTurn the web UI on or off as a background service." \
+            --column "Action" --column "Description" \
+            "Enable-local"  "Start the web UI (localhost only — reach it over an SSH tunnel)" \
+            "Enable-remote" "Start it reachable from the NETWORK (0.0.0.0) — token required" \
+            "Disable"       "Stop the web service and remove it" \
+            "Token"         "Show the access token" \
+            "Rotate"        "Rotate the access token (restarts the service)" \
+            "Close"         "Back to the main menu" \
+            --width 640 --height 420 2>/dev/null) || return
+
+        local port
+        case $action in
+            Enable-local|Enable-remote)
+                port=$(zenity --entry --title "AuditXS — web service" \
+                    --text "Port for the web UI:" --entry-text "9000" 2>/dev/null) || continue
+                [ -n "$port" ] || port=9000
+                local extra=""; [ "$action" = Enable-remote ] && extra="--remote"
+                if [ "$action" = Enable-remote ]; then
+                    zenity --question --title "AuditXS — REMOTE access" --width 520 \
+                        --text "You are about to expose the web UI to the <b>network</b> on port <b>$port</b>.\n\nThe web UI runs <b>privileged</b> operations. Anyone who can reach this port and holds the token controls this host.\n\nPut TLS / a reverse proxy in front and restrict the port with your firewall.\n\nContinue?" 2>/dev/null || continue
+                fi
+                out=$(elevate "$AUDITXS_BIN" webservice enable --port "$port" $extra 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+                zenity --info --title "AuditXS — web service" --width 620 --text "${out:-Web service enabled.}" 2>/dev/null ;;
+            Disable)
+                out=$(elevate "$AUDITXS_BIN" webservice disable 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+                zenity --info --title "AuditXS — web service" --text "${out:-Web service disabled.}" 2>/dev/null ;;
+            Token)
+                out=$(elevate "$AUDITXS_BIN" webservice token 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+                zenity --info --title "AuditXS — web service token" --width 620 --text "${out}" 2>/dev/null ;;
+            Rotate)
+                out=$(elevate "$AUDITXS_BIN" webservice token --reset 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+                zenity --info --title "AuditXS — web service token" --width 620 --text "${out}" 2>/dev/null ;;
+            Close|"") return ;;
+        esac
+    done
+}
+
 run_terminal_gui() {
     local t
     for t in x-terminal-emulator gnome-terminal konsole xfce4-terminal kgx tilix xterm; do
@@ -613,6 +658,7 @@ while true; do
         "Fleet"     "Audit remote hosts over SSH (read-only, aggregated dashboard)" \
         "Tools"     "Install and run security tools (Lynis, CrowdSec, Suricata…)" \
         "Report"    "Generate and open a Material-style HTML report" \
+        "WebService" "Turn the web UI on/off as a service (local or remote)" \
         "Rollback"  "Undo the changes of a previous hardening run" \
         "Baseline"  "Save the latest audit as the approved baseline (drift alerts)" \
         "Schedule"  "Daily audits with drift alerting (status / enable / disable)" \
@@ -634,6 +680,7 @@ while true; do
         Fleet)     run_fleet_gui ;;
         Tools)     run_tools_gui ;;
         Report)    run_report_gui ;;
+        WebService) run_webservice_gui ;;
         Rollback)  run_rollback_gui ;;
         Schedule)  run_schedule_gui ;;
         Waivers)   run_waivers_gui ;;

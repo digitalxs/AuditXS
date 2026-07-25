@@ -23,6 +23,19 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.20
+
+- **Web UI on/off switch — local or remote** (`auditxs webservice
+  status|enable|disable|token`): turn the web UI on as a background
+  `systemd` service (`auditxs-web.service`) that starts at boot, bound to
+  localhost by default or — as an explicit, warned opt-in — exposed to the
+  network with `--remote`. A stable root-only access token
+  (`/etc/auditxs/web-token`) authenticates every request; remote mode prompts
+  for TLS / reverse-proxy / firewall hardening. `auditxs web` gained
+  `--bind`, `--token-file` and a headless `--service` mode. The switch is in
+  every GUI (a **Web** tab in the Qt/web apps, a **WebService** entry in
+  zenity). New error `AX8003`.
+
 ## Shipped in v0.19
 
 - **Per-tool Install / Uninstall / Repair** across all GUIs and the CLI

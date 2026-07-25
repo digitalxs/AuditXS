@@ -73,6 +73,20 @@ ApplicationWindow {
         for (var i = 0; i < ts.length; i++) toolsModel.append(ts[i]);
     }
 
+    // Web-UI service on/off switch: reflect current state in the Web tab.
+    property var webState: ({ active: false, bind: "127.0.0.1", port: "9000",
+                             remote: false, systemd: true })
+    function refreshWeb() {
+        webState = JSON.parse(backend.webserviceStatus());
+        if (webState.port && !webRemote.checked) webPort.text = webState.port;
+    }
+    function webApplyEnable() {
+        webOut.text = backend.webserviceEnable(webPort.text, webRemote.checked);
+        webResultDialog.title = "Web service — ON";
+        webResultDialog.open();
+        refreshWeb();
+    }
+
     // Run a per-tool op; refresh the tool list when it finishes.
     function runToolOp(name, action) {
         if (win.busy) return;
@@ -306,6 +320,7 @@ ApplicationWindow {
             TabButton { text: "Snapshots"; onClicked: refreshSnaps() }
             TabButton { text: "Tools" }
             TabButton { text: "Fleet" }
+            TabButton { text: "Web" ; onClicked: refreshWeb() }
             TabButton { text: "Ops" }
         }
 
@@ -542,6 +557,99 @@ ApplicationWindow {
                 }
             }
 
+            // --- Web (on/off switch for the web UI as a service) ---
+            ColumnLayout {
+                spacing: 8
+                Label {
+                    padding: 12; wrapMode: Text.WordWrap; Layout.fillWidth: true; opacity: 0.85
+                    font.pixelSize: 12
+                    text: "Turn the AuditXS web UI on or off as a background service. "
+                        + "Local mode binds to 127.0.0.1 (reach it over an SSH tunnel). "
+                        + "Remote mode exposes it to the network — the access token is then "
+                        + "the only credential, so put TLS / a reverse proxy in front and firewall the port."
+                }
+                // live state banner
+                Rectangle {
+                    Layout.fillWidth: true; Layout.leftMargin: 12; Layout.rightMargin: 12
+                    implicitHeight: webBanner.implicitHeight + 20; radius: 8
+                    color: win.webState.active ? Qt.rgba(0.30, 0.69, 0.31, 0.16)
+                                               : Qt.rgba(0.5, 0.5, 0.5, 0.10)
+                    ColumnLayout {
+                        id: webBanner
+                        anchors.fill: parent; anchors.margins: 10; spacing: 2
+                        Label {
+                            font.pixelSize: 14; font.bold: true
+                            text: !win.webState.systemd ? "systemd not available on this host"
+                                 : (win.webState.active
+                                    ? ("● ON  ·  " + win.webState.bind + ":" + win.webState.port
+                                       + (win.webState.remote ? "  (REMOTE — reachable from the network)"
+                                                              : "  (local only)"))
+                                    : "○ OFF")
+                            color: win.webState.active ? "#2e7d32" : Material.foreground
+                        }
+                        Label {
+                            visible: win.webState.active && win.webState.remote
+                            wrapMode: Text.WordWrap; Layout.fillWidth: true
+                            font.pixelSize: 11; color: "#b26a00"
+                            text: "Exposed to the network. Anyone who can reach this port and holds the "
+                                + "token can run privileged operations on this host."
+                        }
+                    }
+                }
+                // controls
+                RowLayout {
+                    Layout.leftMargin: 12; Layout.rightMargin: 12; spacing: 8
+                    enabled: win.webState.systemd && !win.busy
+                    Label { text: "Port"; opacity: 0.7 }
+                    TextField {
+                        id: webPort; text: "9000"
+                        Layout.preferredWidth: 90
+                        inputMethodHints: Qt.ImhDigitsOnly
+                        validator: IntValidator { bottom: 1; top: 65535 }
+                    }
+                    CheckBox { id: webRemote; text: "reachable from the network (remote)" }
+                    Item { Layout.fillWidth: true }
+                }
+                RowLayout {
+                    Layout.leftMargin: 12; Layout.rightMargin: 12; spacing: 8
+                    enabled: win.webState.systemd && !win.busy
+                    Button {
+                        text: win.webState.active ? "Restart / apply" : "Turn ON"
+                        highlighted: true
+                        onClicked: {
+                            if (webRemote.checked) { webRemoteConfirm.open(); return; }
+                            webApplyEnable();
+                        }
+                    }
+                    Button {
+                        text: "Turn OFF"; enabled: win.webState.active
+                        onClicked: {
+                            webOut.text = backend.webserviceDisable();
+                            webResultDialog.title = "Web service — OFF";
+                            webResultDialog.open(); refreshWeb();
+                        }
+                    }
+                    Button {
+                        text: "Show token"
+                        onClicked: {
+                            webOut.text = backend.webserviceToken(false);
+                            webResultDialog.title = "Web service — access token";
+                            webResultDialog.open();
+                        }
+                    }
+                    Button {
+                        text: "Rotate token"; enabled: win.webState.active
+                        onClicked: {
+                            webOut.text = backend.webserviceToken(true);
+                            webResultDialog.title = "Web service — token rotated";
+                            webResultDialog.open();
+                        }
+                    }
+                    Button { text: "Refresh"; onClicked: refreshWeb() }
+                }
+                Item { Layout.fillHeight: true }
+            }
+
             // --- Ops (everything else the CLI can do) ---
             ColumnLayout {
                 spacing: 8
@@ -711,6 +819,39 @@ ApplicationWindow {
                 + "Unlike hardening fixes, a package upgrade is NOT reversible by "
                 + "AuditXS rollback — the snapshot engine cannot undo it. Make sure "
                 + "you have backups.\n\nUse \"Preview updates\" first to see what would change."
+        }
+    }
+
+    // Exposing the web UI to the network is a deliberate, warned choice.
+    Dialog {
+        id: webRemoteConfirm
+        anchors.centerIn: parent
+        width: Math.min(win.width - 80, 560)
+        modal: true
+        title: "Expose the web UI to the network?"
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        onAccepted: webApplyEnable()
+        Label {
+            width: parent.width; wrapMode: Text.WordWrap
+            text: "You are about to make the web UI reachable from the network on port "
+                + webPort.text + ".\n\n"
+                + "The web UI runs PRIVILEGED operations. Anyone who can reach this port and "
+                + "holds the access token controls this host. Put TLS / a reverse proxy in "
+                + "front and restrict the port with your firewall.\n\nContinue?"
+        }
+    }
+
+    // Result window for web-service actions (enable/disable/token).
+    Dialog {
+        id: webResultDialog
+        anchors.centerIn: parent
+        width: Math.min(win.width - 60, 720)
+        height: Math.min(win.height - 120, 460)
+        modal: true
+        standardButtons: Dialog.Close
+        ScrollView {
+            anchors.fill: parent
+            TextArea { id: webOut; readOnly: true; wrapMode: TextArea.Wrap; font.family: "monospace"; font.pixelSize: 12 }
         }
     }
 

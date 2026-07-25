@@ -8,13 +8,13 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.19.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.20.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![Checks](https://img.shields.io/badge/checks-122-8957e5)](docs/CHECKS.md)
 [![Frameworks](https://img.shields.io/badge/NIST%20CSF%202.0%20·%20CIS%20·%20STIG-informational)](docs/COMPLIANCE.md)
 
-**Current version: v0.19.0** — see the [changelog](CHANGELOG.md)
+**Current version: v0.20.0** — see the [changelog](CHANGELOG.md)
 
 **Debian** · **Ubuntu** · **Pop!\_OS** · **Arch** · **Fedora** · **openSUSE** *(and derivatives)*
 
@@ -126,6 +126,7 @@ auditxs errors AX6002                  explain an error number (auditxs errors =
 
 sudo auditxs tui                       terminal (ncurses) UI — works over SSH, any profile
 sudo auditxs web                       Material Design web UI, localhost-only (workstation)
+sudo auditxs webservice enable         turn the web UI on as a service (add --remote for network)
 sudo auditxs qt                        native Qt desktop app (workstation; auditxs-gui-qt)
 auditxs profile                        print the active profile (server | workstation)
 

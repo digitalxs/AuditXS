@@ -91,6 +91,24 @@ class StubBackend(QObject):
     def toolsState(self):
         return '[{"name":"lynis","installed":false},{"name":"auditd","installed":true}]'
 
+    # v0.20 contract: web-UI on/off switch.
+    @Slot(result=str)
+    def webserviceStatus(self):
+        return ('{"active":false,"bind":"127.0.0.1","port":"9000",'
+                '"remote":false,"systemd":true,"text":"State: inactive"}')
+
+    @Slot(str, bool, result=str)
+    def webserviceEnable(self, port, remote):
+        return "web service ON"
+
+    @Slot(result=str)
+    def webserviceDisable(self):
+        return "web service OFF"
+
+    @Slot(bool, result=str)
+    def webserviceToken(self, reset):
+        return "Access token: TESTTOKEN"
+
     @Slot(result=str)
     def fleetConfig(self):
         return '{"hosts":["admin@web01"],"key":"","sudo":true}'
@@ -155,6 +173,9 @@ def main():
             # frameless move/resize entry points (QWindow methods)
             win.startSystemResize(Qt.Edge.RightEdge | Qt.Edge.BottomEdge)
             win.startSystemMove()
+            # exercise the web-service tab bindings (v0.20)
+            win.metaObject().invokeMethod(win, "refreshWeb")
+            win.metaObject().invokeMethod(win, "webApplyEnable")
         except Exception as e:  # noqa: BLE001 — report any driving failure
             failures.append(repr(e))
         finally:

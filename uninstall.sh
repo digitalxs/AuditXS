@@ -51,6 +51,14 @@ if [ -f /etc/systemd/system/auditxs-audit.timer ]; then
     ok "removed scheduled audit (auditxs-audit.timer)"
 fi
 
+# Remove the web-UI service if the on/off switch created it
+if [ -f /etc/systemd/system/auditxs-web.service ]; then
+    systemctl disable --now auditxs-web.service >/dev/null 2>&1
+    rm -f /etc/systemd/system/auditxs-web.service
+    systemctl daemon-reload 2>/dev/null
+    ok "removed web-UI service (auditxs-web.service)"
+fi
+
 for cmd in auditxs auditxs-gui update-auditxs; do
     if [ -e "/usr/local/bin/$cmd" ] || [ -L "/usr/local/bin/$cmd" ]; then
         rm -f "/usr/local/bin/$cmd" && ok "removed /usr/local/bin/$cmd"

@@ -43,6 +43,7 @@ QUIET=1
 . lib/tools.sh
 . lib/update.sh
 . lib/fleet.sh
+. lib/webservice.sh
 for c in checks/*.sh; do . "$c"; done
 
 TMPD=$(mktemp -d)
@@ -280,6 +281,25 @@ t "timeshift snapshot requires timeshift" "1" "$(
 )"
 t "timeshift restore hint mentions --restore" "yes" \
     "$(QUIET=0 timeshift_restore_hint 2>&1 | grep -q 'timeshift --restore' && echo yes || echo no)"
+
+# ---- web on/off switch (lib/webservice.sh) -------------------------------
+t "cmd_webservice is defined" "yes" \
+    "$(type -t cmd_webservice >/dev/null 2>&1 && echo yes || echo no)"
+# _web_token creates a 600-perm token file and reuses it on the next call.
+t "_web_token creates + reuses a stable token" "yes" "$(
+    WEB_TOKEN_FILE="$TMPD/web-token"
+    a=$(_web_token); b=$(_web_token)
+    [ -n "$a" ] && [ "$a" = "$b" ] && [ "$(stat -c '%a' "$WEB_TOKEN_FILE")" = 600 ] && echo yes || echo no
+)"
+# The ExecStart the enable step writes is parsed back by _web_unit_field.
+t "_web_unit_field reads bind/port from a unit" "0.0.0.0 9443" "$(
+    WEB_UNIT_PATH="$TMPD/unit"
+    printf 'ExecStart=/x web --service --no-open --port 9443 --bind 0.0.0.0 --token-file /t\n' > "$WEB_UNIT_PATH"
+    echo "$(_web_unit_field bind) $(_web_unit_field port)"
+)"
+# AX8003 (referenced by webservice.sh) must exist in the catalogue.
+t "AX8003 web-service error is catalogued" "Web service management failed" \
+    "${AX_ERR_TITLE[AX8003]:-}"
 
 # ---- Qt runtime preflight (dispatcher helpers) ---------------------------
 # The helpers live in the `auditxs` dispatcher, not a lib; pull just that block.

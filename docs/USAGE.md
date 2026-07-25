@@ -491,6 +491,27 @@ standard library — no framework). Disabled on the server profile (use the
 terminal UI over SSH instead). Full details and the security model:
 [WEBUI.md](WEBUI.md).
 
+### On/off switch — run the web UI as a service (local or remote)
+
+`auditxs web` is a foreground command; `auditxs webservice` makes it a
+background systemd service you can switch on and off — reachable locally or, as
+an explicit warned opt-in, from the network:
+
+```bash
+sudo auditxs webservice enable            # ON, localhost only (reach via SSH tunnel)
+sudo auditxs webservice enable --remote   # ON, reachable from the network (0.0.0.0)
+sudo auditxs webservice status            # is it on?  bind/port + access-token URL
+sudo auditxs webservice token --reset     # rotate the access token
+sudo auditxs webservice disable           # OFF
+```
+
+The service keeps a **stable** access token in a root-only file
+(`/etc/auditxs/web-token`). Remote mode is loudly warned because the web UI runs
+privileged operations: the token is the only credential, so put TLS / a reverse
+proxy in front and firewall the port. The same on/off switch is in the GUIs —
+a **Web** tab in the Qt and web apps, a **WebService** entry in the zenity menu.
+See [WEBUI.md](WEBUI.md) for the full remote-access model.
+
 ## The GUI (workstation profile)
 
 `auditxs-gui` is a thin wrapper over the CLI — everything it does is a visible

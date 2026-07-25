@@ -126,8 +126,17 @@ EOF
 cat > "$STAGE/DEBIAN/prerm" <<'EOF'
 #!/bin/sh
 set -e
-# On purge, offer to keep snapshots/logs? Leave state in place; 'postrm purge'
-# removes configuration only. Snapshots are the rollback safety net.
+# The web on/off switch creates auditxs-web.service dynamically (not shipped by
+# the package), so stop and remove it here before the binary goes away.
+if [ "$1" = remove ] || [ "$1" = purge ]; then
+    if [ -e /etc/systemd/system/auditxs-web.service ]; then
+        systemctl disable --now auditxs-web.service 2>/dev/null || true
+        rm -f /etc/systemd/system/auditxs-web.service
+        systemctl daemon-reload 2>/dev/null || true
+    fi
+fi
+# On purge, leave snapshots/logs in place; 'postrm purge' removes config only.
+# Snapshots are the rollback safety net.
 exit 0
 EOF
 
@@ -135,7 +144,7 @@ cat > "$STAGE/DEBIAN/postrm" <<'EOF'
 #!/bin/sh
 set -e
 if [ "$1" = purge ]; then
-    rm -f /etc/auditxs/auditxs.conf
+    rm -f /etc/auditxs/auditxs.conf /etc/auditxs/web-token
     rmdir /etc/auditxs 2>/dev/null || true
     echo "AuditXS purged. Note: /var/lib/auditxs (snapshots/reports) was kept."
     echo "Remove it manually with: sudo rm -rf /var/lib/auditxs /var/log/auditxs"

@@ -62,6 +62,49 @@ ssh -L 9000:127.0.0.1:9000 user@server
 # then open the printed http://127.0.0.1:9000/?t=<token> URL in your browser
 ```
 
+## Turning it on/off as a service — local or remote *(v0.20)*
+
+By default `auditxs web` is a **foreground** command you start when you need it
+and stop with Ctrl-C. If you'd rather have an **on/off switch** — a background
+service that stays up and starts at boot, reachable locally or (as an explicit,
+warned opt-in) from the network — use `auditxs webservice`:
+
+```bash
+sudo auditxs webservice enable            # ON, localhost only (reach via SSH tunnel)
+sudo auditxs webservice enable --remote   # ON, reachable from the network (0.0.0.0)
+sudo auditxs webservice enable --port 9443 --remote
+sudo auditxs webservice status            # is it on?  bind/port + access-token URL
+sudo auditxs webservice token             # show the access token
+sudo auditxs webservice token --reset     # rotate the token (restarts the service)
+sudo auditxs webservice disable           # OFF (stops it and removes the unit)
+```
+
+The same switch is in every GUI: a **Web** tab in the Qt and web apps and a
+**WebService** entry in the zenity menu (turn on/off, pick local vs. remote,
+show/rotate the token).
+
+It installs a systemd unit (`auditxs-web.service`) that runs
+`auditxs web --service` and enables it at boot. Unlike the transient command,
+a service needs a **stable** credential, so the access token is stored in a
+root-only file (`/etc/auditxs/web-token`, mode `0600`) and reused across
+restarts — the URL printed by `webservice status` keeps working.
+
+### Remote access is a deliberate, guarded choice
+
+Local mode (the default) binds `127.0.0.1` — nothing on the network can reach
+it; use the SSH tunnel above. `--remote` (or `--bind ADDR`) binds a routable
+address so you can open it from another machine. Because the web UI drives
+**privileged** operations, remote mode is guarded and loudly warned:
+
+- The bearer **access token is the only credential** — anyone who can reach the
+  port *and* holds the token can run privileged operations on this host.
+- Put **TLS / a reverse proxy** in front (the service speaks plain HTTP) and
+  **restrict the port with your firewall** to the hosts that need it.
+- Rotate the token with `webservice token --reset` if it may have leaked.
+
+If you don't need network access, prefer local mode + SSH tunnel — it's the
+safer default and needs no extra infrastructure.
+
 ## What you can do
 
 - **Dashboard** — the hardening score ring, PASS/FAIL/WARN/SKIP chips, and
@@ -96,17 +139,19 @@ Because the UI drives root operations, it is built defensively:
 
 | Control | Behaviour |
 |---|---|
-| **Network exposure** | Binds `127.0.0.1` only, always. It cannot be made to listen on a routable address. |
-| **Authentication** | A fresh random bearer token every launch; required on every request. The launch URL carries it once, then the page sends it as `X-Auth-Token`. |
-| **CSRF** | State-changing actions are POST-only and require the token in a header (not a cookie/query), and the `Host` must be loopback. |
+| **Network exposure** | Binds `127.0.0.1` by default. Remote binding (`webservice enable --remote` / `web --bind`) is an explicit, warned opt-in — never the default — and prints guidance to add TLS/a reverse proxy and firewall the port. |
+| **Authentication** | A bearer token is required on every request (sent as `X-Auth-Token`). The transient command mints a fresh token per launch; the service keeps a stable root-only token (`/etc/auditxs/web-token`, `0600`) you can rotate with `webservice token --reset`. |
+| **CSRF** | State-changing actions are POST-only and require the token in a header (not a cookie/query). In local mode the `Host` must be loopback; in remote mode the token is the authenticator. |
 | **Command injection** | Every `auditxs` call uses an argv list — never a shell. Check IDs and snapshot IDs are validated against `[A-Za-z0-9-]`. |
 | **Consent** | `harden` is only ever run after you review the change text and confirm. |
 | **Content policy** | A strict `Content-Security-Policy` (`default-src 'self'`) and `X-Content-Type-Options: nosniff` are sent on every response. |
 | **Least authority** | The server is a front-end; it holds no state and runs the same commands you could run by hand. |
 
-Do **not** port-forward this UI to `0.0.0.0` or expose it publicly. If you
-need multi-user or remote access, put it behind your own authenticated
-reverse proxy with TLS — but the intended model is localhost + SSH tunnel.
+The intended model is **localhost + SSH tunnel**. If you do expose it to the
+network (`webservice enable --remote`), treat the token as a root credential:
+put the service behind your own **TLS reverse proxy** and **firewall the port**
+to the hosts that need it. Don't leave a plain-HTTP `--remote` instance open on
+an untrusted network.
 
 ## When to use which interface
 

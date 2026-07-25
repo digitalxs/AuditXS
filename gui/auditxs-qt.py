@@ -143,6 +143,28 @@ def run_auditxs(args, timeout=240, env_extra=None):
         return 127, "", "auditxs not found"
 
 
+def run_auditxs_root(args, timeout=120):
+    """Run a subcommand that always needs root (e.g. webservice enable/disable).
+
+    Unlike run_auditxs, elevation does not depend on the subcommand being in
+    _ROOT_CMDS — the caller has decided it needs root.
+    """
+    bin_ = os.environ.get("AUDITXS_BIN", "auditxs")
+    cmd = [bin_] + list(args)
+    if os.geteuid() != 0:
+        if shutil.which("pkexec"):
+            cmd = ["pkexec"] + cmd
+        elif shutil.which("sudo") and sys.stdin.isatty():
+            cmd = ["sudo"] + cmd
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return p.returncode, p.stdout, p.stderr
+    except subprocess.TimeoutExpired:
+        return 124, "", "timed out"
+    except FileNotFoundError:
+        return 127, "", "auditxs not found"
+
+
 def strip_ansi(s):
     return re.sub(r"\x1b\[[0-9;]*m", "", s or "")
 
@@ -221,6 +243,7 @@ def selftest():
     check("non-privileged subcommand is never elevated",
           _elevate([_bin, "explain", "SSH-001"]) == [_bin, "explain", "SSH-001"])
     check("audit is treated as privileged", "audit" in _ROOT_CMDS)
+    check("run_auditxs_root is callable", callable(run_auditxs_root))
     check("explain rejects bad id", data_explain("a;b") == "invalid id")
     check("harden rejects bad id", data_harden("a b")["rc"] == 1)
     check("rollback rejects bad id", data_rollback("../x")["rc"] == 1)
@@ -395,6 +418,51 @@ def run_gui():
                 if len(parts) == 2:
                     tools.append({"name": parts[0], "installed": parts[1] == "installed"})
             return json.dumps(tools)
+
+        # Web-UI on/off switch (systemd service, local or — warned — remote).
+        # status is read unprivileged (no password prompt on tab open); the
+        # enable/disable/token actions elevate explicitly.
+        @Slot(result=str)
+        def webserviceStatus(self):
+            rc, out, _ = run_auditxs(["webservice", "status"])
+            txt = strip_ansi(out)
+            active, bind, port, remote, has_systemd = False, "127.0.0.1", "9000", False, False
+            for line in txt.splitlines():
+                s = line.strip()
+                if s.startswith("State:"):
+                    has_systemd = True   # printed only when systemd is present
+                    active = s.split(":", 1)[1].strip().startswith("active")
+                elif s.startswith("Bind:"):
+                    remote = "REMOTE" in s
+                    hp = s.split()[1] if len(s.split()) > 1 else ""
+                    if ":" in hp:
+                        bind, port = hp.rsplit(":", 1)
+            return json.dumps({"active": active, "bind": bind, "port": port,
+                               "remote": remote, "systemd": has_systemd,
+                               "text": txt.strip()})
+
+        @Slot(str, bool, result=str)
+        def webserviceEnable(self, port, remote):
+            args = ["webservice", "enable"]
+            if port and port.isdigit():
+                args += ["--port", port]
+            if remote:
+                args += ["--remote"]
+            rc, out, err = run_auditxs_root(args)
+            return strip_ansi(out) + ("\n" + strip_ansi(err) if rc != 0 and err else "")
+
+        @Slot(result=str)
+        def webserviceDisable(self):
+            rc, out, err = run_auditxs_root(["webservice", "disable"])
+            return strip_ansi(out) + ("\n" + strip_ansi(err) if rc != 0 and err else "")
+
+        @Slot(bool, result=str)
+        def webserviceToken(self, reset):
+            args = ["webservice", "token"]
+            if reset:
+                args += ["--reset"]
+            rc, out, err = run_auditxs_root(args)
+            return strip_ansi(out) + ("\n" + strip_ansi(err) if rc != 0 and err else "")
 
         # Fleet management (user-level inventory; read-only over SSH).
         @Slot(result=str)

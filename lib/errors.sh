@@ -156,6 +156,9 @@ _ax_def AX8001 "Alert delivery failed" \
 _ax_def AX8002 "No alert sink configured" \
     "An alert was requested but no webhook or email destination is configured." \
     "Set ALERT_WEBHOOK and/or ALERT_EMAIL in /etc/auditxs/auditxs.conf (see 'auditxs alert')."
+_ax_def AX8003 "Web service management failed" \
+    "AuditXS could not enable, disable or reconfigure the web UI systemd service." \
+    "Confirm systemd is present and you are root; check 'systemctl status auditxs-web.service' and the journal."
 
 # ---- AX9xxx — internal ----------------------------------------------------
 _ax_def AX9000 "Unspecified error" \

@@ -189,13 +189,41 @@ or
 Runs entirely in the terminal over a plain SSH session \(em the recommended
 interactive interface for servers. Available on every profile.
 .TP
-.B web \fR[--port N] [--no-open]\fP
-Launch the local Material Design web UI. Binds 127.0.0.1 only and requires an
-ephemeral token; reach a remote server through an SSH tunnel.
+.B web \fR[--port N] [--no-open] [--bind ADDR] [--token-file PATH] [--service]\fP
+Launch the local Material Design web UI. Binds 127.0.0.1 by default and requires
+a bearer token; reach a remote server through an SSH tunnel.
 .B "Workstation profile only"
 \(em disabled on servers (use
 .B tui
-instead).
+instead), except in
+.B --service
+mode (see
+.BR webservice )
+which runs headless.
+.TP
+.B webservice \fRstatus | enable [--port N] [--remote | --bind ADDR] | disable | token [--reset]\fP
+Turn the web UI on or off as a background
+.BR systemd (1)
+service
+.RB ( auditxs-web.service )
+that starts at boot \(em an on/off switch, reachable locally or remotely.
+.B enable
+binds 127.0.0.1 (reach it over an SSH tunnel);
+.B --remote
+(or
+.BR --bind )
+exposes it to the network \(em a deliberate, warned opt-in: the web UI runs
+privileged operations, so a stable bearer token is required on every request
+and you should put TLS / a reverse proxy in front and firewall the port.
+.B status
+shows the state, bind/port and access-token URL;
+.B token
+shows or (with
+.BR --reset )
+rotates the root-only token in
+.IR /etc/auditxs/web-token ;
+.B disable
+stops the service and removes the unit.
 .TP
 .B qt
 Launch the native Qt/QML desktop app (requires the optional

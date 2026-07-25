@@ -49,6 +49,12 @@ ck "tools action needs token"           403 "$(code -X POST -H 'Content-Type: ap
 ck "tools action rejects bad action"    400 "$(code -X POST -H "X-Auth-Token: $TOKEN" -H 'Content-Type: application/json' -d '{"tool":"lynis","action":"pwn"}' "$base/api/tools/action")"
 ck "tools action rejects bad tool"      400 "$(code -X POST -H "X-Auth-Token: $TOKEN" -H 'Content-Type: application/json' -d '{"tool":"a;b","action":"install"}' "$base/api/tools/action")"
 ck "POST harden without token → 403"    403 "$(code -X POST -H 'Content-Type: application/json' -d '{"checks":["ACC-003"]}' "$base/api/harden")"
+# web on/off switch (v0.20)
+ck "webservice status needs token"      403 "$(code "$base/api/webservice")"
+ck "webservice status with token → 200" 200 "$(code -H "X-Auth-Token: $TOKEN" "$base/api/webservice")"
+ck "webservice action needs token"      403 "$(code -X POST -H 'Content-Type: application/json' -d '{"action":"disable"}' "$base/api/webservice")"
+ck "webservice rejects bad action"      400 "$(code -X POST -H "X-Auth-Token: $TOKEN" -H 'Content-Type: application/json' -d '{"action":"pwn"}' "$base/api/webservice")"
+ck "webservice rejects bad port"        400 "$(code -X POST -H "X-Auth-Token: $TOKEN" -H 'Content-Type: application/json' -d '{"action":"enable","port":"80x"}' "$base/api/webservice")"
 
 # page carries the SPA and the audit endpoint returns valid JSON with a summary
 curl -s -H "X-Auth-Token: $TOKEN" "$base/" | grep -q '<title>AuditXS</title>' \
@@ -64,6 +70,7 @@ curl -s -H "X-Auth-Token: $TOKEN" "$base/api/audit" \
 PAGEHTML=$(curl -s -H "X-Auth-Token: $TOKEN" "$base/")
 for pat in 'onclick="onFix(' 'onchange="onToggle(this)"' '/api/harden' \
            'id="fleetRun"' 'id="fleetPass"' 'id="fleetSudoPass"' \
+           'data-tab="web"' 'function renderWeb' 'id="webEnable"' '/api/webservice' \
            'id="conIn"' 'id="conToggle"' '/api/cli'; do
     printf '%s' "$PAGEHTML" | grep -qF "$pat" \
         && ck "page wiring: $pat" yes yes || ck "page wiring: $pat" yes no

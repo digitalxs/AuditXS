@@ -18,7 +18,7 @@
 AUDITXS_SELF=$(readlink -f "${BASH_SOURCE[0]}")
 AUDITXS_ROOT=$(dirname "$AUDITXS_SELF")
 
-for _lib in core errors distro backup registry waivers report fixlib maintenance cve tools update fleet alerts; do
+for _lib in core errors distro backup registry waivers report fixlib maintenance cve tools update fleet alerts webservice; do
     # shellcheck disable=SC1090
     . "$AUDITXS_ROOT/lib/$_lib.sh" || { echo "auditxs: missing library lib/$_lib.sh" >&2; exit 1; }
 done
@@ -59,6 +59,7 @@ ${BOLD}COMMANDS${RC}
   errors      Browse the error-code catalogue:  auditxs errors [CODE|term|log]
   tui         Launch the terminal (ncurses) interface — works over SSH; server-friendly
   web         Launch the local web UI (Material Design 3) — workstation profile only
+  webservice  Turn the web UI on/off as a service:  status | enable [--remote] | disable | token
   qt          Launch the native Qt/QML desktop app — workstation profile only
   electron    Launch the Electron desktop app (web UI in a window) — workstation only
   profile     Print the resolved profile (server|workstation)
@@ -348,7 +349,11 @@ main() {
             --debug)     DEBUG=1 ;;
             --help|-h)   usage; return 0 ;;
             --port)      ARGS+=("--port" "${2:?--port needs a value}"); shift ;;   # passthrough to web/tui/fleet
+            --bind)      ARGS+=("--bind" "${2:?--bind needs a value}"); shift ;;   # passthrough to web / webservice
+            --token-file) ARGS+=("--token-file" "${2:?--token-file needs a path}"); shift ;; # passthrough to web
             --no-open)   ARGS+=("--no-open") ;;                                     # passthrough to web
+            --service)   ARGS+=("--service") ;;                                     # web: run as unattended service
+            --remote)    ARGS+=("--remote") ;;                                      # passthrough to webservice enable
             --all|--full|--security|--snapshot|--no-snapshot) ARGS+=("$1") ;;       # passthrough to 'update'
             # fleet-mode options — passed through to 'auditxs fleet'
             --hosts|--inventory|--user|--key|--timeout|--output|--until)
@@ -464,7 +469,13 @@ main() {
         web)
             require_root web
             resolve_profile
-            require_workstation_interface "the web UI"
+            # As a managed systemd service (--service) the web UI is headless and
+            # deliberately runs without a desktop session, so skip the
+            # workstation-interface gate; interactive `auditxs web` still honours it.
+            case " ${ARGS[*]} " in
+                *" --service "*) : ;;
+                *) require_workstation_interface "the web UI" ;;
+            esac
             have python3 || die "The web UI requires python3 (standard library only). Install it, or use 'auditxs tui' / the CLI."
             [ -f "$AUDITXS_ROOT/gui/auditxs-web.py" ] || die "Web UI not found at $AUDITXS_ROOT/gui/auditxs-web.py"
             log "web UI starting (profile=$PROFILE)"
@@ -494,6 +505,10 @@ main() {
             log "electron app starting (profile=$PROFILE, dir=$ELECTRON_RUN_DIR)"
             AUDITXS_BIN="$AUDITXS_SELF" AUDITXS_PROFILE="$PROFILE" \
                 exec "$ELECTRON_RUN_DIR/node_modules/.bin/electron" "$ELECTRON_RUN_DIR" "${ARGS[@]}" ;;
+        webservice|websvc)
+            # Turn the web UI on/off as a background systemd service, locally or
+            # (as an explicit, warned opt-in) remotely. 'status' needs no root.
+            cmd_webservice "${ARGS[@]}"; return $? ;;
         profile)
             resolve_profile
             echo "$PROFILE"
