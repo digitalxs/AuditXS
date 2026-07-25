@@ -33,6 +33,8 @@ mkdir -p "$SHARE" "$STAGE/usr/bin" "$STAGE/usr/share/man/man8" \
 cp -a "$REPO/auditxs" "$SHARE/"
 cp -a "$REPO/lib" "$REPO/checks" "$REPO/gui" "$REPO/scripts" "$SHARE/"
 cp -a "$REPO/VERSION" "$SHARE/"
+# The Electron dependency is fetched per-user on first use — never ship it.
+rm -rf "$SHARE/gui/electron/node_modules" "$SHARE/gui/electron/package-lock.json"
 chmod 0755 "$SHARE/auditxs" "$SHARE/gui/auditxs-gui" "$SHARE/scripts/updater.sh"
 
 # ---- commands (symlinks resolve back to the shipped tree) ----------------

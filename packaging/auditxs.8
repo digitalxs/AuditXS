@@ -168,6 +168,13 @@ interfaces if declined.
 .B tui
 instead.
 .TP
+.B electron
+Launch the Electron desktop app \(em the localhost web UI in a standalone
+window. Runs unprivileged and elevates the web server once with
+.BR pkexec .
+Needs Node.js; the Electron dependency is fetched per-user on first use.
+.B "Workstation profile only."
+.TP
 .B profile
 Print the active profile
 .RB ( server

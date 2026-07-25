@@ -23,6 +23,25 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.16
+
+- **Electron desktop app** (`auditxs electron`): a fourth GUI — the audited
+  localhost web UI in a standalone, locked-down window (unprivileged app +
+  one-time pkexec for the server, clean `/api/quit` shutdown). Node fetched
+  per-user on first launch.
+- **GUI interaction verification**: web UI buttons/toggles/fix-flows driven
+  end-to-end in a headless browser; the page wiring is now a web-test
+  regression guard, and the Qt selftest covers the op whitelist and fleet
+  config round-trip.
+
+## Shipped in v0.15
+
+- **SSH login + interactive sudo for fleet audits** (`--ask-pass` /
+  `--ask-sudo-pass`): scan remote hosts by logging in over SSH and using sudo
+  with a password (fed to `sudo -S` over the channel, never on argv) — no
+  passwordless sudo required. Exposed on every GUI's Fleet screen; new error
+  `AX6009` for remote sudo failure.
+
 ## Shipped in v0.14
 
 - **GUI feature parity**: Fix it / How to fix buttons on every finding in

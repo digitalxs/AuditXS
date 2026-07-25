@@ -8,13 +8,13 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.15.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.16.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![Checks](https://img.shields.io/badge/checks-122-8957e5)](docs/CHECKS.md)
 [![Frameworks](https://img.shields.io/badge/NIST%20CSF%202.0%20·%20CIS%20·%20STIG-informational)](docs/COMPLIANCE.md)
 
-**Current version: v0.15.0** — see the [changelog](CHANGELOG.md)
+**Current version: v0.16.0** — see the [changelog](CHANGELOG.md)
 
 **Debian** · **Ubuntu** · **Pop!\_OS** · **Arch** · **Fedora** · **openSUSE** *(and derivatives)*
 
@@ -194,6 +194,7 @@ nothing runs a browser or a root web server on a headless box:
 | Terminal UI (ncurses, works over SSH) | `sudo auditxs tui` | ✔ | ✔ |
 | Localhost web UI (Material Design) | `sudo auditxs web` | – | ✔ |
 | Native desktop app (Qt) | `sudo auditxs qt` | – | ✔ |
+| Electron desktop app | `auditxs electron` | – | ✔ |
 | Graphical launcher (zenity) | `auditxs-gui` | – | ✔ |
 
 **Authenticate once, not per click** — the GUIs elevate individual actions

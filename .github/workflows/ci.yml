@@ -50,6 +50,10 @@ jobs:
           python3 scripts/build-site.py
           test -s index.html && test -s docs/index.html && test -s docs/usage.html
           python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('packaging/com.digitalxs.auditxs.policy')"
+      - name: Electron app checks (syntax + manifest, no heavy install)
+        run: |
+          node --check gui/electron/main.js
+          node -e "JSON.parse(require('fs').readFileSync('gui/electron/package.json','utf8'))"
 
   package:
     name: Build & install .deb

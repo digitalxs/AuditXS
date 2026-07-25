@@ -59,6 +59,7 @@ ${BOLD}COMMANDS${RC}
   tui         Launch the terminal (ncurses) interface — works over SSH; server-friendly
   web         Launch the local web UI (Material Design 3) — workstation profile only
   qt          Launch the native Qt/QML desktop app — workstation profile only
+  electron    Launch the Electron desktop app (web UI in a window) — workstation only
   profile     Print the resolved profile (server|workstation)
   version     Show version
   help        Show this help
@@ -263,6 +264,55 @@ ensure_qt_runtime() {
     return 1
 }
 
+# --------------------------------------------------------- Electron runtime
+# The Electron desktop app (gui/electron) needs its Node dependency (Electron
+# itself) fetched via npm on first use. ensure_electron_runtime detects that
+# and offers to install it, mirroring the Qt preflight.
+_gui_ask() {   # <title> <question> — yes/no via terminal or, headless, zenity
+    local title=$1 q=$2
+    if [ -t 0 ] || [ -t 1 ]; then
+        confirm "$q"; return $?
+    fi
+    if _qt_desktop_session && have zenity; then
+        zenity --question --width=460 --title="$title" --text="$q" 2>/dev/null; return $?
+    fi
+    return 1
+}
+
+ensure_electron_runtime() {   # <source app dir> — resolves ELECTRON_RUN_DIR
+    local src=$1
+    # The install dir (/opt/auditxs/…) is root-owned, so a normal user cannot
+    # `npm install` there. When the source is not writable, run from a per-user
+    # copy of the two tiny app files and install the dependency there instead.
+    ELECTRON_RUN_DIR=$src
+    if [ ! -w "$src" ]; then
+        ELECTRON_RUN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/auditxs/electron"
+        mkdir -p "$ELECTRON_RUN_DIR" 2>/dev/null || { ax_error AX5001 "cannot create $ELECTRON_RUN_DIR"; return 1; }
+        cp -f "$src/main.js" "$src/package.json" "$ELECTRON_RUN_DIR/" 2>/dev/null
+    fi
+    local eapp=$ELECTRON_RUN_DIR
+    [ -x "$eapp/node_modules/.bin/electron" ] && return 0
+    warn "The AuditXS Electron app needs its Node dependency (Electron), which is not installed yet."
+    if have npm; then
+        if _gui_ask "AuditXS — install Electron" \
+               "The AuditXS desktop app needs to download Electron (~250 MB) with npm. Do this now?"; then
+            say "Installing the Electron runtime (one time, into $eapp)…"
+            if ( cd "$eapp" && npm install --no-audit --no-fund ) && [ -x "$eapp/node_modules/.bin/electron" ]; then
+                ok "Electron installed — starting the AuditXS desktop app."
+                return 0
+            fi
+            ax_error AX5001 "npm install failed in $eapp"
+        fi
+    else
+        ax_error AX5001 "npm not found — install Node.js/npm to use the Electron app"
+    fi
+    echo "The Electron app cannot start yet. You can:
+  • install its dependency:  ${BOLD}cd $eapp && npm install${RC}
+  • or use the web UI instead:  ${BOLD}sudo auditxs web${RC}
+  • or the Qt app:  ${BOLD}auditxs qt${RC}" >&2
+    return 1
+}
+
 main() {
     local cmd=${1:-help}
     [ $# -gt 0 ] && shift
@@ -427,6 +477,18 @@ main() {
             log "qt GUI starting (profile=$PROFILE)"
             AUDITXS_BIN="$AUDITXS_SELF" AUDITXS_PROFILE="$PROFILE" \
                 exec python3 "$AUDITXS_ROOT/gui/auditxs-qt.py" "${ARGS[@]}" ;;
+        electron)
+            # Electron desktop shell around the localhost web UI. Runs
+            # UNPRIVILEGED; it elevates the (root) web server once with pkexec.
+            resolve_profile
+            require_workstation_interface "the Electron app"
+            local eapp="$AUDITXS_ROOT/gui/electron"
+            have node || die "The Electron app requires Node.js (node + npm). Install it, or use ${BOLD}auditxs web${RC} / ${BOLD}auditxs qt${RC}."
+            [ -f "$eapp/main.js" ] || die "Electron app not found at $eapp"
+            ensure_electron_runtime "$eapp" || return 1
+            log "electron app starting (profile=$PROFILE, dir=$ELECTRON_RUN_DIR)"
+            AUDITXS_BIN="$AUDITXS_SELF" AUDITXS_PROFILE="$PROFILE" \
+                exec "$ELECTRON_RUN_DIR/node_modules/.bin/electron" "$ELECTRON_RUN_DIR" "${ARGS[@]}" ;;
         profile)
             resolve_profile
             echo "$PROFILE"

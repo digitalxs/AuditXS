@@ -54,6 +54,18 @@ curl -s -H "X-Auth-Token: $TOKEN" "$base/api/audit" \
     | python3 -c 'import sys,json;d=json.load(sys.stdin);assert "summary" in d' 2>/dev/null \
     && ck "audit returns JSON with summary" yes yes || ck "audit returns JSON with summary" yes no
 
+# The interactive wiring must be present in the served page (regression guard
+# for the buttons/toggles verified end-to-end in a browser): Fix it / How to
+# fix (onFix), Feature toggles (onToggle), the harden call, the fleet run with
+# credential fields, and the console.
+PAGEHTML=$(curl -s -H "X-Auth-Token: $TOKEN" "$base/")
+for pat in 'onclick="onFix(' 'onchange="onToggle(this)"' '/api/harden' \
+           'id="fleetRun"' 'id="fleetPass"' 'id="fleetSudoPass"' \
+           'id="conIn"' 'id="conToggle"' '/api/cli'; do
+    printf '%s' "$PAGEHTML" | grep -qF "$pat" \
+        && ck "page wiring: $pat" yes yes || ck "page wiring: $pat" yes no
+done
+
 # never binds beyond loopback
 if command -v ss >/dev/null 2>&1; then
     ss -tlnH 2>/dev/null | grep -q "127.0.0.1:$PORT" && ck "bound to loopback only" yes yes \

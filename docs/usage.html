@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.15.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.16.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg active" href="usage.html">User manual</a>
@@ -306,6 +306,15 @@ AUDITXS_GUI=zenity  auditxs-gui      # use the classic zenity dialogs</code></pr
 <li><strong>Doctor / Catalogue / About</strong>.</li>
 </ul>
 <p>The console output uses a clean <strong>nala-style</strong> boxed layout; the HTML report uses <strong>Material Design 3</strong> (theme-aware light/dark, score ring, status chips). The zenity GUI itself follows your desktop's GTK theme.</p>
+<h3 id="four-graphical-interfaces-v016">Four graphical interfaces (v0.16)</h3>
+<p>All four drive the same <code>auditxs</code> CLI and the same reversible engine; pick whichever fits:</p>
+<ul>
+<li><strong>zenity</strong> (<code>auditxs-gui</code>) — zero extra dependencies, always available on a desktop.</li>
+<li><strong>Qt</strong> (<code>auditxs qt</code>) — a fully native window (PySide6), no browser engine.</li>
+<li><strong>web</strong> (<code>auditxs web</code>) — a browser tab; also reachable over an SSH tunnel.</li>
+<li><strong>Electron</strong> (<code>auditxs electron</code>) — the web UI as a standalone desktop app. It runs unprivileged and elevates the web server once with <code>pkexec</code> (one prompt per session with the polkit <em>keep</em> policy). Needs Node.js; the Electron runtime is fetched per-user on first launch, so the first <code>auditxs electron</code> may take a moment while it downloads.</li>
+</ul>
+<p>Every button and control is wired to a real action: <strong>Fix it</strong> applies a reversible fix after review; the <strong>Feature</strong> on/off switches turn the corresponding control on when toggled (after the mandatory review step); the <strong>Fleet</strong> controls run remote audits; the <strong>console</strong> runs commands. These flows are exercised end-to-end in the test suite (browser-driven for the web UI, offscreen-QML plus a data-layer selftest for Qt).</p>
 <h3 id="the-guis-do-everything-the-cli-does-v014">The GUIs do everything the CLI does (v0.14)</h3>
 <ul>
 <li><strong>Fix it on every finding.</strong> Each FAIL/WARN row (Qt dashboard, web dashboard, and the zenity results list via <em>Fix / Details</em>) carries a button: <strong>Fix it</strong> runs the review → consent → reversible-fix → verify flow for that one check; <strong>How to fix</strong> shows detailed manual guidance (the exact change to make, and how it would be reverted) when no automatic fix exists.</li>

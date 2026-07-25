@@ -1,0 +1,6 @@
+# Electron and its dependencies are fetched on first use (npm install), not
+# committed — keep the repo lean.
+node_modules/
+package-lock.json
+dist/
+out/

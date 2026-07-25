@@ -458,6 +458,28 @@ The console output uses a clean **nala-style** boxed layout; the HTML report
 uses **Material Design 3** (theme-aware light/dark, score ring, status
 chips). The zenity GUI itself follows your desktop's GTK theme.
 
+### Four graphical interfaces (v0.16)
+
+All four drive the same `auditxs` CLI and the same reversible engine; pick
+whichever fits:
+
+- **zenity** (`auditxs-gui`) — zero extra dependencies, always available on a
+  desktop.
+- **Qt** (`auditxs qt`) — a fully native window (PySide6), no browser engine.
+- **web** (`auditxs web`) — a browser tab; also reachable over an SSH tunnel.
+- **Electron** (`auditxs electron`) — the web UI as a standalone desktop app.
+  It runs unprivileged and elevates the web server once with `pkexec` (one
+  prompt per session with the polkit *keep* policy). Needs Node.js; the
+  Electron runtime is fetched per-user on first launch, so the first
+  `auditxs electron` may take a moment while it downloads.
+
+Every button and control is wired to a real action: **Fix it** applies a
+reversible fix after review; the **Feature** on/off switches turn the
+corresponding control on when toggled (after the mandatory review step); the
+**Fleet** controls run remote audits; the **console** runs commands. These
+flows are exercised end-to-end in the test suite (browser-driven for the web
+UI, offscreen-QML plus a data-layer selftest for Qt).
+
 ### The GUIs do everything the CLI does (v0.14)
 
 - **Fix it on every finding.** Each FAIL/WARN row (Qt dashboard, web

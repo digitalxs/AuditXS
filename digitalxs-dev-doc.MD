@@ -84,6 +84,8 @@ gui/
   auditxs.qml           Qt Quick Controls (Material) view with custom window chrome
 setup.sh                installer (Server/Workstation selection, dxsbash-style)
 uninstall.sh            uninstaller (protects snapshots)
+gui/electron/           Electron desktop app (main.js wraps the web UI; deps
+                        fetched per-user via npm on first `auditxs electron`)
 scripts/
   updater.sh            'update-auditxs' command
   release.sh            local release prep (build + checksum + optional sign + tag)

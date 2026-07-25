@@ -67,6 +67,10 @@ OP_ARG = _re.compile(r"[A-Za-z0-9@.,:%/_=+~ -]+")
 FLEET_HOSTS_PATH = "/var/lib/auditxs/fleet-hosts"
 FLEET_LAST_DIR = {"path": ""}
 
+# The running server, so an authenticated /api/quit can stop it cleanly (used
+# by the Electron desktop shell when its window closes).
+SERVER = None
+
 # --------------------------------------------------------------- CLI bridge
 def run_auditxs(args, timeout=180, env_extra=None):
     """Run `auditxs <args>` with no shell; return (rc, stdout, stderr).
@@ -572,6 +576,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"error": "bad id"}, 400)
             rc, out, err = run_auditxs(["rollback", sid, "--yes"], timeout=300)
             return self._json({"rc": rc, "log": strip_ansi(out + err)})
+        if u.path == "/api/quit":
+            # Clean shutdown for the Electron desktop shell (token-gated here in
+            # do_POST). Stop from a worker thread so this response completes.
+            if SERVER is not None:
+                threading.Thread(target=SERVER.shutdown, daemon=True).start()
+            return self._json({"ok": True})
         if u.path == "/api/cli":
             args = body.get("args", [])
             if (not isinstance(args, list) or not args
@@ -717,6 +727,8 @@ def main():
 
     # SECURITY: loopback only, always.
     httpd = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    global SERVER
+    SERVER = httpd
     url = f"http://127.0.0.1:{port}/?t={TOKEN}"
     line = "─" * 66
     print(f"\n\033[36m╭─\033[0m \033[1mAuditXS web UI\033[0m \033[36m{line[:48]}╮\033[0m")

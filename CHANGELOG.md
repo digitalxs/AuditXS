@@ -7,6 +7,28 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.16.0]
+
+### Added
+- **Electron desktop app** (`auditxs electron`) — a fourth graphical
+  interface: the audited localhost web UI in a standalone, locked-down
+  desktop window. It reuses the web UI wholesale (loopback-only bind,
+  per-launch token, CSRF, argv-only calls, strict CSP), runs **unprivileged**,
+  and elevates the web server once with `pkexec` (a single prompt per session
+  under the polkit keep policy). Node.js required; the Electron runtime is
+  fetched per-user on first launch (never shipped in the package). New
+  `POST /api/quit` (token-gated) lets the app stop its server cleanly on
+  window close, and `SIGTERM`/`SIGINT`/`SIGHUP` handlers cover logout/kill.
+
+### Verified / fixed
+- **GUI interaction verification** — the web UI's buttons and controls were
+  driven end-to-end in a headless browser: **Fix it** (review + Apply),
+  **How to fix** (manual guidance, no Apply), the **Feature** on/off switches
+  (toggle → review modal → correct `POST /api/harden`), and tab rendering,
+  all with zero JS errors. The served page's interactive wiring is now a
+  web-test regression guard, and the Qt data-layer selftest gained checks for
+  the op whitelist and fleet config round-trip (18 checks).
+
 ## [0.15.0]
 
 ### Added

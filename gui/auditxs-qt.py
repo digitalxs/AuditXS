@@ -229,6 +229,22 @@ def selftest():
     a = data_audit()
     check("audit returns summary dict", isinstance(a, dict) and "summary" in a)
     check("snapshots returns a list", isinstance(data_snapshots(), list))
+    # Action plumbing (v0.14/0.15): the op whitelist and fleet round-trip.
+    check("op_allowed permits a real op", op_allowed(["cve"]))
+    check("op_allowed permits fleet+args", op_allowed(["fleet", "--inventory", "/tmp/h"]))
+    check("op_allowed rejects non-auditxs", not op_allowed(["rm", "-rf", "/"]))
+    check("op_allowed rejects shell metachars", not op_allowed(["audit", ";id"]))
+    check("op_allowed rejects newline injection", not op_allowed(["audit\nrm"]))
+    # Redirect the fleet config to a throwaway dir so the test never touches
+    # the user's real inventory.
+    global _CFG_DIR, FLEET_HOSTS
+    _CFG_DIR = tempfile.mkdtemp(prefix="auditxs-selftest-")
+    FLEET_HOSTS = os.path.join(_CFG_DIR, "fleet-hosts")
+    cfg = fleet_save({"hosts": ["admin@web01", "bad host!"], "key": "/k", "sudo": False})
+    check("fleet_save keeps valid host", "admin@web01" in cfg["hosts"])
+    check("fleet_save drops invalid host", "bad host!" not in cfg["hosts"])
+    check("fleet_save round-trips key+sudo", cfg["key"] == "/k" and cfg["sudo"] is False)
+    check("read_progress tolerates missing file", isinstance(read_progress(), dict))
     return 0 if ok else 1
 
 

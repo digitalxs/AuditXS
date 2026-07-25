@@ -148,10 +148,14 @@ install_files() {
     mkdir -p "$INSTALL_DIR" || fail "Cannot create $INSTALL_DIR"
     # Copy the repository (including .git when present, so update-auditxs can pull).
     if command -v rsync >/dev/null 2>&1; then
-        rsync -a --delete "$SRC_DIR/" "$INSTALL_DIR/" || fail "Copy to $INSTALL_DIR failed"
+        # Never copy the per-user Electron dependency into the system install.
+        rsync -a --delete --exclude 'gui/electron/node_modules' \
+              --exclude 'gui/electron/package-lock.json' \
+              "$SRC_DIR/" "$INSTALL_DIR/" || fail "Copy to $INSTALL_DIR failed"
     else
         rm -rf "${INSTALL_DIR:?}"/* "$INSTALL_DIR/.git" 2>/dev/null
         cp -a "$SRC_DIR/." "$INSTALL_DIR/" || fail "Copy to $INSTALL_DIR failed"
+        rm -rf "$INSTALL_DIR/gui/electron/node_modules" "$INSTALL_DIR/gui/electron/package-lock.json"
     fi
     chmod 755 "$INSTALL_DIR/auditxs" "$INSTALL_DIR/gui/auditxs-gui" \
               "$INSTALL_DIR/gui/auditxs-tui.sh" \
