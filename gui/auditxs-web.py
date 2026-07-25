@@ -24,6 +24,7 @@ import html
 import json
 import os
 import secrets
+import socket
 import subprocess
 import sys
 import tempfile
@@ -834,6 +835,38 @@ def _osname():
     return "Linux"
 
 
+def _primary_ip():
+    """Best-effort primary outbound IPv4 — for a reachable URL when bound to all
+    interfaces. Uses a connect() to a TEST-NET address to pick the routing
+    interface; no packets are actually sent."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("192.0.2.1", 1))       # RFC 5737 TEST-NET-1 (never routed)
+            return s.getsockname()[0]
+        finally:
+            s.close()
+    except OSError:
+        return None
+
+
+def _all_ipv4():
+    """Every non-loopback IPv4 address on this host, for listing reachable URLs."""
+    addrs = []
+    try:
+        host = socket.gethostname()
+        for res in socket.getaddrinfo(host, None, socket.AF_INET):
+            ip = res[4][0]
+            if not ip.startswith("127.") and ip not in addrs:
+                addrs.append(ip)
+    except OSError:
+        pass
+    primary = _primary_ip()
+    if primary and primary not in addrs:
+        addrs.insert(0, primary)
+    return addrs
+
+
 # ------------------------------------------------------------------- main
 def main():
     global VERSION, TOKEN, BIND
@@ -848,21 +881,27 @@ def main():
             port = int(args[i + 1]); i += 2; continue
         if args[i] == "--bind" and i + 1 < len(args):
             bind = args[i + 1]; i += 2; continue
+        if args[i] == "--remote":                 # reachable on the network (LAN)
+            bind = "0.0.0.0"; i += 1; continue
         if args[i] == "--token-file" and i + 1 < len(args):
             token_file = args[i + 1]; i += 2; continue
         if args[i] == "--no-open":
             do_open = False; i += 1; continue
         i += 1
 
-    # Persistent token for service mode: read it if present, else create it
-    # (root-only). A stable token lets a user reconnect to a running service.
+    # Persistent token for service mode: reuse the stored token if present, else
+    # create it (root-only). A stable token lets a user reconnect to a running
+    # service. An empty/missing file is (re)populated so reconnect always works.
     if token_file:
+        stored = ""
         try:
             with open(token_file) as f:
-                t = f.read().strip()
-            if t:
-                TOKEN = t
+                stored = f.read().strip()
         except OSError:
+            stored = ""
+        if stored:
+            TOKEN = stored
+        else:
             try:
                 with open(token_file, "w") as f:
                     f.write(TOKEN)
@@ -878,16 +917,28 @@ def main():
     global SERVER
     SERVER = httpd
     loopback = bind in ("127.0.0.1", "localhost")
-    host_for_url = "127.0.0.1" if loopback else bind
-    url = f"http://{host_for_url}:{port}/?t={TOKEN}"
+    all_ifaces = bind == "0.0.0.0"
+    # For a bound-to-all server, show the actual reachable LAN address.
+    display_ip = (_primary_ip() or bind) if all_ifaces else \
+        ("127.0.0.1" if loopback else bind)
+    url = f"http://{display_ip}:{port}/?t={TOKEN}"
     line = "─" * 66
     print(f"\n\033[36m╭─\033[0m \033[1mAuditXS web UI\033[0m \033[36m{line[:48]}╮\033[0m")
     print(f"\033[36m│\033[0m  Open: \033[1m{url}\033[0m")
     if loopback:
         print(f"\033[36m│\033[0m  Bound to 127.0.0.1 only. Remote server? Tunnel first:")
         print(f"\033[36m│\033[0m    ssh -L {port}:127.0.0.1:{port} user@host")
+        print(f"\033[36m│\033[0m  …or reach it on the network at this host's IP:  add "
+              f"\033[1m--remote\033[0m")
+        print(f"\033[36m│\033[0m    (persistent: 'auditxs webservice enable --remote')")
     else:
-        print(f"\033[33m│  ⚠ REMOTE ACCESS: bound to {bind}:{port} — reachable from the network.\033[0m")
+        where = "all interfaces (0.0.0.0)" if all_ifaces else bind
+        print(f"\033[33m│  ⚠ REMOTE ACCESS: bound to {where}:{port} — reachable from the network.\033[0m")
+        if all_ifaces:
+            others = [a for a in _all_ipv4() if a != display_ip]
+            if others:
+                print(f"\033[36m│\033[0m  Also reachable at: " +
+                      ", ".join(f"http://{a}:{port}/" for a in others[:4]))
         print(f"\033[33m│  The bearer token is the only credential; put TLS/a reverse proxy\033[0m")
         print(f"\033[33m│  in front and restrict access by firewall. Anyone with the token\033[0m")
         print(f"\033[33m│  can run privileged operations on this host.\033[0m")

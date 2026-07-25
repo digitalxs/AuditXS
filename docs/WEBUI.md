@@ -6,37 +6,35 @@ could type — so the transparency and reversibility guarantees are unchanged.
 
 ## Why a web UI (and who it is for)
 
-The web UI is the graphical interface for **workstations** — run it and it
-opens in your browser, with the full audit/harden/rollback workflow behind a
-Material Design 3 surface.
+The web UI opens in your browser with the full audit/harden/rollback workflow
+behind a Material Design 3 surface. It runs on **both profiles**: on a
+workstation it's your graphical interface; on a **headless server** it's a
+network-reachable control panel (bound to localhost by default, or to the
+network with `--remote` — see below).
 
-It is **disabled on the `server` profile** by design. Servers are kept to
-text interfaces only, so a headless box never runs a root web server: use the
-ncurses terminal UI over a plain SSH session instead —
+The *desktop* GUIs — the Qt app, the Electron app and the zenity launcher —
+stay **workstation-only**, because they need a graphical display. On a server
+without a desktop, use the web UI, the ncurses terminal UI, or the CLI:
 
 ```bash
 sudo auditxs tui                 # menu-driven, works over SSH, no browser/tunnel
 ```
 
-— or the CLI directly. If a machine really is a desktop that was installed
-with the server profile, override for a one-off with `--profile workstation`
-(then the tunnel workflow below applies).
-
 ## Launching
 
 ```bash
-sudo auditxs web                 # starts on http://127.0.0.1:9000 and opens a browser
+sudo auditxs web                 # localhost: http://127.0.0.1:9000 (opens a browser)
 sudo auditxs web --port 8080     # choose a different port
 sudo auditxs web --no-open       # don't auto-open a browser (print the URL only)
+sudo auditxs web --remote        # reachable on the network at this host's IP
+sudo auditxs web --bind 10.0.0.5 # bind one specific address
 ```
 
-The default port is **9000**; override it any time with `--port`.
+The default port is **9000**; override it any time with `--port`. It needs
+`python3` (standard library only — no framework, no pip installs) and root,
+because auditing reads privileged files such as `/etc/shadow`.
 
-It requires the **workstation** profile, `python3` (standard library only —
-no framework, no pip installs) and root, because auditing reads privileged
-files such as `/etc/shadow`.
-
-On launch it prints a URL that contains a one-time token:
+On launch it prints a URL that contains the access token:
 
 ```
 ╭─ AuditXS web UI ───────────────────────────────╮
@@ -49,8 +47,9 @@ On launch it prints a URL that contains a one-time token:
 
 ## Using it on a remote (headless) server
 
-The server binds `127.0.0.1` **only** — it is never exposed to the network.
-Reach it through an SSH tunnel from your workstation:
+You have two ways to reach the web UI on a server.
+
+**Safest — localhost + SSH tunnel** (nothing exposed to the network):
 
 ```bash
 # on the server
@@ -61,6 +60,24 @@ ssh -L 9000:127.0.0.1:9000 user@server
 
 # then open the printed http://127.0.0.1:9000/?t=<token> URL in your browser
 ```
+
+**On the internal network at the server's IP** — an explicit, warned opt-in
+(the web UI drives privileged operations, so the access token is the only
+credential):
+
+```bash
+# one-off (foreground): bind all interfaces, reachable at this host's IP
+sudo auditxs web --remote
+#   → prints  http://<server-ip>:9000/?t=<token>
+
+# persistent (recommended for a server): a systemd service, on at boot
+sudo auditxs webservice enable --remote
+sudo auditxs webservice status            # shows the http://<server-ip>:9000/?t=… URL
+```
+
+Put **TLS / a reverse proxy** in front and **firewall the port** to the hosts
+that need it. Rotate the token any time with `sudo auditxs webservice token
+--reset`.
 
 ## Turning it on/off as a service — local or remote *(v0.20)*
 
@@ -139,7 +156,7 @@ Because the UI drives root operations, it is built defensively:
 
 | Control | Behaviour |
 |---|---|
-| **Network exposure** | Binds `127.0.0.1` by default. Remote binding (`webservice enable --remote` / `web --bind`) is an explicit, warned opt-in — never the default — and prints guidance to add TLS/a reverse proxy and firewall the port. |
+| **Network exposure** | Binds `127.0.0.1` by default. Remote binding (`web --remote` / `web --bind` / `webservice enable --remote`) is an explicit, warned opt-in — never the default — and prints guidance to add TLS/a reverse proxy and firewall the port. |
 | **Authentication** | A bearer token is required on every request (sent as `X-Auth-Token`). The transient command mints a fresh token per launch; the service keeps a stable root-only token (`/etc/auditxs/web-token`, `0600`) you can rotate with `webservice token --reset`. |
 | **CSRF** | State-changing actions are POST-only and require the token in a header (not a cookie/query). In local mode the `Host` must be loopback; in remote mode the token is the authenticator. |
 | **Command injection** | Every `auditxs` call uses an argv list — never a shell. Check IDs and snapshot IDs are validated against `[A-Za-z0-9-]`. |
@@ -157,7 +174,7 @@ an untrusted network.
 
 | | CLI | Web UI | Qt app | zenity GUI |
 |---|---|---|---|---|
-| Headless server | ✔ | ✔ (SSH tunnel) | ✗ | ✗ |
+| Headless server | ✔ | ✔ (SSH tunnel or `--remote`) | ✗ | ✗ |
 | Workstation | ✔ | ✔ | ✔ | ✔ |
 | Material look, live toggles | – | ✔ | ✔ | – |
 | Cross-desktop consistent | n/a | ✔ | ✔ | follows GTK theme |

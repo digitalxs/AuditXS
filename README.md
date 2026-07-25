@@ -8,13 +8,13 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.21.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.22.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![Checks](https://img.shields.io/badge/checks-122-8957e5)](docs/CHECKS.md)
 [![Frameworks](https://img.shields.io/badge/NIST%20CSF%202.0%20·%20CIS%20·%20STIG-informational)](docs/COMPLIANCE.md)
 
-**Current version: v0.21.0** — see the [changelog](CHANGELOG.md)
+**Current version: v0.22.0** — see the [changelog](CHANGELOG.md)
 
 **Debian** · **Ubuntu** · **Pop!\_OS** · **Arch** · **Fedora** · **openSUSE** *(and derivatives)*
 
@@ -126,7 +126,8 @@ auditxs errors AX6002                  explain an error number (auditxs errors =
 
 auditxs terminal                       open a real interactive terminal (a shell) — prefers Konsole
 sudo auditxs tui                       terminal (ncurses) UI — works over SSH, any profile
-sudo auditxs web                       Material Design web UI, localhost-only (workstation)
+sudo auditxs web                       Material Design web UI (localhost; --remote for the LAN)
+sudo auditxs webservice enable --remote  run the web UI as a service on the server's network IP
 sudo auditxs webservice enable         turn the web UI on as a service (add --remote for network)
 sudo auditxs qt                        native Qt desktop app (workstation; auditxs-gui-qt)
 auditxs profile                        print the active profile (server | workstation)
@@ -214,9 +215,12 @@ overview dashboard), an embedded collapsible **console** sits at the bottom
 (full shell in Qt; auditxs commands in the web UI), and a status bar shows
 the version and live operation progress with percentage.
 
-> On a server, `web` / `qt` / `auditxs-gui` refuse to start and point you at
-> `sudo auditxs tui`. If a machine is really a desktop installed with the
-> server profile, add `--profile workstation` for a one-off, or edit the config.
+> The **web UI runs on both profiles** — on a server it's a network-reachable
+> control panel (`sudo auditxs web`, localhost by default; `--remote` to expose
+> it on the server's IP; or `auditxs webservice enable --remote` for a
+> persistent service). The **desktop** GUIs (`qt` / `electron` / `auditxs-gui`)
+> need a display, so they refuse to start on a server and point you at
+> `sudo auditxs tui` or the web UI.
 
 ---
 

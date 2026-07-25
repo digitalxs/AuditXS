@@ -457,14 +457,18 @@ use any interface.
 | Command line | `auditxs audit` / `harden` / … | ✔ | ✔ |
 | Terminal UI (ncurses) | `sudo auditxs tui` | ✔ | ✔ |
 | Real terminal (a shell) | `auditxs terminal` | – | ✔ |
-| Localhost web UI | `sudo auditxs web` | – | ✔ |
+| Web UI | `sudo auditxs web` (`--remote` for LAN) | ✔ | ✔ |
 | Native desktop app (Qt) | `sudo auditxs qt` | – | ✔ |
+| Electron desktop app | `auditxs electron` | – | ✔ |
 | Graphical launcher (zenity) | `auditxs-gui` | – | ✔ |
 
-`web`, `qt` and `auditxs-gui` refuse to start on the server profile and
-point you at `sudo auditxs tui`. Check the active profile with `auditxs
-profile`; override per-run with `--profile workstation` (or edit
-`/etc/auditxs/auditxs.conf`).
+The web UI runs on **both** profiles — on a server it's a network-reachable
+control panel (localhost by default, `--remote` to expose it on the server's
+IP; see *A network-reachable web UI on a server* below). The **desktop** GUIs
+(`qt`, `electron`, `auditxs-gui`) need a display, so they refuse to start on the
+server profile and point you at `sudo auditxs tui` or the web UI. Check the
+active profile with `auditxs profile`; override per-run with `--profile
+workstation` (or edit `/etc/auditxs/auditxs.conf`).
 
 ## The terminal UI (ncurses)
 
@@ -503,17 +507,39 @@ or **Ctrl+Shift+T**), built with xterm.js and a dependency-free Python PTY broke
 Over the web UI a full shell is deliberately **not** exposed (the web console is
 restricted to `auditxs` subcommands) — for a remote shell, use SSH.
 
-## The web UI (workstation profile)
+## The web UI (both profiles)
 
 ```bash
 sudo auditxs web                 # Material Design web UI on http://127.0.0.1:9000
 sudo auditxs web --port 9000 --no-open
+sudo auditxs web --remote        # reachable on the network at this host's IP
 ```
 
-A localhost-only, token-authenticated Material Design 3 interface (Python
-standard library — no framework). Disabled on the server profile (use the
-terminal UI over SSH instead). Full details and the security model:
-[WEBUI.md](WEBUI.md).
+A token-authenticated Material Design 3 interface (Python standard library — no
+framework). It binds `127.0.0.1` by default and runs on **both** profiles; on a
+server, add `--remote` to reach it on the internal network (see below). Full
+details and the security model: [WEBUI.md](WEBUI.md).
+
+### A network-reachable web UI on a server
+
+On a headless server the web UI is a handy control panel. Keep it local and
+reach it through an SSH tunnel, or expose it on the internal network — an
+explicit, warned opt-in (the web UI drives privileged operations, so the access
+token is the only credential):
+
+```bash
+# safest: localhost + SSH tunnel from your workstation
+sudo auditxs web --no-open
+ssh -L 9000:127.0.0.1:9000 user@server
+
+# on the internal network, at the server's own IP:
+sudo auditxs web --remote                 # one-off (foreground)
+sudo auditxs webservice enable --remote   # persistent service, on at boot (recommended)
+sudo auditxs webservice status            # prints the http://<server-ip>:9000/?t=… URL
+```
+
+Put TLS / a reverse proxy in front and firewall the port to the hosts that need
+it; rotate the token with `sudo auditxs webservice token --reset`.
 
 ### On/off switch — run the web UI as a service (local or remote)
 

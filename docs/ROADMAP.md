@@ -23,6 +23,15 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.22
+
+- **Web UI on the server profile + LAN access.** The web UI is no longer
+  workstation-only — on a headless server it's a network-reachable control
+  panel. `auditxs web --remote` binds all interfaces and prints a URL using the
+  server's own IP; `auditxs webservice enable --remote` runs it as a persistent
+  service. Remote access stays a warned, token-guarded opt-in. Only the desktop
+  GUIs (Qt/Electron/zenity) remain workstation-only.
+
 ## Shipped in v0.21
 
 - **A real, Konsole-like terminal.** `auditxs terminal` opens a fully

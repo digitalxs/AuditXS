@@ -7,6 +7,28 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.22.0]
+
+### Changed
+- **The web UI now runs on the server profile too.** It's no longer
+  workstation-only: on a headless server it's a network-reachable control
+  panel. Only the *desktop* GUIs (Qt, Electron, zenity) stay workstation-only
+  (they need a display).
+
+### Added
+- **Network / LAN-IP access for the web UI.** `auditxs web` gained `--remote`
+  (bind all interfaces, `0.0.0.0`) alongside the existing `--bind ADDR`. When
+  bound to the network the printed URL uses the **server's own IP** (best-effort
+  primary address), and any other reachable addresses are listed. Remote access
+  stays a deliberate, warned opt-in — the access token is the only credential,
+  so AuditXS prints TLS / reverse-proxy / firewall guidance. For a persistent
+  server control panel, `auditxs webservice enable --remote` remains the
+  recommended path.
+
+### Fixed
+- An **empty** `--token-file` is now (re)populated with the token instead of
+  being left empty, so reconnecting to a running service always works.
+
 ## [0.21.0]
 
 ### Added

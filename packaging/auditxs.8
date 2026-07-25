@@ -198,17 +198,21 @@ or
 Runs entirely in the terminal over a plain SSH session \(em the recommended
 interactive interface for servers. Available on every profile.
 .TP
-.B web \fR[--port N] [--no-open] [--bind ADDR] [--token-file PATH] [--service]\fP
-Launch the local Material Design web UI. Binds 127.0.0.1 by default and requires
-a bearer token; reach a remote server through an SSH tunnel.
-.B "Workstation profile only"
-\(em disabled on servers (use
-.B tui
-instead), except in
-.B --service
-mode (see
-.BR webservice )
-which runs headless.
+.B web \fR[--port N] [--no-open] [--remote] [--bind ADDR] [--token-file PATH] [--service]\fP
+Launch the Material Design web UI. Binds 127.0.0.1 by default and requires a
+bearer token on every request. Available on
+.B both profiles
+\(em on a headless server it is a network-reachable control panel. Reach it
+through an SSH tunnel, or expose it on the internal network with
+.B --remote
+(bind all interfaces; the printed URL uses the server's own IP) or
+.B --bind ADDR
+(one specific address). Remote access is a deliberate, warned opt-in: the token
+is the only credential, so put TLS / a reverse proxy in front and firewall the
+port. The
+.BR qt ,
+.B electron
+and zenity GUIs remain workstation-only (they need a display).
 .TP
 .B webservice \fRstatus | enable [--port N] [--remote | --bind ADDR] | disable | token [--reset]\fP
 Turn the web UI on or off as a background

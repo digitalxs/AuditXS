@@ -59,7 +59,7 @@ ${BOLD}COMMANDS${RC}
   errors      Browse the error-code catalogue:  auditxs errors [CODE|term|log]
   terminal    Open a real, fully-interactive terminal (a shell) — prefers Konsole
   tui         Launch the terminal (ncurses) interface — works over SSH; server-friendly
-  web         Launch the local web UI (Material Design 3) — workstation profile only
+  web         Launch the web UI (Material Design 3); localhost by default, --remote for the network
   webservice  Turn the web UI on/off as a service:  status | enable [--remote] | disable | token
   qt          Launch the native Qt/QML desktop app — workstation profile only
   electron    Launch the Electron desktop app (web UI in a window) — workstation only
@@ -68,8 +68,9 @@ ${BOLD}COMMANDS${RC}
   help        Show this help
 
 ${BOLD}INTERFACES BY PROFILE${RC}
-  server        CLI + terminal UI (tui) only — no web/graphical server on this box
-  workstation   all of the above plus web UI, Qt app and the zenity GUI
+  server        CLI, terminal UI (tui) and the web UI (localhost, or --remote for
+                the network) — no desktop GUIs (Qt/Electron/zenity need a display)
+  workstation   all of the above plus the Qt app, Electron app and the zenity GUI
 
 ${BOLD}OPTIONS${RC}
   --profile server|workstation   Override the configured profile
@@ -476,13 +477,11 @@ main() {
         web)
             require_root web
             resolve_profile
-            # As a managed systemd service (--service) the web UI is headless and
-            # deliberately runs without a desktop session, so skip the
-            # workstation-interface gate; interactive `auditxs web` still honours it.
-            case " ${ARGS[*]} " in
-                *" --service "*) : ;;
-                *) require_workstation_interface "the web UI" ;;
-            esac
+            # The web UI runs on BOTH profiles: a headless server can use it as a
+            # network-reachable control panel. It binds 127.0.0.1 by default;
+            # add --remote to reach it on the server's IP over the internal
+            # network (the access token then guards every request). The Qt,
+            # Electron and zenity GUIs stay workstation-only (they need a display).
             have python3 || die "The web UI requires python3 (standard library only). Install it, or use 'auditxs tui' / the CLI."
             [ -f "$AUDITXS_ROOT/gui/auditxs-web.py" ] || die "Web UI not found at $AUDITXS_ROOT/gui/auditxs-web.py"
             log "web UI starting (profile=$PROFILE)"

@@ -76,11 +76,30 @@ for pat in 'onclick="onFix(' 'onchange="onToggle(this)"' '/api/harden' \
         && ck "page wiring: $pat" yes yes || ck "page wiring: $pat" yes no
 done
 
-# never binds beyond loopback
+# never binds beyond loopback by default
 if command -v ss >/dev/null 2>&1; then
-    ss -tlnH 2>/dev/null | grep -q "127.0.0.1:$PORT" && ck "bound to loopback only" yes yes \
-        || ck "bound to loopback only" yes no
+    ss -tlnH 2>/dev/null | grep -q "127.0.0.1:$PORT" && ck "bound to loopback only (default)" yes yes \
+        || ck "bound to loopback only (default)" yes no
 fi
+
+# --remote (v0.22): binds all interfaces, populates an empty token file, and the
+# token then authenticates. Run a second, short-lived instance for this.
+RPORT=8792
+RTOK=$(mktemp); : > "$RTOK"    # empty token file — must be populated on start
+AUDITXS_BIN="$PWD/auditxs" AUDITXS_PROFILE=server \
+    python3 -u gui/auditxs-web.py --no-open --remote --port "$RPORT" --token-file "$RTOK" \
+    > "$OUT.remote" 2>&1 &
+RPID=$!
+for _ in $(seq 1 30); do [ -s "$RTOK" ] && break; sleep 0.3; done
+tok=$(cat "$RTOK" 2>/dev/null)
+ck "server profile + --remote starts"  yes "$([ -n "$tok" ] && echo yes || echo no)"
+ck "empty --token-file is populated"   yes "$([ -n "$tok" ] && echo yes || echo no)"
+ck "--remote authed request → 200"     200 "$(code "http://127.0.0.1:$RPORT/?t=$tok")"
+if command -v ss >/dev/null 2>&1; then
+    ss -tlnH 2>/dev/null | grep -qE "(0\.0\.0\.0|\*):$RPORT" && ck "--remote binds all interfaces" yes yes \
+        || ck "--remote binds all interfaces" yes no
+fi
+kill "$RPID" 2>/dev/null; rm -f "$RTOK" "$OUT.remote"
 
 echo
 echo "web tests: $PASS passed, $FAILED failed"
