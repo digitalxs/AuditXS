@@ -509,6 +509,11 @@ ApplicationWindow {
                 Flow {
                     Layout.fillWidth: true; Layout.leftMargin: 12; Layout.rightMargin: 12; spacing: 8
                     Button { text: "CVE scan";        enabled: !win.busy; onClicked: runOp(["cve"], "CVE / vulnerability warnings") }
+                    Button { text: "Preview updates"; enabled: !win.busy; onClicked: runOp(["update", "--dry-run"], "Pending package updates (preview)") }
+                    Button {
+                        text: "Apply security updates"; enabled: !win.busy
+                        onClicked: updateDialog.open()
+                    }
                     Button { text: "Doctor";          enabled: !win.busy; onClicked: runOp(["doctor"], "Installation diagnosis") }
                     Button { text: "Open HTML report"; enabled: !win.busy
                         onClicked: { var e = backend.openReport(); if (e.length) { opText.text = e; opDialog.title = "Report"; opDialog.open(); } } }
@@ -623,6 +628,24 @@ ApplicationWindow {
         ScrollView {
             anchors.fill: parent
             TextArea { id: reviewText; readOnly: true; wrapMode: Text.WordWrap; font.family: "monospace" }
+        }
+    }
+
+    // Applying package updates is NOT snapshot-reversible — confirm explicitly.
+    Dialog {
+        id: updateDialog
+        anchors.centerIn: parent
+        width: Math.min(win.width - 80, 560)
+        modal: true
+        title: "Apply security updates?"
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        onAccepted: runOp(["update", "--security", "--yes"], "Security updates")
+        Label {
+            width: parent.width; wrapMode: Text.WordWrap
+            text: "This applies the pending security updates to installed packages.\n\n"
+                + "Unlike hardening fixes, a package upgrade is NOT reversible by "
+                + "AuditXS rollback — the snapshot engine cannot undo it. Make sure "
+                + "you have backups.\n\nUse \"Preview updates\" first to see what would change."
         }
     }
 

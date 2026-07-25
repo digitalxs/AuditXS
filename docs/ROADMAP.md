@@ -23,6 +23,14 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.17
+
+- **Package updating** (`auditxs update`): preview + consented apply of
+  security (or `--all`) updates, honestly flagged as not snapshot-reversible;
+  `AUTO_UPDATE=1` makes the scheduled audit patch automatically; the
+  reversible `UPD-002` fix still enables the OS's own auto-updates. Wired into
+  the Qt/zenity/web GUIs. New error `AX5005`.
+
 ## Shipped in v0.16
 
 - **Electron desktop app** (`auditxs electron`): a fourth GUI — the audited
@@ -237,8 +245,12 @@ they shipped first:
 
 ## Deliberate non-goals
 
-- **No irreversible automation.** Package upgrades, partitioning, MAC
-  enablement, database schema/config changes stay report-only forever.
+- **No irreversible change inside the reversible flow.** Partitioning, MAC
+  enablement and database schema/config changes stay report-only, and nothing
+  that a snapshot can't undo is ever part of `harden`/`rollback`. Package
+  updating is the one explicitly-consented exception, and it is kept *outside*
+  that flow: `auditxs update` states plainly that an upgrade can't be rolled
+  back, previews first, and requires consent (or an opt-in `AUTO_UPDATE=1`).
 - **No agent, no daemon, no cloud.** AuditXS stays a transparent local
   tool; scheduling uses the system's own timer infrastructure.
 - **No exploit/scan functionality.** AuditXS hardens configurations; it

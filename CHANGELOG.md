@@ -7,6 +7,29 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.17.0]
+
+### Added
+- **Package updating** — AuditXS can now apply updates, three consented ways:
+  - **`auditxs update`** — a new command that previews the exact change list
+    (read-only), then applies **security** updates on consent (`--all` for a
+    full upgrade, `--dry-run` to preview, `--yes` for automation). Per distro:
+    `unattended-upgrade`/`apt-get` (Debian), `dnf upgrade --security` (Fedora),
+    `pacman -Syu` (Arch — only full upgrades are supported), `zypper patch
+    --category security` (openSUSE). It is **honest that a package upgrade is
+    not reversible** by `rollback`, is kept out of the harden/rollback flow,
+    and records start/finish in the change ledger. New error `AX5005`.
+  - **`AUTO_UPDATE=1`** in `/etc/auditxs/auditxs.conf` — the scheduled audit
+    then applies pending security updates automatically when it finds them
+    (and alerts via the configured webhook/email). Off by default.
+  - The existing **`UPD-002` reversible fix** (enable the distro's own
+    automatic-security-update mechanism) remains the "let the OS patch itself"
+    option.
+  - Exposed in the GUIs: a "Preview updates" + confirm-gated "Apply security
+    updates" pair on the Qt Ops tab, an **Update** entry in the zenity menu
+    (preview → consent → apply), and `update` whitelisted in the web/Qt
+    consoles.
+
 ## [0.16.0]
 
 ### Added

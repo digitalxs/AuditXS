@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.16.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.17.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -130,6 +130,7 @@
 <tr><td><code>AX5002</code></td><td>Unknown security tool requested</td><td>The tool name passed to 'tools install' is not one AuditXS knows how to install.</td><td>Run 'auditxs tools install' with no name to see the known list.</td></tr>
 <tr><td><code>AX5003</code></td><td>External scanner reported errors</td><td>An installed scanner (Lynis, rkhunter, ClamAV, OpenSCAP…) exited non-zero; its findings are still saved.</td><td>Read the saved report under /var/lib/auditxs/reports/tools/ — a non-zero exit is often findings, not a crash.</td></tr>
 <tr><td><code>AX5004</code></td><td>SCAP content not found</td><td>OpenSCAP was asked to scan but no SCAP Security Guide (SSG) content is installed.</td><td>Install the 'scap-security-guide'/'ssg-*' content package, then re-run 'auditxs tools scan openscap'.</td></tr>
+<tr><td><code>AX5005</code></td><td>Package update failed</td><td>The distribution package manager returned an error while applying updates ('auditxs update').</td><td>Check network/repository access and disk space; run the package manager by hand to see the full error, then retry.</td></tr>
 <tr><td><code>AX6001</code></td><td>Cannot reach host</td><td>The remote host did not accept a TCP/SSH connection (down, wrong address/port, or firewalled).</td><td>Verify the hostname/IP and port, that sshd is running, and that a firewall is not blocking you.</td></tr>
 <tr><td><code>AX6002</code></td><td>SSH authentication failed</td><td>The remote host rejected the credentials (wrong user, key not authorised, or bad password).</td><td>Check the username; authorise your key with 'ssh-copy-id', or re-check the password. Prefer key auth.</td></tr>
 <tr><td><code>AX6003</code></td><td>Host key verification failed</td><td>The remote host key is unknown or has changed, so AuditXS refused to connect (possible MITM).</td><td>Verify the host key out-of-band and add it to known_hosts. Only use --insecure-host-key on trusted networks.</td></tr>

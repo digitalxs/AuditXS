@@ -564,6 +564,21 @@ run_schedule_gui() {
     esac
 }
 
+run_update_gui() {
+    # Preview (read-only) first, then apply security updates on explicit consent.
+    elevate "$AUDITXS_BIN" update --dry-run 2>&1 | sed 's/\x1b\[[0-9;]*m//g' > "$WORK_DIR/update-preview.txt"
+    zenity --text-info --title "AuditXS — pending updates (preview)" \
+        --filename "$WORK_DIR/update-preview.txt" \
+        --checkbox "Apply these SECURITY updates now — NOT reversible by rollback." \
+        --width 840 --height 600 2>/dev/null || return
+    local log="$WORK_DIR/update.log"
+    ( elevate "$AUDITXS_BIN" update --security --yes > "$log" 2>&1 ) | \
+        zenity --progress --title "AuditXS" --text "Applying security updates…" --pulsate --no-cancel --auto-close 2>/dev/null
+    sed 's/\x1b\[[0-9;]*m//g' "$log" > "$log.c" 2>/dev/null && mv "$log.c" "$log"
+    zenity --text-info --title "AuditXS — update result" \
+        --filename "$log" --width 840 --height 560 2>/dev/null
+}
+
 run_terminal_gui() {
     local t
     for t in x-terminal-emulator gnome-terminal konsole xfce4-terminal kgx tilix xterm; do
@@ -593,6 +608,7 @@ while true; do
         "Schedule"  "Daily audits with drift alerting (status / enable / disable)" \
         "Waivers"   "Accepted-risk waivers (list / add / remove)" \
         "CVE"       "Known-vulnerability warnings for installed packages" \
+        "Update"    "Apply pending security updates (preview first; not reversible)" \
         "Alerts"    "Drift & CVE alert sinks (status / test)" \
         "Errors"    "Browse the AXnnnn error catalogue" \
         "Doctor"    "Diagnose the AuditXS installation and system tooling" \
@@ -612,6 +628,7 @@ while true; do
         Schedule)  run_schedule_gui ;;
         Waivers)   run_waivers_gui ;;
         CVE)       show_cli_gui "CVE warnings" "$AUDITXS_BIN" cve ;;
+        Update)    run_update_gui ;;
         Alerts)    show_cli_gui "alert status" "$AUDITXS_BIN" alert status ;;
         Errors)    show_cli_gui "error catalogue" "$AUDITXS_BIN" errors ;;
         Terminal)  run_terminal_gui ;;

@@ -58,7 +58,7 @@ def read_progress():
 # arguments restricted to a safe charset — same policy as every route here.
 import re as _re
 OP_CMDS = {"audit", "report", "harden", "rollback", "snapshots", "tools",
-           "cve", "baseline", "doctor", "schedule", "errors", "waive",
+           "cve", "update", "baseline", "doctor", "schedule", "errors", "waive",
            "unwaive", "waivers", "alert", "fleet", "list", "explain",
            "diff", "version", "profile"}
 OP_ARG = _re.compile(r"[A-Za-z0-9@.,:%/_=+~ -]+")

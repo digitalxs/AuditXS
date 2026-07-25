@@ -85,6 +85,23 @@ Diagnose the installation, tooling and snapshot integrity.
 .B cve
 Warn about installed packages with a known vulnerability / CVE.
 .TP
+.B update \fR[--security|--all] [--dry-run] [--yes]\fP
+Apply pending package updates. Previews exactly what would change first, then
+applies on consent. Defaults to
+.B security
+updates only;
+.B --all
+does a full upgrade. On Arch only a full system upgrade is supported.
+.B "Package upgrades are NOT reversible by"
+.BR "auditxs rollback" ":"
+the snapshot engine cannot undo a software upgrade, so this command is kept
+separate from harden/rollback and warns before proceeding. To patch
+automatically, either enable the distribution's own mechanism via
+.B UPD-002
+(a reversible hardening fix) or set
+.B AUTO_UPDATE=1
+in the configuration so scheduled audits apply security updates.
+.TP
 .B tools \fRstatus|install|scan|vpn\fP
 Inventory, install and run security tools (Lynis, rkhunter, chkrootkit, AIDE,
 ClamAV, OpenSCAP, auditd, Fail2ban, CrowdSec, Suricata, \[char46]\[char46]\[char46]);

@@ -18,7 +18,7 @@
 AUDITXS_SELF=$(readlink -f "${BASH_SOURCE[0]}")
 AUDITXS_ROOT=$(dirname "$AUDITXS_SELF")
 
-for _lib in core errors distro backup registry waivers report fixlib maintenance cve tools fleet alerts; do
+for _lib in core errors distro backup registry waivers report fixlib maintenance cve tools update fleet alerts; do
     # shellcheck disable=SC1090
     . "$AUDITXS_ROOT/lib/$_lib.sh" || { echo "auditxs: missing library lib/$_lib.sh" >&2; exit 1; }
 done
@@ -50,6 +50,7 @@ ${BOLD}COMMANDS${RC}
   schedule    Daily audit + drift alert:  auditxs schedule enable | disable | status | run
   doctor      Diagnose the AuditXS installation, tooling and snapshot integrity
   cve         Warn about installed packages with a known vulnerability / CVE
+  update      Apply pending package updates (security by default; --all, --dry-run)
   tools       Security tooling:  auditxs tools status | install <name> | scan | vpn
   fleet       Audit many hosts over SSH (read-only):  auditxs fleet <host...> [options]
   waive       Accept a finding as a documented risk:  auditxs waive <ID> "reason" [--until DATE]
@@ -348,6 +349,7 @@ main() {
             --help|-h)   usage; return 0 ;;
             --port)      ARGS+=("--port" "${2:?--port needs a value}"); shift ;;   # passthrough to web/tui/fleet
             --no-open)   ARGS+=("--no-open") ;;                                     # passthrough to web
+            --all|--full|--security) ARGS+=("$1") ;;                                # passthrough to 'update'
             # fleet-mode options — passed through to 'auditxs fleet'
             --hosts|--inventory|--user|--key|--timeout|--output|--until)
                          ARGS+=("$1" "${2:?"$1 needs a value"}"); shift ;;
@@ -445,6 +447,9 @@ main() {
         cve)
             require_root cve
             cmd_cve
+            return $? ;;
+        update|upgrade)
+            cmd_update "${ARGS[@]}"
             return $? ;;
         tools)
             cmd_tools "${ARGS[@]}"

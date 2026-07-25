@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.16.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.17.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg active" href="usage.html">User manual</a>
@@ -102,7 +102,7 @@
 <a class="pg" href="../index.html">AuditXS home</a>
 <a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
 <main>
-<h1 id="auditxs-user-manual">AuditXS user manual</h1><div class="onpage"><b>On this page</b><a href="#contents">Contents</a><a href="#concepts">Concepts</a><a href="#installation">Installation</a><a href="#auditing">Auditing</a><a href="#hardening">Hardening</a><a href="#rollback">Rollback</a><a href="#baselines--drift-detection">Baselines &amp; drift detection</a><a href="#scheduled-audits">Scheduled audits</a><a href="#vulnerability-cve-warnings">Vulnerability (CVE) warnings</a><a href="#security-tooling">Security tooling</a><a href="#fleet-mode--auditing-many-hosts-over-ssh">Fleet mode — auditing many hosts over SSH</a><a href="#error-numbers">Error numbers</a><a href="#maintenance-doctor">Maintenance (doctor)</a><a href="#interfaces-by-profile">Interfaces by profile</a><a href="#the-terminal-ui-ncurses">The terminal UI (ncurses)</a><a href="#the-web-ui-workstation-profile">The web UI (workstation profile)</a><a href="#the-gui-workstation-profile">The GUI (workstation profile)</a><a href="#privileges--credential-caching">Privileges &amp; credential caching</a><a href="#debugging">Debugging</a><a href="#files--directories">Files &amp; directories</a><a href="#exit-codes">Exit codes</a></div>
+<h1 id="auditxs-user-manual">AuditXS user manual</h1><div class="onpage"><b>On this page</b><a href="#contents">Contents</a><a href="#concepts">Concepts</a><a href="#installation">Installation</a><a href="#auditing">Auditing</a><a href="#hardening">Hardening</a><a href="#rollback">Rollback</a><a href="#baselines--drift-detection">Baselines &amp; drift detection</a><a href="#scheduled-audits">Scheduled audits</a><a href="#vulnerability-cve-warnings">Vulnerability (CVE) warnings</a><a href="#applying-package-updates">Applying package updates</a><a href="#security-tooling">Security tooling</a><a href="#fleet-mode--auditing-many-hosts-over-ssh">Fleet mode — auditing many hosts over SSH</a><a href="#error-numbers">Error numbers</a><a href="#maintenance-doctor">Maintenance (doctor)</a><a href="#interfaces-by-profile">Interfaces by profile</a><a href="#the-terminal-ui-ncurses">The terminal UI (ncurses)</a><a href="#the-web-ui-workstation-profile">The web UI (workstation profile)</a><a href="#the-gui-workstation-profile">The GUI (workstation profile)</a><a href="#privileges--credential-caching">Privileges &amp; credential caching</a><a href="#debugging">Debugging</a><a href="#files--directories">Files &amp; directories</a><a href="#exit-codes">Exit codes</a></div>
 <p>AuditXS audits Linux systems against fundamental security baselines and — only with your explicit consent — hardens them with fully reversible changes. This manual covers the CLI, the GUI, and the operational workflows. See <a href="compliance.html">COMPLIANCE.md</a> for framework alignment and <a href="checks.html">CHECKS.md</a> for every check's documentation.</p>
 <h2 id="contents">Contents</h2>
 <ol>
@@ -186,6 +186,19 @@ sudo auditxs schedule disable</code></pre>
 <h2 id="vulnerability-cve-warnings">Vulnerability (CVE) warnings</h2>
 <pre class="lang-bash"><code>sudo auditxs cve                  # warn about installed packages with a known CVE</code></pre>
 <p>Uses the distribution's own security data (Debian: <code>debsecan</code> or the security apt suite; Fedora: <code>dnf updateinfo</code>; openSUSE: <code>zypper patches</code>). Exits non-zero when vulnerable packages are found. The same signal appears automatically at the end of every <code>audit</code> (console banner + check <code>VULN-001</code> + HTML report banner + log) and in the GUI after an audit. For a precise per-CVE list on Debian, <code>sudo auditxs tools install debsecan</code>.</p>
+<h2 id="applying-package-updates">Applying package updates</h2>
+<p>Keeping packages patched is the single most effective control, so AuditXS can apply updates for you — three ways, all consented:</p>
+<pre class="lang-bash"><code>sudo auditxs update --dry-run       # preview exactly what would be updated
+sudo auditxs update                 # apply pending SECURITY updates (asks first)
+sudo auditxs update --all           # a full upgrade (asks first)
+sudo auditxs update --security --yes # non-interactive (automation)</code></pre>
+<p><code>update</code> previews the change list first, then applies on consent (or <code>--yes</code>). It defaults to <strong>security</strong> updates; <code>--all</code> does a full upgrade. On Arch only a full <code>pacman -Syu</code> is supported (partial upgrades are unsupported there).</p>
+<blockquote><p><strong>Important:</strong> a package upgrade is <strong>not reversible</strong> by <code>auditxs rollback</code> — the snapshot engine cannot undo a software upgrade. <code>update</code> says so and is deliberately kept out of the harden/rollback flow. It records start/finish in the change ledger (<code>/var/lib/auditxs/changes.log</code>).</p></blockquote>
+<p><strong>To patch automatically</strong>, choose either:</p>
+<ul>
+<li><strong>Let the OS do it</strong> — the <code>UPD-002</code> control ("automatic security updates") is a <em>reversible</em> hardening fix: applying it installs and enables the distribution's own mechanism (<code>unattended-upgrades</code> on Debian/Ubuntu/Pop!_OS, <code>dnf-automatic</code> on Fedora). The system then patches itself, and <code>auditxs rollback</code> can undo the configuration.</li>
+<li><strong>Let the scheduled audit do it</strong> — set <code>AUTO_UPDATE=1</code> in <code>/etc/auditxs/auditxs.conf</code>. The daily <code>auditxs schedule</code> run then applies pending security updates whenever it finds them (and, if <code>ALERT_WEBHOOK</code> / <code>ALERT_EMAIL</code> are configured, notifies you). Off by default.</li>
+</ul>
 <h2 id="security-tooling">Security tooling</h2>
 <pre class="lang-bash"><code>sudo auditxs tools status         # which defensive tools are installed
 sudo auditxs tools install lynis  # guided, reversible install (also: rkhunter,

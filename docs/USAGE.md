@@ -190,6 +190,39 @@ automatically at the end of every `audit` (console banner + check
 `VULN-001` + HTML report banner + log) and in the GUI after an audit. For a
 precise per-CVE list on Debian, `sudo auditxs tools install debsecan`.
 
+## Applying package updates
+
+Keeping packages patched is the single most effective control, so AuditXS can
+apply updates for you — three ways, all consented:
+
+```bash
+sudo auditxs update --dry-run       # preview exactly what would be updated
+sudo auditxs update                 # apply pending SECURITY updates (asks first)
+sudo auditxs update --all           # a full upgrade (asks first)
+sudo auditxs update --security --yes # non-interactive (automation)
+```
+
+`update` previews the change list first, then applies on consent (or `--yes`).
+It defaults to **security** updates; `--all` does a full upgrade. On Arch only
+a full `pacman -Syu` is supported (partial upgrades are unsupported there).
+
+> **Important:** a package upgrade is **not reversible** by `auditxs rollback`
+> — the snapshot engine cannot undo a software upgrade. `update` says so and is
+> deliberately kept out of the harden/rollback flow. It records start/finish in
+> the change ledger (`/var/lib/auditxs/changes.log`).
+
+**To patch automatically**, choose either:
+
+- **Let the OS do it** — the `UPD-002` control ("automatic security updates")
+  is a *reversible* hardening fix: applying it installs and enables the
+  distribution's own mechanism (`unattended-upgrades` on Debian/Ubuntu/Pop!_OS,
+  `dnf-automatic` on Fedora). The system then patches itself, and
+  `auditxs rollback` can undo the configuration.
+- **Let the scheduled audit do it** — set `AUTO_UPDATE=1` in
+  `/etc/auditxs/auditxs.conf`. The daily `auditxs schedule` run then applies
+  pending security updates whenever it finds them (and, if `ALERT_WEBHOOK` /
+  `ALERT_EMAIL` are configured, notifies you). Off by default.
+
 ## Security tooling
 
 ```bash

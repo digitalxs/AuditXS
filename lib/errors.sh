@@ -108,6 +108,9 @@ _ax_def AX5003 "External scanner reported errors" \
 _ax_def AX5004 "SCAP content not found" \
     "OpenSCAP was asked to scan but no SCAP Security Guide (SSG) content is installed." \
     "Install the 'scap-security-guide'/'ssg-*' content package, then re-run 'auditxs tools scan openscap'."
+_ax_def AX5005 "Package update failed" \
+    "The distribution package manager returned an error while applying updates ('auditxs update')." \
+    "Check network/repository access and disk space; run the package manager by hand to see the full error, then retry."
 
 # ---- AX6xxx — fleet / SSH -------------------------------------------------
 _ax_def AX6001 "Cannot reach host" \

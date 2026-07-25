@@ -41,6 +41,7 @@ QUIET=1
 . lib/maintenance.sh
 . lib/cve.sh
 . lib/tools.sh
+. lib/update.sh
 . lib/fleet.sh
 for c in checks/*.sh; do . "$c"; done
 
@@ -235,6 +236,18 @@ tt "report How-to-fix on WARN"        yes grep -q 'data-cmd="auditxs explain SSH
 tt "report no button on PASS"         no  grep -q 'check SSH-002' <<<"$rhtml"
 tt "report filter script present"     yes grep -q 'applyFilter' <<<"$rhtml"
 unset rhtml
+
+# ---- package update command (lib/update.sh) ------------------------------
+# _update_apply must build the right, scoped upgrade command per package
+# manager. Run in dry-run so nothing executes (xrun prints "would run: …").
+# Use scope=all where possible to avoid the apt-security path's pkg_install
+# (which would touch the snapshot engine).
+t "apt all → apt-get upgrade"    "yes" "$(DRYRUN=1 PKG=apt;    _update_apply all 2>&1 | grep -q 'apt-get -y upgrade' && echo yes || echo no)"
+t "dnf security uses --security" "yes" "$(DRYRUN=1 PKG=dnf;    _update_apply security 2>&1 | grep -q -- '--security' && echo yes || echo no)"
+t "dnf all omits --security"     "no"  "$(DRYRUN=1 PKG=dnf;    _update_apply all 2>&1 | grep -q -- '--security' && echo yes || echo no)"
+t "pacman is always full -Syu"   "yes" "$(DRYRUN=1 PKG=pacman; _update_apply security 2>&1 | grep -q 'pacman -Syu' && echo yes || echo no)"
+t "zypper security patches"      "yes" "$(DRYRUN=1 PKG=zypper; _update_apply security 2>&1 | grep -q 'patch --category security' && echo yes || echo no)"
+t "unknown pkg mgr → error rc"   "1"   "$(DRYRUN=1 PKG=none;   _update_apply all >/dev/null 2>&1; echo $?)"
 
 # ---- Qt runtime preflight (dispatcher helpers) ---------------------------
 # The helpers live in the `auditxs` dispatcher, not a lib; pull just that block.

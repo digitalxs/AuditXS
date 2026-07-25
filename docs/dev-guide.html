@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.16.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.17.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -165,6 +165,8 @@ gui/
   auditxs.qml           Qt Quick Controls (Material) view with custom window chrome
 setup.sh                installer (Server/Workstation selection, dxsbash-style)
 uninstall.sh            uninstaller (protects snapshots)
+gui/electron/           Electron desktop app (main.js wraps the web UI; deps
+                        fetched per-user via npm on first `auditxs electron`)
 scripts/
   updater.sh            &#x27;update-auditxs&#x27; command
   release.sh            local release prep (build + checksum + optional sign + tag)

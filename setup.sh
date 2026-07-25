@@ -233,6 +233,14 @@ choose_profile() {
 # PROFILE decides which checks apply: server | workstation
 # Change it any time by re-running: sudo /opt/auditxs/setup.sh
 PROFILE=$PROFILE
+
+# Automatic security updates during the scheduled audit (auditxs schedule).
+# 0 = off (default; the audit only reports pending updates).
+# 1 = the scheduled run applies pending SECURITY updates when it finds them
+#     (equivalent to 'auditxs update --security'). Package upgrades are NOT
+#     reversible by rollback — enable this only where unattended patching is
+#     acceptable. Configure ALERT_WEBHOOK/ALERT_EMAIL to be notified.
+AUTO_UPDATE=0
 EOF
     chmod 644 "$CONF_FILE"
     ok "Profile configured: ${BOLD}$PROFILE${RC} ($CONF_FILE)"

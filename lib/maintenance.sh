@@ -237,6 +237,21 @@ WantedBy=timers.target"
             save_reports
             cve_scan
             log "scheduled audit complete: score=$SCORE pass=$N_PASS fail=$N_FAIL"
+            # Opt-in automatic security updates: with AUTO_UPDATE=1 in the conf,
+            # the scheduled run patches the system when updates are pending.
+            if [ "${AUTO_UPDATE:-0}" = 1 ]; then
+                local _pend; _pend=$(pending_updates)
+                if [ "$_pend" != "?" ] && [ "${_pend:-0}" -gt 0 ] 2>/dev/null; then
+                    log "AUTO_UPDATE=1 and $_pend pending — applying security updates"
+                    if cmd_update --security --yes; then
+                        alerts_configured && send_alert "Security updates applied automatically" \
+                            "AuditXS applied pending security updates on $(hostname 2>/dev/null) during the scheduled run ($_pend were pending). A reboot may be required (UPD-003)." || true
+                    else
+                        alerts_configured && send_alert "Automatic security update FAILED" \
+                            "AuditXS could not apply security updates on $(hostname 2>/dev/null) during the scheduled run. Run 'sudo auditxs update' by hand." || true
+                    fi
+                fi
+            fi
             local _drift=0
             if [ -f "$BASELINE_PATH" ]; then
                 QUIET=0

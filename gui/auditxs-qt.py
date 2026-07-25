@@ -46,7 +46,7 @@ def read_progress():
 # Any CLI operation the GUI may run (argv only, never a shell). First token
 # must be one of these auditxs subcommands; every argument must match _OPARG.
 _OP_CMDS = {"audit", "report", "harden", "rollback", "snapshots", "tools",
-            "cve", "baseline", "doctor", "schedule", "errors", "waive",
+            "cve", "update", "baseline", "doctor", "schedule", "errors", "waive",
             "unwaive", "waivers", "alert", "fleet", "list", "explain",
             "diff", "version", "profile"}
 _OPARG = re.compile(r"[A-Za-z0-9@.,:%/_=+~ -]+")
@@ -103,7 +103,7 @@ def fleet_save(cfg):
 # same model as the zenity GUI — so the window itself stays unprivileged and
 # displays normally on X11 and Wayland.
 _ROOT_CMDS = {"audit", "report", "harden", "rollback", "snapshots",
-              "tools", "cve", "baseline", "doctor", "schedule"}
+              "tools", "cve", "update", "baseline", "doctor", "schedule"}
 
 
 def _elevate(cmd):
