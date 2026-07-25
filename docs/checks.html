@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.17.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.18.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -103,7 +103,7 @@
 <a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
 <main>
 <h1 id="auditxs-check-catalogue">AuditXS check catalogue</h1><div class="onpage"><b>On this page</b><a href="#updates--os-hardening-domain">Updates — OS Hardening domain</a><a href="#debian--os-hardening-domain">Debian — OS Hardening domain</a><a href="#os--os-hardening-domain">OS — OS Hardening domain</a><a href="#ssh--server-hardening-domain">SSH — Server Hardening domain</a><a href="#containers--os-hardening-domain">Containers — OS Hardening domain</a><a href="#fail2ban--network-security-domain">Fail2ban — Network Security domain</a><a href="#firewall--network-security-domain">Firewall — Network Security domain</a><a href="#accounts--server-hardening-domain">Accounts — Server Hardening domain</a><a href="#privileged--server-hardening-domain">Privileged — Server Hardening domain</a><a href="#filesystem--os-hardening-domain">Filesystem — OS Hardening domain</a><a href="#kernel--os-hardening-domain">Kernel — OS Hardening domain</a><a href="#boot--os-hardening-domain">Boot — OS Hardening domain</a><a href="#mac--os-hardening-domain">MAC — OS Hardening domain</a><a href="#services--application-hardening-domain">Services — Application Hardening domain</a><a href="#applications--application-hardening-domain">Applications — Application Hardening domain</a><a href="#php--application-hardening-domain">PHP — Application Hardening domain</a><a href="#webapps--application-hardening-domain">WebApps — Application Hardening domain</a><a href="#network--network-security-domain">Network — Network Security domain</a><a href="#mail--application-hardening-domain">Mail — Application Hardening domain</a><a href="#dns--network-security-domain">DNS — Network Security domain</a><a href="#database--database-hardening-domain">Database — Database Hardening domain</a><a href="#tls--network-security-domain">TLS — Network Security domain</a><a href="#logging--os-hardening-domain">Logging — OS Hardening domain</a><a href="#securitytools--os-hardening-domain">SecurityTools — OS Hardening domain</a><a href="#vulnerabilities--os-hardening-domain">Vulnerabilities — OS Hardening domain</a></div>
-<p>Generated from the check registry by <code>auditxs list --markdown</code> (v0.17.0).</p>
+<p>Generated from the check registry by <code>auditxs list --markdown</code> (v0.18.0).</p>
 <p>Legend: checks with an <strong>automatic fix</strong> are only ever applied by <code>auditxs harden</code> after showing you exactly what will change, and every change is recorded in a snapshot that <code>auditxs rollback</code> can restore. <strong>Manual</strong> checks only report — they never change the system.</p>
 <h2 id="updates--os-hardening-domain">Updates — OS Hardening domain</h2>
 <h3 id="upd-001--no-pending-package-updates">UPD-001 — No pending package updates</h3>
@@ -112,9 +112,11 @@
 <li><strong>Profiles:</strong> server,workstation</li>
 <li><strong>CIS Benchmark:</strong> 1.9 · <strong>Level:</strong> 1</li>
 <li><strong>NIST CSF 2.0:</strong> ID.RA-01, PR.PS-02</li>
-<li><strong>Fix:</strong> manual (report-only)</li>
+<li><strong>Fix:</strong> automatic (reversible)</li>
 </ul>
-<p>Counts package updates pending in the package manager's cache. Unpatched software is the most common initial access vector; known vulnerabilities in outdated packages are actively exploited. AuditXS never upgrades packages itself because upgrades are not reversible — this check only reports.</p>
+<p>Counts package updates pending in the package manager's cache. Unpatched software is the most common initial access vector; known vulnerabilities in outdated packages are actively exploited. The fix applies the pending updates — but only after taking a Timeshift system snapshot, because package upgrades cannot be undone by the AuditXS snapshot engine.</p>
+<p><strong>What the fix changes:</strong> Takes a Timeshift system snapshot ('AuditXS pre-update …'), then applies all pending updates with the distribution package manager. Timeshift is REQUIRED so the change stays recoverable; if it is not installed/configured the fix declines with guidance. You can also run 'sudo auditxs update' directly.</p>
+<p><strong>How it is reverted:</strong> This is the one fix NOT reversed by 'auditxs rollback' — a package upgrade is not something the snapshot engine can undo. Instead restore the Timeshift snapshot taken just before it: 'sudo timeshift --restore' (or 'sudo timeshift --list' to choose).</p>
 <h3 id="upd-002--automatic-security-updates-are-enabled">UPD-002 — Automatic security updates are enabled</h3>
 <ul>
 <li><strong>Severity:</strong> high</li>

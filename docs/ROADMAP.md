@@ -23,6 +23,14 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.18
+
+- **Timeshift-backed updates**: `auditxs update` takes a Timeshift system
+  snapshot before applying (when Timeshift is configured), so an upgrade can be
+  rolled back with `timeshift --restore` — closing the "package upgrades aren't
+  reversible" gap. **UPD-001 is now fixable** on this basis (Timeshift-gated),
+  and `timeshift` is installable via `auditxs tools`. New error `AX5006`.
+
 ## Shipped in v0.17
 
 - **Package updating** (`auditxs update`): preview + consented apply of

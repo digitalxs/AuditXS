@@ -7,6 +7,35 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.18.0]
+
+### Added
+- **Timeshift-backed updates — package upgrades you can roll back.** AuditXS
+  now integrates with Timeshift (filesystem snapshots), which *can* undo a
+  software upgrade that `auditxs rollback` cannot:
+  - `auditxs update` takes a Timeshift system snapshot **before** applying
+    anything whenever Timeshift is installed and configured (labelled
+    `AuditXS pre-update …`), and prints the `timeshift --restore` command to
+    undo it. `--snapshot` forces it (aborting if Timeshift is missing);
+    `--no-snapshot` skips it.
+  - **UPD-001 ("no pending updates") is now a fixable finding** — the Fix it
+    button / `harden --check UPD-001` takes a Timeshift snapshot, then applies
+    the pending updates. It **requires** Timeshift so the otherwise-reversible
+    harden flow never makes an unrecoverable change, and declines with guidance
+    when Timeshift isn't available.
+  - `timeshift` added to `auditxs tools install`. New error `AX5006` (Timeshift
+    snapshot failed).
+
+### Fixed
+- **Fleet password auth now installs `sshpass` automatically** instead of
+  failing with `AX6004`: directly when root (CLI / web UI), or elevated with
+  `pkexec`/`sudo` when launched unprivileged from the Qt/zenity GUIs.
+- **No more `errors.log: Permission denied` leak.** When AuditXS runs
+  unprivileged (e.g. a fleet audit from a GUI), the error-ledger write is now
+  writability-checked first, so a failed append no longer prints a stray
+  "Permission denied" line (`>> file 2>/dev/null` can't suppress an open
+  failure).
+
 ## [0.17.0]
 
 ### Added

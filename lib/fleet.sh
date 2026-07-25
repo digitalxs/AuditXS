@@ -25,6 +25,31 @@
 
 FLEET_REPORT_DIR_ROOT="/var/lib/auditxs/reports/fleet"
 
+# SSH password authentication needs 'sshpass'. Rather than fail, try to install
+# it: directly when root (CLI / web UI), or elevated (pkexec on a desktop, else
+# sudo) when unprivileged (Qt / zenity fleet). Installs directly — no snapshot
+# side effects, since fleet is read-only. Returns 0 once sshpass is present.
+_fleet_ensure_sshpass() {
+    have sshpass && return 0
+    local cmd=""
+    case $PKG in
+        apt)    cmd="env DEBIAN_FRONTEND=noninteractive apt-get install -y -q sshpass" ;;
+        pacman) cmd="pacman -S --noconfirm --needed sshpass" ;;
+        dnf)    cmd="dnf install -y -q sshpass" ;;
+        zypper) cmd="zypper --non-interactive --quiet install sshpass" ;;
+        *)      return 1 ;;
+    esac
+    info "Installing 'sshpass' (needed for SSH password authentication)…"
+    if [ "$(id -u)" -eq 0 ]; then
+        sh -c "$cmd" >/dev/null 2>&1
+    elif { [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; } && have pkexec; then
+        pkexec sh -c "$cmd" >/dev/null 2>&1
+    elif have sudo; then
+        sudo sh -c "$cmd" >/dev/null 2>&1
+    fi
+    have sshpass
+}
+
 cmd_fleet() {
     local -a hosts=() _h=()
     local inventory="" user="" key="" port=22 timeout=120
@@ -76,7 +101,7 @@ Example: ${BOLD}auditxs fleet web01 db01 --user admin --key ~/.ssh/id_ed25519 --
     # they never leak to the ssh/sshpass child processes.
     local sshpass_pre=()
     if [ "$ask_pass" = 1 ]; then
-        have sshpass || { ax_error AX6004; return 2; }
+        _fleet_ensure_sshpass || { ax_error AX6004; return 2; }
         if [ -n "${AUDITXS_SSH_PASS+x}" ]; then
             export SSHPASS="$AUDITXS_SSH_PASS"
         else

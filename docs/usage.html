@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.17.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.18.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg active" href="usage.html">User manual</a>
@@ -193,7 +193,20 @@ sudo auditxs update                 # apply pending SECURITY updates (asks first
 sudo auditxs update --all           # a full upgrade (asks first)
 sudo auditxs update --security --yes # non-interactive (automation)</code></pre>
 <p><code>update</code> previews the change list first, then applies on consent (or <code>--yes</code>). It defaults to <strong>security</strong> updates; <code>--all</code> does a full upgrade. On Arch only a full <code>pacman -Syu</code> is supported (partial upgrades are unsupported there).</p>
-<blockquote><p><strong>Important:</strong> a package upgrade is <strong>not reversible</strong> by <code>auditxs rollback</code> — the snapshot engine cannot undo a software upgrade. <code>update</code> says so and is deliberately kept out of the harden/rollback flow. It records start/finish in the change ledger (<code>/var/lib/auditxs/changes.log</code>).</p></blockquote>
+<h3 id="rolling-updates-back-with-timeshift">Rolling updates back with Timeshift</h3>
+<p>A package upgrade is <strong>not reversible</strong> by <code>auditxs rollback</code> — the snapshot engine can restore a config file, but not a whole installed-software set. So AuditXS integrates with <strong><a href="https://github.com/linuxmint/timeshift">Timeshift</a></strong>, which snapshots the <em>filesystem</em> (rsync or BTRFS) and can restore the system — packages and all.</p>
+<ul>
+<li>When Timeshift is installed <strong>and configured</strong>, <code>auditxs update</code> takes a system snapshot <strong>before</strong> applying anything (labelled <code>AuditXS pre-update …</code>). Force it with <code>--snapshot</code>; skip it with <code>--no-snapshot</code>.</li>
+<li>If something breaks, roll the whole update back:</li>
+</ul>
+<p>``<code>bash sudo timeshift --list       # see the snapshots sudo timeshift --restore    # pick the AuditXS pre-update snapshot </code>``</p>
+<ul>
+<li>Install/prepare Timeshift once:</li>
+</ul>
+<p>``<code>bash sudo auditxs tools install timeshift sudo timeshift --create      # first run: choose a backup device </code>``</p>
+<p>Without Timeshift, <code>update</code> still works but warns that the change can't be rolled back. Either way it records start/finish in the change ledger (<code>/var/lib/auditxs/changes.log</code>).</p>
+<h3 id="fixing-pending-updates-from-the-audit">Fixing pending updates from the audit</h3>
+<p>Because Timeshift makes the change recoverable, <strong>UPD-001 ("no pending updates") is now a fixable finding</strong>: the <strong>Fix it</strong> button (in the report and GUIs) — or <code>sudo auditxs harden --check UPD-001</code> — takes a Timeshift snapshot, then applies the pending updates. If Timeshift isn't installed/configured the fix declines with guidance (so the harden flow never makes an unrecoverable change). To reverse it, restore the snapshot with <code>sudo timeshift --restore</code>.</p>
 <p><strong>To patch automatically</strong>, choose either:</p>
 <ul>
 <li><strong>Let the OS do it</strong> — the <code>UPD-002</code> control ("automatic security updates") is a <em>reversible</em> hardening fix: applying it installs and enables the distribution's own mechanism (<code>unattended-upgrades</code> on Debian/Ubuntu/Pop!_OS, <code>dnf-automatic</code> on Fedora). The system then patches itself, and <code>auditxs rollback</code> can undo the configuration.</li>

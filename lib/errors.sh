@@ -111,6 +111,9 @@ _ax_def AX5004 "SCAP content not found" \
 _ax_def AX5005 "Package update failed" \
     "The distribution package manager returned an error while applying updates ('auditxs update')." \
     "Check network/repository access and disk space; run the package manager by hand to see the full error, then retry."
+_ax_def AX5006 "Timeshift snapshot failed" \
+    "AuditXS could not create a Timeshift system snapshot before updating, so the update was not applied (it would not be recoverable)." \
+    "Install and configure Timeshift ('sudo auditxs tools install timeshift', then 'sudo timeshift --create' once to pick a backup device). To update without a snapshot, pass --no-snapshot (not recommended)."
 
 # ---- AX6xxx — fleet / SSH -------------------------------------------------
 _ax_def AX6001 "Cannot reach host" \
@@ -190,6 +193,15 @@ ax_die() { ax_error "$@"; exit 1; }
 _ax_ledger() {
     local dir; dir=$(dirname "$AX_ERROR_LEDGER")
     [ -d "$dir" ] || mkdir -p "$dir" 2>/dev/null || return 0
+    # Only write if we actually can. An unprivileged run (e.g. fleet launched
+    # from a GUI) cannot append to the root-owned ledger; check writability
+    # first so bash never tries to open it — a failed '>>' open prints a
+    # "Permission denied" line that 2>/dev/null cannot suppress.
+    if [ -e "$AX_ERROR_LEDGER" ]; then
+        [ -w "$AX_ERROR_LEDGER" ] || return 0
+    else
+        [ -w "$dir" ] || return 0
+    fi
     printf '%s\t%s\t%s\t%s\n' "$(date -Is 2>/dev/null)" "$1" "${HOSTNAME:-$(hostname 2>/dev/null)}" "$2" \
         >> "$AX_ERROR_LEDGER" 2>/dev/null
     return 0

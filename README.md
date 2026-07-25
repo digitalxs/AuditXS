@@ -8,13 +8,13 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.17.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.18.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![Checks](https://img.shields.io/badge/checks-122-8957e5)](docs/CHECKS.md)
 [![Frameworks](https://img.shields.io/badge/NIST%20CSF%202.0%20·%20CIS%20·%20STIG-informational)](docs/COMPLIANCE.md)
 
-**Current version: v0.17.0** — see the [changelog](CHANGELOG.md)
+**Current version: v0.18.0** — see the [changelog](CHANGELOG.md)
 
 **Debian** · **Ubuntu** · **Pop!\_OS** · **Arch** · **Fedora** · **openSUSE** *(and derivatives)*
 
@@ -112,7 +112,8 @@ auditxs diff old.json new.json         compare two reports (exits 1 on regressio
 
 sudo auditxs cve                       warn about installed packages with a known CVE
 sudo auditxs update --dry-run          preview pending updates (security by default)
-sudo auditxs update                    apply pending security updates (asks first)
+sudo auditxs update                    apply security updates (Timeshift-snapshotted, asks first)
+sudo timeshift --restore               roll an update back (whole-system snapshot)
 sudo auditxs tools status              inventory of installed security tooling
 sudo auditxs tools install lynis       install a security tool (reversible)
 sudo auditxs tools scan                run installed scanners (Lynis, rkhunter, …)
@@ -291,7 +292,7 @@ rather than reinventing it — all through the same reversible interface:
 - **`auditxs tools scan`** — runs the installed scanners (including ClamAV and an auto-selected OpenSCAP CIS/STIG profile) and collects their reports under `/var/lib/auditxs/reports/tools/` for cross-verification.
 - **`auditxs tools vpn`** — reviews WireGuard / OpenVPN configuration (private-key permissions, weak ciphers, HMAC).
 - **`auditxs cve`** — warns when an installed package has a **known vulnerability with a fix available**, using the distribution's own security data (Debian debsecan, Fedora `dnf updateinfo`, openSUSE `zypper patches`).
-- **`auditxs update`** — applies pending updates (**security** by default, `--all` for a full upgrade). Previews the change list first and asks before applying. A package upgrade is **not reversible** by `rollback`, so it's kept separate from the harden flow and says so. To patch **automatically**, apply the reversible `UPD-002` control (enables the OS's own auto-updates) or set `AUTO_UPDATE=1` so scheduled audits patch on their own.
+- **`auditxs update`** — applies pending updates (**security** by default, `--all` for a full upgrade). Previews first and asks before applying. Because a package upgrade isn't reversible by `rollback`, it integrates with **Timeshift**: when Timeshift is configured it takes a whole-system snapshot **before** updating, so you can undo it with `sudo timeshift --restore`. On this basis **UPD-001 is a fixable finding** — the *Fix it* button snapshots then updates. To patch **automatically**, apply the reversible `UPD-002` control (enables the OS's own auto-updates) or set `AUTO_UPDATE=1` so scheduled audits patch on their own.
 
 ---
 

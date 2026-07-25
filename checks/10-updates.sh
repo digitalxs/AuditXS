@@ -7,7 +7,9 @@
 
 register_check "UPD-001" "Updates" "medium" "server,workstation" \
     "No pending package updates"
-set_meta UPD-001 desc "Counts package updates pending in the package manager's cache. Unpatched software is the most common initial access vector; known vulnerabilities in outdated packages are actively exploited. AuditXS never upgrades packages itself because upgrades are not reversible — this check only reports."
+set_meta UPD-001 desc "Counts package updates pending in the package manager's cache. Unpatched software is the most common initial access vector; known vulnerabilities in outdated packages are actively exploited. The fix applies the pending updates — but only after taking a Timeshift system snapshot, because package upgrades cannot be undone by the AuditXS snapshot engine."
+set_meta UPD-001 fix "Takes a Timeshift system snapshot ('AuditXS pre-update …'), then applies all pending updates with the distribution package manager. Timeshift is REQUIRED so the change stays recoverable; if it is not installed/configured the fix declines with guidance. You can also run 'sudo auditxs update' directly."
+set_meta UPD-001 revert "This is the one fix NOT reversed by 'auditxs rollback' — a package upgrade is not something the snapshot engine can undo. Instead restore the Timeshift snapshot taken just before it: 'sudo timeshift --restore' (or 'sudo timeshift --list' to choose)."
 
 audit_UPD_001() {
     local n
@@ -20,8 +22,32 @@ audit_UPD_001() {
         DETAIL="No pending updates in the package cache"
         return 0
     fi
-    DETAIL="$n package update(s) pending (based on the local package cache). Apply them with your package manager — AuditXS never upgrades packages automatically."
+    DETAIL="$n package update(s) pending (based on the local package cache). Fix applies them after a Timeshift snapshot; or run 'sudo auditxs update'."
     return 2
+}
+
+# The update fix is deliberately gated on Timeshift: package upgrades are not
+# reversible by 'auditxs rollback', so we only apply them inside the (otherwise
+# fully reversible) harden flow when Timeshift can snapshot the system first.
+fix_UPD_001() {
+    if ! timeshift_available; then
+        DETAIL="Timeshift is not installed — required so the update stays reversible. Install it (sudo auditxs tools install timeshift) and run 'sudo timeshift --create' once, or apply updates with 'sudo auditxs update'."
+        return 1
+    fi
+    if ! timeshift_configured; then
+        DETAIL="Timeshift is installed but not configured. Run 'sudo timeshift --create' once to choose a backup device, then re-run this fix."
+        return 1
+    fi
+    timeshift_snapshot "AuditXS pre-update (UPD-001 fix)" || {
+        DETAIL="Timeshift snapshot failed — update aborted to stay recoverable (see AX5006)."
+        return 1
+    }
+    if _update_apply all; then
+        DETAIL="Pending updates applied after a Timeshift snapshot. Roll back with 'sudo timeshift --restore' if needed; a reboot may be required (UPD-003)."
+        return 0
+    fi
+    DETAIL="Package manager reported an error while updating (see AX5005). The Timeshift snapshot is available to restore."
+    return 1
 }
 
 register_check "UPD-002" "Updates" "high" "server,workstation" \

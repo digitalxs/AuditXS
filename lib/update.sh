@@ -22,6 +22,48 @@
 # Part of AuditXS — https://github.com/digitalxs/AuditXS
 #
 
+# ---------------------------------------------------------------- Timeshift
+# Timeshift makes a package update recoverable: a filesystem snapshot taken
+# BEFORE the update can be restored afterwards (something the AuditXS snapshot
+# engine cannot do for upgrades). When Timeshift is present, `auditxs update`
+# snapshots first by default; the update fix (UPD-001) requires it.
+
+timeshift_available() { have timeshift; }
+
+# timeshift_configured — Timeshift has a backup device/config set up. Without
+# this, --create fails; we detect it so we can guide the user to configure it.
+timeshift_configured() {
+    [ -f /etc/timeshift/timeshift.json ] || [ -f /etc/timeshift.json ]
+}
+
+# timeshift_snapshot <comment> — create an on-demand system snapshot. Honours
+# dry-run. Returns non-zero (AX5006) if it cannot.
+timeshift_snapshot() {
+    local comment=$1
+    timeshift_available || { ax_error AX5006 "timeshift not installed"; return 1; }
+    if ! timeshift_configured; then
+        ax_error AX5006 "timeshift is not configured (run 'sudo timeshift --create' once to pick a backup device)"
+        return 1
+    fi
+    say ""
+    info "Creating a Timeshift snapshot so these updates can be rolled back…"
+    # --scripted: non-interactive; tag O = on-demand (kept out of the daily set).
+    xrun timeshift --create --comments "$comment" --scripted --tags O || {
+        ax_error AX5006 "timeshift --create failed"
+        return 1
+    }
+    ledger "timeshift snapshot created before update ($comment)"
+    return 0
+}
+
+# timeshift_restore_hint — print how to undo the update with Timeshift.
+timeshift_restore_hint() {
+    say ""
+    info "To roll these updates back, restore the snapshot taken just now:"
+    say "    ${BOLD}sudo timeshift --restore${RC}      (pick the 'AuditXS pre-update …' snapshot)"
+    say "    ${DIM}list snapshots:  sudo timeshift --list${RC}"
+}
+
 # _update_preview — list what would be updated (strictly read-only).
 _update_preview() {
     case $PKG in
@@ -90,15 +132,17 @@ _update_apply() {
 # cmd_update [--all|--security] [--dry-run] [--yes] — apply pending updates.
 cmd_update() {
     require_root update
-    local scope=security
+    local scope=security snapshot=auto
     while [ $# -gt 0 ]; do
         case $1 in
-            --all|--full)  scope=all ;;
-            --security)    scope=security ;;
-            --dry-run)     DRYRUN=1 ;;
-            --yes|-y)      ASSUME_YES=1 ;;
-            -*)            die "update: unknown option '$1' (see 'auditxs help')" ;;
-            *)             die "update: unexpected argument '$1'" ;;
+            --all|--full)   scope=all ;;
+            --security)     scope=security ;;
+            --snapshot)     snapshot=force ;;   # require a Timeshift snapshot
+            --no-snapshot)  snapshot=off ;;     # skip it (not recommended)
+            --dry-run)      DRYRUN=1 ;;
+            --yes|-y)       ASSUME_YES=1 ;;
+            -*)             die "update: unknown option '$1' (see 'auditxs help')" ;;
+            *)              die "update: unexpected argument '$1'" ;;
         esac
         shift
     done
@@ -119,22 +163,42 @@ cmd_update() {
     info "These packages would be updated (${scope}):"
     printf '%s\n' "$preview"
     say ""
-    warn "Package upgrades are ${BOLD}NOT reversible${RC} by 'auditxs rollback' — the snapshot engine cannot undo a software upgrade. Make sure you have backups before proceeding."
+
+    # Decide whether a Timeshift snapshot will guard this update.
+    local will_snapshot=0
+    case $snapshot in
+        force) will_snapshot=1 ;;
+        auto)  timeshift_available && timeshift_configured && will_snapshot=1 ;;
+        off)   will_snapshot=0 ;;
+    esac
+    if [ "$will_snapshot" = 1 ]; then
+        ok "A Timeshift snapshot will be taken first — these updates ${BOLD}can be rolled back${RC} (sudo timeshift --restore)."
+    else
+        warn "Package upgrades are ${BOLD}NOT reversible${RC} by 'auditxs rollback', and no Timeshift snapshot will be taken. Install Timeshift (${BOLD}sudo auditxs tools install timeshift${RC}) for one-command rollback, or make a backup first."
+    fi
     [ "$DRYRUN" = 1 ] && info "${BOLD}DRY-RUN:${RC} the commands below are shown but nothing is executed."
 
     if [ "$DRYRUN" != 1 ]; then
         confirm "Apply these ${scope} updates now?" || { info "Cancelled — nothing was changed."; return 0; }
     fi
 
-    ledger "package update started (scope=$scope, pending=$n)"
+    # Snapshot BEFORE touching packages. If it was explicitly required (--snapshot
+    # or the auto path found Timeshift) and fails, abort — staying recoverable.
+    if [ "$will_snapshot" = 1 ]; then
+        timeshift_snapshot "AuditXS pre-update $(date '+%F %H:%M') (scope=$scope)" || return 1
+    fi
+
+    ledger "package update started (scope=$scope, pending=$n, snapshot=$will_snapshot)"
     if _update_apply "$scope"; then
         if [ "$DRYRUN" != 1 ]; then
             ok "Updates applied. A reboot may be required to activate them — check ${BOLD}auditxs audit${RC} (UPD-003)."
+            [ "$will_snapshot" = 1 ] && timeshift_restore_hint
             ledger "package update completed (scope=$scope)"
         fi
         return 0
     fi
     ax_error AX5005 "scope=$scope distro=$DISTRO_FAMILY"
+    [ "$will_snapshot" = 1 ] && { warn "The update failed after a snapshot was taken — restore it if the system is in a bad state:"; timeshift_restore_hint; }
     ledger "package update FAILED (scope=$scope)"
     return 1
 }

@@ -37,6 +37,7 @@ _tool_pkg() {
         firejail)      echo firejail ;;
         logwatch)      echo logwatch ;;
         acct)          echo acct ;;               # process accounting (lastcomm/sa)
+        timeshift)     echo timeshift ;;          # system snapshots (undo package updates)
         crowdsec)      echo crowdsec ;;           # may need the CrowdSec repo
         auditd)        case $DISTRO_FAMILY in debian) echo auditd ;; *) echo audit ;; esac ;;
         *)             echo "" ;;

@@ -163,6 +163,13 @@ tt "ax_error returns non-zero"       no  ax_error AX9000 2>/dev/null
 mdrows=$(cmd_errors --markdown | grep -c '| `AX')
 t "errors --markdown emits rows"     yes "$([ "$mdrows" -ge 20 ] && echo yes || echo no)"
 tt "ax_error wrote to the ledger"    yes test -s "$TMPD/errors.log"
+# Unprivileged / unwritable ledger must be silent (no "Permission denied" leak)
+# and still return success. An impossible path stands in for a root-owned file.
+_saved_ledger=$AX_ERROR_LEDGER
+AX_ERROR_LEDGER="/proc/auditxs-nope/errors.log"
+t "ledger silent when unwritable"    "" "$(_ax_ledger AX6004 test 2>&1)"
+tt "ledger returns success anyway"   yes _ax_ledger AX6004 test
+AX_ERROR_LEDGER=$_saved_ledger
 
 # ---- waivers (lib/waivers.sh) --------------------------------------------
 AX_WAIVERS_FILE="$TMPD/waivers.conf"
@@ -248,6 +255,23 @@ t "dnf all omits --security"     "no"  "$(DRYRUN=1 PKG=dnf;    _update_apply all
 t "pacman is always full -Syu"   "yes" "$(DRYRUN=1 PKG=pacman; _update_apply security 2>&1 | grep -q 'pacman -Syu' && echo yes || echo no)"
 t "zypper security patches"      "yes" "$(DRYRUN=1 PKG=zypper; _update_apply security 2>&1 | grep -q 'patch --category security' && echo yes || echo no)"
 t "unknown pkg mgr → error rc"   "1"   "$(DRYRUN=1 PKG=none;   _update_apply all >/dev/null 2>&1; echo $?)"
+
+# ---- Timeshift integration (lib/update.sh) -------------------------------
+# timeshift_snapshot builds a scripted on-demand snapshot; run it with the
+# availability/config checks stubbed so no real timeshift is needed.
+t "timeshift snapshot command" "yes" "$(
+    DRYRUN=1
+    timeshift_available()  { return 0; }
+    timeshift_configured() { return 0; }
+    timeshift_snapshot 'AuditXS test' 2>&1 | grep -q 'timeshift --create --comments AuditXS test --scripted --tags O' && echo yes || echo no
+)"
+t "timeshift snapshot requires timeshift" "1" "$(
+    DRYRUN=1
+    timeshift_available() { return 1; }
+    timeshift_snapshot 'x' >/dev/null 2>&1; echo $?
+)"
+t "timeshift restore hint mentions --restore" "yes" \
+    "$(QUIET=0 timeshift_restore_hint 2>&1 | grep -q 'timeshift --restore' && echo yes || echo no)"
 
 # ---- Qt runtime preflight (dispatcher helpers) ---------------------------
 # The helpers live in the `auditxs` dispatcher, not a lib; pull just that block.

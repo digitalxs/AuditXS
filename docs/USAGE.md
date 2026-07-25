@@ -206,10 +206,44 @@ sudo auditxs update --security --yes # non-interactive (automation)
 It defaults to **security** updates; `--all` does a full upgrade. On Arch only
 a full `pacman -Syu` is supported (partial upgrades are unsupported there).
 
-> **Important:** a package upgrade is **not reversible** by `auditxs rollback`
-> — the snapshot engine cannot undo a software upgrade. `update` says so and is
-> deliberately kept out of the harden/rollback flow. It records start/finish in
-> the change ledger (`/var/lib/auditxs/changes.log`).
+### Rolling updates back with Timeshift
+
+A package upgrade is **not reversible** by `auditxs rollback` — the snapshot
+engine can restore a config file, but not a whole installed-software set. So
+AuditXS integrates with **[Timeshift](https://github.com/linuxmint/timeshift)**,
+which snapshots the *filesystem* (rsync or BTRFS) and can restore the system —
+packages and all.
+
+- When Timeshift is installed **and configured**, `auditxs update` takes a
+  system snapshot **before** applying anything (labelled
+  `AuditXS pre-update …`). Force it with `--snapshot`; skip it with
+  `--no-snapshot`.
+- If something breaks, roll the whole update back:
+
+  ```bash
+  sudo timeshift --list       # see the snapshots
+  sudo timeshift --restore    # pick the AuditXS pre-update snapshot
+  ```
+
+- Install/prepare Timeshift once:
+
+  ```bash
+  sudo auditxs tools install timeshift
+  sudo timeshift --create      # first run: choose a backup device
+  ```
+
+Without Timeshift, `update` still works but warns that the change can't be
+rolled back. Either way it records start/finish in the change ledger
+(`/var/lib/auditxs/changes.log`).
+
+### Fixing pending updates from the audit
+
+Because Timeshift makes the change recoverable, **UPD-001 ("no pending
+updates") is now a fixable finding**: the **Fix it** button (in the report and
+GUIs) — or `sudo auditxs harden --check UPD-001` — takes a Timeshift snapshot,
+then applies the pending updates. If Timeshift isn't installed/configured the
+fix declines with guidance (so the harden flow never makes an unrecoverable
+change). To reverse it, restore the snapshot with `sudo timeshift --restore`.
 
 **To patch automatically**, choose either:
 

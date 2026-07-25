@@ -1,6 +1,6 @@
 # AuditXS check catalogue
 
-Generated from the check registry by `auditxs list --markdown` (v0.17.0).
+Generated from the check registry by `auditxs list --markdown` (v0.18.0).
 
 Legend: checks with an **automatic fix** are only ever applied by
 `auditxs harden` after showing you exactly what will change, and every
@@ -15,9 +15,13 @@ change is recorded in a snapshot that `auditxs rollback` can restore.
 - **Profiles:** server,workstation
 - **CIS Benchmark:** 1.9 · **Level:** 1
 - **NIST CSF 2.0:** ID.RA-01, PR.PS-02
-- **Fix:** manual (report-only)
+- **Fix:** automatic (reversible)
 
-Counts package updates pending in the package manager's cache. Unpatched software is the most common initial access vector; known vulnerabilities in outdated packages are actively exploited. AuditXS never upgrades packages itself because upgrades are not reversible — this check only reports.
+Counts package updates pending in the package manager's cache. Unpatched software is the most common initial access vector; known vulnerabilities in outdated packages are actively exploited. The fix applies the pending updates — but only after taking a Timeshift system snapshot, because package upgrades cannot be undone by the AuditXS snapshot engine.
+
+**What the fix changes:** Takes a Timeshift system snapshot ('AuditXS pre-update …'), then applies all pending updates with the distribution package manager. Timeshift is REQUIRED so the change stays recoverable; if it is not installed/configured the fix declines with guidance. You can also run 'sudo auditxs update' directly.
+
+**How it is reverted:** This is the one fix NOT reversed by 'auditxs rollback' — a package upgrade is not something the snapshot engine can undo. Instead restore the Timeshift snapshot taken just before it: 'sudo timeshift --restore' (or 'sudo timeshift --list' to choose).
 
 ### UPD-002 — Automatic security updates are enabled
 
