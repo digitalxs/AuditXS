@@ -7,6 +7,17 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.14.1]
+
+### Fixed
+- **Qt GUI: no concurrent privileged operations.** The "Run audit" button and
+  the Fix it / Feature-toggle / Roll back initiators were disabled only while
+  an audit was running, not while a background Ops/Tools/Fleet operation was —
+  so a second elevated `auditxs` process could be launched over a running one
+  (both writing the shared progress file and potentially both touching
+  snapshots). A single `busy` guard now gates every action initiator, so only
+  one operation runs at a time.
+
 ## [0.14.0]
 
 A major GUI release — the graphical interfaces reach feature parity with the

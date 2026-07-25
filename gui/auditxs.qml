@@ -43,11 +43,15 @@ ApplicationWindow {
     property string appVersion: "?"
     property string appProfile: "?"
     property string appHost: "?"
+    // One operation at a time: an audit, an Ops/Tools/Fleet run, or an applied
+    // fix. Every action initiator is gated on this so two privileged auditxs
+    // processes never run at once (they share the progress file and snapshots).
+    property bool busy: auditRunning || opRunning
 
     // Run any whitelisted auditxs operation asynchronously; progress shows in
     // the status bar and the output opens in a dialog when done.
     function runOp(args, label, showDialog) {
-        if (win.opRunning || win.auditRunning) return;
+        if (win.busy) return;
         if (!backend.opStart(JSON.stringify(args))) return;
         win.opRunning = true; win.opPct = 0; win.opLabel = label;
         win.opShowDialog = (showDialog === undefined) ? true : showDialog;
@@ -104,7 +108,7 @@ ApplicationWindow {
     }
 
     function refreshAudit() {
-        if (auditRunning) return;
+        if (busy) return;
         auditRunning = true; auditPct = 0; auditCheck = "";
         chips.text = "Auditing (read-only — nothing is changed)…";
         backend.auditStart();
@@ -242,7 +246,7 @@ ApplicationWindow {
                 Item { Layout.fillWidth: true }   // draggable gap
                 Button {
                     text: win.auditRunning ? win.auditPct + "%" : "Run audit"
-                    enabled: !win.auditRunning
+                    enabled: !win.busy
                     highlighted: true; focusPolicy: Qt.NoFocus; onClicked: refreshAudit()
                 }
                 Item { width: 10 }
@@ -315,6 +319,7 @@ ApplicationWindow {
                         }
                         Button {
                             visible: status === "FAIL" || status === "WARN"
+                            enabled: !win.busy
                             text: (status === "FAIL" && fixable) ? "Fix it" : "How to fix"
                             highlighted: status === "FAIL" && fixable
                             focusPolicy: Qt.NoFocus
@@ -354,7 +359,7 @@ ApplicationWindow {
                         }
                         Switch {
                             checked: status === "PASS"
-                            enabled: status !== "PASS"   // already-on controls: turn off via Snapshots
+                            enabled: status !== "PASS" && !win.busy   // already-on controls: turn off via Snapshots
                             onClicked: {
                                 checked = false;          // don't flip until confirmed
                                 reviewDialog.cid = id;
@@ -377,7 +382,7 @@ ApplicationWindow {
                         spacing: 12
                         Label { text: id + "   " + date + "   " + actions + " action(s) · " + status; Layout.fillWidth: true }
                         Button {
-                            text: "Roll back"; enabled: status === "applied"
+                            text: "Roll back"; enabled: status === "applied" && !win.busy
                             onClicked: { rollbackDialog.sid = id; rollbackDialog.open(); }
                         }
                     }
@@ -395,9 +400,9 @@ ApplicationWindow {
                 }
                 Flow {
                     Layout.fillWidth: true; Layout.leftMargin: 16; spacing: 8
-                    Button { text: "Tool status";  enabled: !win.opRunning; onClicked: runOp(["tools", "status"], "Security tool status") }
-                    Button { text: "Run scanners"; enabled: !win.opRunning; onClicked: runOp(["tools", "scan"], "Scanner results") }
-                    Button { text: "VPN review";   enabled: !win.opRunning; onClicked: runOp(["tools", "vpn"], "VPN configuration review") }
+                    Button { text: "Tool status";  enabled: !win.busy; onClicked: runOp(["tools", "status"], "Security tool status") }
+                    Button { text: "Run scanners"; enabled: !win.busy; onClicked: runOp(["tools", "scan"], "Scanner results") }
+                    Button { text: "VPN review";   enabled: !win.busy; onClicked: runOp(["tools", "vpn"], "VPN configuration review") }
                 }
                 Item { Layout.fillHeight: true }
             }
@@ -483,20 +488,20 @@ ApplicationWindow {
                 }
                 Flow {
                     Layout.fillWidth: true; Layout.leftMargin: 12; Layout.rightMargin: 12; spacing: 8
-                    Button { text: "CVE scan";        enabled: !win.opRunning; onClicked: runOp(["cve"], "CVE / vulnerability warnings") }
-                    Button { text: "Doctor";          enabled: !win.opRunning; onClicked: runOp(["doctor"], "Installation diagnosis") }
-                    Button { text: "Open HTML report"; enabled: !win.opRunning
+                    Button { text: "CVE scan";        enabled: !win.busy; onClicked: runOp(["cve"], "CVE / vulnerability warnings") }
+                    Button { text: "Doctor";          enabled: !win.busy; onClicked: runOp(["doctor"], "Installation diagnosis") }
+                    Button { text: "Open HTML report"; enabled: !win.busy
                         onClicked: { var e = backend.openReport(); if (e.length) { opText.text = e; opDialog.title = "Report"; opDialog.open(); } } }
-                    Button { text: "Schedule status"; enabled: !win.opRunning; onClicked: runOp(["schedule", "status"], "Scheduled audits") }
-                    Button { text: "Enable daily audit";  enabled: !win.opRunning; onClicked: runOp(["schedule", "enable"], "Enable scheduled audits") }
-                    Button { text: "Disable daily audit"; enabled: !win.opRunning; onClicked: runOp(["schedule", "disable"], "Disable scheduled audits") }
-                    Button { text: "Baseline: approve latest"; enabled: !win.opRunning; onClicked: runOp(["baseline", "set"], "Approve baseline") }
-                    Button { text: "Baseline: show";  enabled: !win.opRunning; onClicked: runOp(["baseline", "show"], "Approved baseline") }
-                    Button { text: "Waivers";         enabled: !win.opRunning; onClicked: runOp(["waivers"], "Accepted-risk waivers") }
-                    Button { text: "Alert status";    enabled: !win.opRunning; onClicked: runOp(["alert", "status"], "Alert sinks") }
-                    Button { text: "Alert test";      enabled: !win.opRunning; onClicked: runOp(["alert", "test"], "Alert test") }
-                    Button { text: "Error catalogue"; enabled: !win.opRunning; onClicked: runOp(["errors"], "Error catalogue") }
-                    Button { text: "Check catalogue"; enabled: !win.opRunning; onClicked: runOp(["list"], "Check catalogue") }
+                    Button { text: "Schedule status"; enabled: !win.busy; onClicked: runOp(["schedule", "status"], "Scheduled audits") }
+                    Button { text: "Enable daily audit";  enabled: !win.busy; onClicked: runOp(["schedule", "enable"], "Enable scheduled audits") }
+                    Button { text: "Disable daily audit"; enabled: !win.busy; onClicked: runOp(["schedule", "disable"], "Disable scheduled audits") }
+                    Button { text: "Baseline: approve latest"; enabled: !win.busy; onClicked: runOp(["baseline", "set"], "Approve baseline") }
+                    Button { text: "Baseline: show";  enabled: !win.busy; onClicked: runOp(["baseline", "show"], "Approved baseline") }
+                    Button { text: "Waivers";         enabled: !win.busy; onClicked: runOp(["waivers"], "Accepted-risk waivers") }
+                    Button { text: "Alert status";    enabled: !win.busy; onClicked: runOp(["alert", "status"], "Alert sinks") }
+                    Button { text: "Alert test";      enabled: !win.busy; onClicked: runOp(["alert", "test"], "Alert test") }
+                    Button { text: "Error catalogue"; enabled: !win.busy; onClicked: runOp(["errors"], "Error catalogue") }
+                    Button { text: "Check catalogue"; enabled: !win.busy; onClicked: runOp(["list"], "Check catalogue") }
                 }
                 Item { Layout.fillHeight: true }
             }
