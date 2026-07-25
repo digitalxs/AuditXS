@@ -39,6 +39,7 @@ ApplicationWindow {
     property string opLabel: ""
     property bool opShowDialog: true
     property bool opAfterFleet: false
+    property bool opAfterTools: false
     property bool consoleOpen: false
     property string appVersion: "?"
     property string appProfile: "?"
@@ -66,6 +67,20 @@ ApplicationWindow {
                                            sudo: fleetSudo.checked }));
     }
 
+    function refreshTools() {
+        toolsModel.clear();
+        var ts = JSON.parse(backend.toolsState());
+        for (var i = 0; i < ts.length; i++) toolsModel.append(ts[i]);
+    }
+
+    // Run a per-tool op; refresh the tool list when it finishes.
+    function runToolOp(name, action) {
+        if (win.busy) return;
+        win.opAfterTools = true;
+        runOp(["tools", action, name],
+              action.charAt(0).toUpperCase() + action.slice(1) + " " + name);
+    }
+
     function loadFleet() {
         var c = JSON.parse(backend.fleetConfig());
         fleetModel.clear();
@@ -87,6 +102,7 @@ ApplicationWindow {
                     win.opAfterFleet = false;
                     fleetOverviewBtn.visible = backend.fleetOverview().length > 0;
                 }
+                if (win.opAfterTools) { win.opAfterTools = false; refreshTools(); }
                 if (win.opShowDialog) {
                     opText.text = s.output && s.output.length ? s.output : "(no output)";
                     opDialog.title = win.opLabel;
@@ -389,22 +405,52 @@ ApplicationWindow {
                 }
             }
 
-            // --- Tools ---
+            // --- Tools (per-tool install / uninstall / repair) ---
             ColumnLayout {
-                spacing: 8
-                Label {
-                    padding: 16; wrapMode: Text.WordWrap; Layout.fillWidth: true; opacity: 0.8
-                    text: "Inventory, run and review the integrated security tools (Lynis, rkhunter, "
-                        + "AIDE, ClamAV, OpenSCAP, …). Installing a tool is reversible like every "
-                        + "other change — use the Console for 'auditxs tools install <tool>'."
-                }
+                spacing: 6
                 Flow {
-                    Layout.fillWidth: true; Layout.leftMargin: 16; spacing: 8
-                    Button { text: "Tool status";  enabled: !win.busy; onClicked: runOp(["tools", "status"], "Security tool status") }
+                    Layout.fillWidth: true; Layout.leftMargin: 12; Layout.topMargin: 8; spacing: 8
                     Button { text: "Run scanners"; enabled: !win.busy; onClicked: runOp(["tools", "scan"], "Scanner results") }
                     Button { text: "VPN review";   enabled: !win.busy; onClicked: runOp(["tools", "vpn"], "VPN configuration review") }
+                    Button { text: "Refresh";      enabled: !win.busy; onClicked: refreshTools() }
                 }
-                Item { Layout.fillHeight: true }
+                Label {
+                    Layout.leftMargin: 12; Layout.rightMargin: 12; Layout.fillWidth: true
+                    wrapMode: Text.WordWrap; opacity: 0.7; font.pixelSize: 11
+                    text: "Install lays down a tool + defaults · Repair reinstalls with fresh configuration · Uninstall removes it (stopping its service first)."
+                }
+                ListView {
+                    Layout.fillWidth: true; Layout.fillHeight: true; clip: true
+                    model: ListModel { id: toolsModel }
+                    delegate: ItemDelegate {
+                        width: ListView.view ? ListView.view.width : 0
+                        contentItem: RowLayout {
+                            spacing: 8
+                            Label { text: name; font.family: "monospace"; Layout.fillWidth: true }
+                            Rectangle {
+                                radius: 5; implicitWidth: 74; implicitHeight: 20
+                                color: installed ? "#12331f" : "#33343d"
+                                Label { anchors.centerIn: parent; text: installed ? "installed" : "absent"
+                                    color: installed ? "#7fd99b" : "#a8abb4"; font.pixelSize: 10; font.bold: true }
+                            }
+                            Button {
+                                visible: !installed; text: "Install"; highlighted: true
+                                enabled: !win.busy; focusPolicy: Qt.NoFocus
+                                onClicked: runToolOp(name, "install")
+                            }
+                            Button {
+                                visible: installed; text: "Repair"
+                                enabled: !win.busy; focusPolicy: Qt.NoFocus
+                                onClicked: { toolConfirm.tool = name; toolConfirm.act = "repair"; toolConfirm.open(); }
+                            }
+                            Button {
+                                visible: installed; text: "Uninstall"
+                                enabled: !win.busy; focusPolicy: Qt.NoFocus
+                                onClicked: { toolConfirm.tool = name; toolConfirm.act = "uninstall"; toolConfirm.open(); }
+                            }
+                        }
+                    }
+                }
             }
 
             // --- Fleet (audit remote hosts over SSH — read-only) ---
@@ -631,6 +677,25 @@ ApplicationWindow {
         }
     }
 
+    // Confirm destructive tool actions (repair replaces config; uninstall removes).
+    Dialog {
+        id: toolConfirm
+        property string tool: ""
+        property string act: ""
+        anchors.centerIn: parent
+        width: Math.min(win.width - 80, 480)
+        modal: true
+        title: (toolConfirm.act === "repair" ? "Repair " : "Uninstall ") + toolConfirm.tool + "?"
+        standardButtons: Dialog.Ok | Dialog.Cancel
+        onAccepted: runToolOp(toolConfirm.tool, toolConfirm.act)
+        Label {
+            width: parent.width; wrapMode: Text.WordWrap
+            text: toolConfirm.act === "repair"
+                ? ("Reinstall " + toolConfirm.tool + " with fresh default configuration? This replaces its current configuration files.")
+                : ("Remove " + toolConfirm.tool + " (its service is stopped and disabled first)?")
+        }
+    }
+
     // Applying package updates is NOT snapshot-reversible — confirm explicitly.
     Dialog {
         id: updateDialog
@@ -726,6 +791,7 @@ ApplicationWindow {
         win.appProfile = m.profile || "?";
         win.appHost = m.host || "?";
         loadFleet();
+        refreshTools();
         refreshAudit();
     }
 }

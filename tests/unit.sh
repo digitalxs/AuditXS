@@ -256,6 +256,14 @@ t "pacman is always full -Syu"   "yes" "$(DRYRUN=1 PKG=pacman; _update_apply sec
 t "zypper security patches"      "yes" "$(DRYRUN=1 PKG=zypper; _update_apply security 2>&1 | grep -q 'patch --category security' && echo yes || echo no)"
 t "unknown pkg mgr → error rc"   "1"   "$(DRYRUN=1 PKG=none;   _update_apply all >/dev/null 2>&1; echo $?)"
 
+# ---- security-tool management (lib/tools.sh) -----------------------------
+t  "tools_list includes lynis"     "yes" "$(tools_list | grep -qw lynis && echo yes || echo no)"
+t  "tools_list includes timeshift" "yes" "$(tools_list | grep -qw timeshift && echo yes || echo no)"
+t  "fail2ban maps to its service"  "fail2ban" "$(_tool_service fail2ban)"
+t  "clamav service is freshclam"   "clamav-freshclam" "$(_tool_service clamav)"
+t  "a tool with no service"        "" "$(_tool_service lynis)"
+t  "pkg_purge is defined"          "yes" "$(declare -F pkg_purge >/dev/null && echo yes || echo no)"
+
 # ---- Timeshift integration (lib/update.sh) -------------------------------
 # timeshift_snapshot builds a scripted on-demand snapshot; run it with the
 # availability/config checks stubbed so no real timeshift is needed.

@@ -7,6 +7,22 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.19.0]
+
+### Added
+- **Per-tool Install / Uninstall / Repair.** Every security tool now has its
+  own three buttons in the GUIs (Tools tab in the web and Qt apps; a *Manage*
+  flow in the zenity Tools menu) and matching CLI verbs:
+  - `auditxs tools install <tool>` — lay the tool down with its defaults.
+  - `auditxs tools uninstall <tool>` — remove it, **stopping and disabling its
+    service first**.
+  - `auditxs tools repair <tool>` — purge its configuration and reinstall so
+    package defaults are restored (fresh config).
+  - `auditxs tools list` / `state` — machine-readable tool list / install
+    state (drives the GUIs).
+  - `timeshift` is now a managed tool; `pkg_purge` added for clean repairs.
+  - New token-gated web route `POST /api/tools/action` (argv-validated).
+
 ## [0.18.0]
 
 ### Added

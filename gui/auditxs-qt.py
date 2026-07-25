@@ -385,6 +385,17 @@ def run_gui():
             return json.dumps({"running": running,
                                "log": "\n\n".join(getattr(self, "_con_lines", []))})
 
+        # Security tools: one {name, installed} record per manageable tool.
+        @Slot(result=str)
+        def toolsState(self):
+            rc, out, _ = run_auditxs(["tools", "state"])
+            tools = []
+            for line in strip_ansi(out).splitlines():
+                parts = line.split()
+                if len(parts) == 2:
+                    tools.append({"name": parts[0], "installed": parts[1] == "installed"})
+            return json.dumps(tools)
+
         # Fleet management (user-level inventory; read-only over SSH).
         @Slot(result=str)
         def fleetConfig(self):

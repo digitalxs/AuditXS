@@ -51,7 +51,7 @@ ${BOLD}COMMANDS${RC}
   doctor      Diagnose the AuditXS installation, tooling and snapshot integrity
   cve         Warn about installed packages with a known vulnerability / CVE
   update      Apply pending package updates (security by default; --all, --dry-run)
-  tools       Security tooling:  auditxs tools status | install <name> | scan | vpn
+  tools       Security tooling:  status | list | install/uninstall/repair <name> | scan | vpn
   fleet       Audit many hosts over SSH (read-only):  auditxs fleet <host...> [options]
   waive       Accept a finding as a documented risk:  auditxs waive <ID> "reason" [--until DATE]
   waivers     List accepted-risk waivers   ·   unwaive <ID> removes one

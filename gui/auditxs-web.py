@@ -146,7 +146,10 @@ footer.brand .links{margin-top:.15rem;font-size:.76rem}
 .btn{border:none;border-radius:2rem;padding:.55rem 1.1rem;font-weight:600;font-size:.85rem;
  cursor:pointer;background:var(--surface2);color:var(--on)}
 .btn.primary{background:var(--primary);color:var(--primaryc)}
+.btn.danger{background:var(--errc);color:var(--err)}
 .btn:disabled{opacity:.5;cursor:default}
+.toolbtns{display:flex;gap:.4rem;flex-wrap:wrap}
+.toolbtns .btn{padding:.35rem .8rem;font-size:.78rem}
 .wrap{max-width:64rem;margin:0 auto;padding:1.1rem}
 .tabs{display:flex;gap:.4rem;margin:.2rem 0 1rem;flex-wrap:wrap}
 .tab{padding:.45rem 1rem;border-radius:2rem;cursor:pointer;font-size:.85rem;font-weight:600;
@@ -407,11 +410,29 @@ async function rollback(id){if(!confirm("Revert every change recorded in snapsho
 
 async function renderTools(){
  $("#view").innerHTML='<div class="empty"><span class="spin"></span> loading…</div>';
- try{const d=await api("/api/tools");let h='<div class="card"><div class="sect" style="margin-top:0">Security tooling</div>';
-  d.tools.forEach(t=>{h+=`<div class="snaprow"><span style="flex:1">${t.name}</span>
-   <span class="chip ${t.installed?"pass":"skip"}">${t.installed?"installed":"not installed"}</span></div>`;});
-  h+=`</div><div class="note">Install and run scanners from the command line: <span class="mono">sudo auditxs tools install lynis</span> · <span class="mono">sudo auditxs tools scan</span>. VPN review: <span class="mono">auditxs tools vpn</span>.</div>`;
+ try{const d=await api("/api/tools");let h='<div class="card"><div class="sect" style="margin-top:0">Security tooling — install, uninstall or repair each tool</div>';
+  d.tools.forEach(t=>{
+   const ins=t.installed;
+   h+=`<div class="snaprow"><span class="mono" style="flex:1">${t.name}</span>
+    <span class="chip ${ins?"pass":"skip"}">${ins?"installed":"not installed"}</span>
+    <span class="toolbtns">
+     ${ins?"":`<button class="btn primary" onclick="toolAction('${t.name}','install',this)">Install</button>`}
+     ${ins?`<button class="btn" onclick="toolAction('${t.name}','repair',this)">Repair</button>`:""}
+     ${ins?`<button class="btn danger" onclick="toolAction('${t.name}','uninstall',this)">Uninstall</button>`:""}
+    </span></div>`;});
+  h+=`</div><div class="note">Install lays down the tool and its defaults; <b>Repair</b> reinstalls with fresh configuration; <b>Uninstall</b> removes it (stopping its service first). Run scanners with <span class="mono">auditxs tools scan</span>.</div>`;
   $("#view").innerHTML=h;}catch(e){$("#view").innerHTML='<div class="empty">Failed to load tools.</div>';}
+}
+async function toolAction(tool,action,btn){
+ if(action==="uninstall" && !confirm("Uninstall "+tool+"?"))return;
+ if(action==="repair" && !confirm("Repair "+tool+"? This replaces its configuration with fresh defaults."))return;
+ const old=btn.textContent; btn.innerHTML='<span class="spin"></span>';
+ document.querySelectorAll(".toolbtns button").forEach(b=>b.disabled=true);
+ progressStart();
+ try{const d=await api("/api/tools/action",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({tool,action})});
+  toast((d.rc===0?"":"⚠ ")+tool+" "+action+(d.rc===0?" done":" finished (rc "+d.rc+")"));}
+ catch(e){toast(tool+" "+action+" failed: "+e.message);}
+ progressStop(); await renderTools();
 }
 async function renderFleet(){
  $("#view").innerHTML='<div class="empty"><span class="spin"></span> loading…</div>';
@@ -576,6 +597,15 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"error": "bad id"}, 400)
             rc, out, err = run_auditxs(["rollback", sid, "--yes"], timeout=300)
             return self._json({"rc": rc, "log": strip_ansi(out + err)})
+        if u.path == "/api/tools/action":
+            tool = body.get("tool", "")
+            action = body.get("action", "")
+            if not (isinstance(tool, str) and tool.isalnum()):
+                return self._json({"error": "bad tool"}, 400)
+            if action not in ("install", "uninstall", "repair"):
+                return self._json({"error": "bad action"}, 400)
+            rc, out, err = run_auditxs(["tools", action, tool], timeout=1800)
+            return self._json({"rc": rc, "log": strip_ansi(out + ("\n" + err if err else ""))})
         if u.path == "/api/quit":
             # Clean shutdown for the Electron desktop shell (token-gated here in
             # do_POST). Stop from a worker thread so this response completes.
@@ -684,16 +714,13 @@ class Handler(BaseHTTPRequestHandler):
         return {"count": "0", "source": ""}
 
     def _tools(self):
-        rc, out, _ = run_auditxs(["tools", "status"])
-        txt = strip_ansi(out)
-        known = {"lynis", "rkhunter", "chkrootkit", "tiger", "checksecurity",
-                 "lsat", "aide", "debsecan", "fail2ban", "crowdsec", "suricata"}
+        # 'tools state' prints one "<name> installed|absent" line per tool.
+        rc, out, _ = run_auditxs(["tools", "state"])
         tools = []
-        for line in txt.splitlines():
-            parts = line.strip().lstrip("│").strip().split()
-            if len(parts) >= 2 and parts[0] in known:
-                installed = parts[-1] == "installed" and "not" not in parts
-                tools.append({"name": parts[0], "installed": installed})
+        for line in strip_ansi(out).splitlines():
+            parts = line.split()
+            if len(parts) == 2:
+                tools.append({"name": parts[0], "installed": parts[1] == "installed"})
         return {"tools": tools}
 
 

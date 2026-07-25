@@ -246,10 +246,10 @@ run_features_gui() {
 run_tools_gui() {
     local action
     action=$(zenity --list --title "AuditXS — Security tools" \
-        --text "Install and run established security tooling. Installs are recorded and reversible via Rollback." \
+        --text "Install, uninstall or repair each security tool, and run scanners." \
         --column "Action" --column "Description" \
-        "Status"   "Which security tools are installed" \
-        "Install"  "Install a security tool (Lynis, CrowdSec, Suricata, AIDE, …)" \
+        "Manage"   "Install / uninstall / repair each tool individually" \
+        "Status"   "Which security tools are installed (grouped view)" \
         "Scan"     "Run installed scanners (Lynis, rkhunter, …) and collect reports" \
         "VPN"      "Review WireGuard / OpenVPN configuration" \
         --width 640 --height 400 2>/dev/null) || return
@@ -257,30 +257,40 @@ run_tools_gui() {
         Status)
             elevate "$AUDITXS_BIN" tools status 2>&1 | sed 's/\x1b\[[0-9;]*m//g' > "$WORK_DIR/tools.txt"
             zenity --text-info --title "AuditXS — security tooling" --filename "$WORK_DIR/tools.txt" --width 700 --height 480 2>/dev/null ;;
-        Install)
-            local tool
-            tool=$(zenity --list --radiolist --title "AuditXS — install security tool" \
-                --text "Choose a tool to install. AuditXS never pipes remote scripts to your shell — for CrowdSec/OSSEC it shows the official steps instead." \
-                --column "" --column "Tool" --column "Purpose" \
-                FALSE lynis "Host security auditor" \
-                FALSE rkhunter "Rootkit detector" \
-                FALSE chkrootkit "Rootkit detector (second opinion)" \
-                FALSE clamav "Antivirus / malware scanner" \
-                FALSE aide "File integrity monitoring" \
-                FALSE openscap "SCAP compliance scanner (CIS/STIG)" \
-                FALSE auditd "Linux kernel audit daemon" \
-                FALSE debsecan "Precise Debian CVE tracking" \
-                FALSE fail2ban "Log-based ban engine" \
-                FALSE crowdsec "Collaborative intrusion prevention" \
-                FALSE suricata "Network IDS/IPS" \
-                FALSE usbguard "USB device allow-listing" \
-                FALSE firejail "Application sandboxing" \
-                --width 680 --height 540 2>/dev/null) || return
-            [ -n "$tool" ] || return
-            ( elevate "$AUDITXS_BIN" tools install "$tool" > "$WORK_DIR/toolinstall.log" 2>&1; echo $? >"$WORK_DIR/ti.rc" ) | \
-                zenity --progress --title "AuditXS" --text "Installing $tool…" --pulsate --no-cancel --auto-close 2>/dev/null
-            sed 's/\x1b\[[0-9;]*m//g' "$WORK_DIR/toolinstall.log" > "$WORK_DIR/toolinstall.clean" 2>/dev/null && mv "$WORK_DIR/toolinstall.clean" "$WORK_DIR/toolinstall.log"
-            zenity --text-info --title "AuditXS — install $tool" --filename "$WORK_DIR/toolinstall.log" --width 760 --height 480 2>/dev/null ;;
+        Manage)
+            while true; do
+                # Build the tool list (name + install state) for the picker.
+                local -a rows=() name st
+                while read -r name st; do
+                    [ -n "$name" ] && rows+=("$name" "$([ "$st" = installed ] && echo '● installed' || echo '○ not installed')")
+                done < <("$AUDITXS_BIN" tools state 2>/dev/null)
+                local tool
+                tool=$(zenity --list --title "AuditXS — manage tools" \
+                    --text "Pick a tool, then choose Install / Repair / Uninstall." \
+                    --column "Tool" --column "State" --print-column 1 \
+                    --width 560 --height 560 "${rows[@]}" 2>/dev/null) || return
+                [ -n "$tool" ] || return
+                local installed=0
+                "$AUDITXS_BIN" tools state 2>/dev/null | grep -q "^$tool installed" && installed=1
+                local -a acts
+                if [ "$installed" = 1 ]; then acts=("Repair" "Reinstall with fresh configuration" "Uninstall" "Remove the tool (stops its service first)")
+                else acts=("Install" "Install the tool and its defaults"); fi
+                local act
+                act=$(zenity --list --title "AuditXS — $tool" \
+                    --text "Tool: <b>$tool</b>" --column "Action" --column "Description" \
+                    "${acts[@]}" --width 520 --height 300 2>/dev/null) || continue
+                local sub=""
+                case $act in
+                    Install)   sub=install ;;
+                    Repair)    zenity --question --title "AuditXS" --text "Repair <b>$tool</b>? This replaces its configuration with fresh defaults." 2>/dev/null || continue; sub=repair ;;
+                    Uninstall) zenity --question --title "AuditXS" --text "Uninstall <b>$tool</b>?" 2>/dev/null || continue; sub=uninstall ;;
+                    *) continue ;;
+                esac
+                ( elevate "$AUDITXS_BIN" tools "$sub" "$tool" > "$WORK_DIR/toolop.log" 2>&1 ) | \
+                    zenity --progress --title "AuditXS" --text "${act}ing $tool…" --pulsate --no-cancel --auto-close 2>/dev/null
+                sed 's/\x1b\[[0-9;]*m//g' "$WORK_DIR/toolop.log" > "$WORK_DIR/toolop.clean" 2>/dev/null && mv "$WORK_DIR/toolop.clean" "$WORK_DIR/toolop.log"
+                zenity --text-info --title "AuditXS — $act $tool" --filename "$WORK_DIR/toolop.log" --width 760 --height 480 2>/dev/null
+            done ;;
         Scan)
             zenity --question --title "AuditXS" --text "Run all installed external scanners now?\n(This can take several minutes.)" 2>/dev/null || return
             ( elevate "$AUDITXS_BIN" tools scan > "$WORK_DIR/scan.log" 2>&1; echo $? >"$WORK_DIR/scan.rc" ) | \

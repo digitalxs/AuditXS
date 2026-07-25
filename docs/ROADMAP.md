@@ -23,6 +23,14 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.19
+
+- **Per-tool Install / Uninstall / Repair** across all GUIs and the CLI
+  (`auditxs tools install|uninstall|repair <tool>`): each security tool has its
+  own three buttons; Repair reinstalls with fresh configuration; Uninstall
+  stops the service first. `tools list`/`state` expose the machine-readable
+  inventory. Timeshift is now a managed tool.
+
 ## Shipped in v0.18
 
 - **Timeshift-backed updates**: `auditxs update` takes a Timeshift system

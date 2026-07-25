@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.18.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.19.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg active" href="usage.html">User manual</a>
@@ -213,11 +213,13 @@ sudo auditxs update --security --yes # non-interactive (automation)</code></pre>
 <li><strong>Let the scheduled audit do it</strong> — set <code>AUTO_UPDATE=1</code> in <code>/etc/auditxs/auditxs.conf</code>. The daily <code>auditxs schedule</code> run then applies pending security updates whenever it finds them (and, if <code>ALERT_WEBHOOK</code> / <code>ALERT_EMAIL</code> are configured, notifies you). Off by default.</li>
 </ul>
 <h2 id="security-tooling">Security tooling</h2>
-<pre class="lang-bash"><code>sudo auditxs tools status         # which defensive tools are installed
-sudo auditxs tools install lynis  # guided, reversible install (also: rkhunter,
-                                  # aide, debsecan, suricata, crowdsec, fail2ban…)
-sudo auditxs tools scan           # run installed scanners, collect their reports
-auditxs tools vpn                 # review WireGuard / OpenVPN configuration</code></pre>
+<pre class="lang-bash"><code>sudo auditxs tools status            # grouped inventory of defensive tooling
+sudo auditxs tools install lynis     # install a tool + its defaults
+sudo auditxs tools repair lynis      # reinstall with FRESH configuration
+sudo auditxs tools uninstall lynis   # remove it (stops its service first)
+sudo auditxs tools scan              # run installed scanners, collect reports
+auditxs tools vpn                    # review WireGuard / OpenVPN configuration</code></pre>
+<p>Every tool has its own <strong>Install / Uninstall / Repair</strong> buttons in the GUIs (Tools tab in the web and Qt apps, the <em>Manage</em> entry in the zenity Tools menu). <strong>Install</strong> lays the tool down; <strong>Repair</strong> purges its configuration and reinstalls it so package defaults are restored; <strong>Uninstall</strong> removes it, stopping and disabling its service first. <code>auditxs tools list</code> / <code>state</code> print the machine-readable tool list and per-tool install state.</p>
 <p>Scanner reports are saved under <code>/var/lib/auditxs/reports/tools/&lt;timestamp&gt;/</code>. CrowdSec and OSSEC/Wazuh require third-party installers — AuditXS prints the official steps rather than piping a remote script into your shell.</p>
 <h2 id="fleet-mode--auditing-many-hosts-over-ssh">Fleet mode — auditing many hosts over SSH</h2>
 <pre class="lang-bash"><code>auditxs fleet web01 db01 app03            # audit three hosts (uses your SSH agent/keys)

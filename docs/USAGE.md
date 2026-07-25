@@ -260,12 +260,20 @@ change). To reverse it, restore the snapshot with `sudo timeshift --restore`.
 ## Security tooling
 
 ```bash
-sudo auditxs tools status         # which defensive tools are installed
-sudo auditxs tools install lynis  # guided, reversible install (also: rkhunter,
-                                  # aide, debsecan, suricata, crowdsec, fail2ban…)
-sudo auditxs tools scan           # run installed scanners, collect their reports
-auditxs tools vpn                 # review WireGuard / OpenVPN configuration
+sudo auditxs tools status            # grouped inventory of defensive tooling
+sudo auditxs tools install lynis     # install a tool + its defaults
+sudo auditxs tools repair lynis      # reinstall with FRESH configuration
+sudo auditxs tools uninstall lynis   # remove it (stops its service first)
+sudo auditxs tools scan              # run installed scanners, collect reports
+auditxs tools vpn                    # review WireGuard / OpenVPN configuration
 ```
+
+Every tool has its own **Install / Uninstall / Repair** buttons in the GUIs
+(Tools tab in the web and Qt apps, the *Manage* entry in the zenity Tools
+menu). **Install** lays the tool down; **Repair** purges its configuration and
+reinstalls it so package defaults are restored; **Uninstall** removes it,
+stopping and disabling its service first. `auditxs tools list` / `state` print
+the machine-readable tool list and per-tool install state.
 
 Scanner reports are saved under `/var/lib/auditxs/reports/tools/<timestamp>/`.
 CrowdSec and OSSEC/Wazuh require third-party installers — AuditXS prints the

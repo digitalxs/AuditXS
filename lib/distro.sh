@@ -88,6 +88,18 @@ pkg_remove() {
     esac
 }
 
+# pkg_purge <pkg> — remove a package AND its configuration files, so a
+# subsequent install lays down fresh defaults (used by 'tools repair').
+pkg_purge() {
+    case $PKG in
+        apt)    env DEBIAN_FRONTEND=noninteractive apt-get purge -y -q "$1" ;;
+        pacman) pacman -Rns --noconfirm "$1" ;;   # -n: don't save config backups
+        dnf)    dnf remove -y -q "$1" ;;           # rpm drops unmodified configs
+        zypper) zypper --non-interactive remove -u "$1" ;;
+        *)      err "No supported package manager found"; return 1 ;;
+    esac
+}
+
 # pending_updates — echo the number of pending package updates, or "?" if it
 # cannot be determined. Read-only: never syncs or mutates package databases.
 pending_updates() {

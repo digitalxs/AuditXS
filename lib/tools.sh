@@ -87,10 +87,33 @@ cmd_tools_status() {
 }
 
 # --------------------------------------------------------------- install ---
+# The package-backed security tools AuditXS can install / uninstall / repair.
+# (Guidance-only integrations like osquery/trivy/ossec are handled separately
+# and are not in this list because there is no single distro package to manage.)
+tools_list() {
+    echo "lynis rkhunter chkrootkit tiger checksecurity lsat aide debsecan \
+suricata fail2ban clamav openscap auditd arpwatch usbguard firejail logwatch acct timeshift crowdsec"
+}
+
+# _tool_service <tool> — the systemd unit to stop/disable when uninstalling
+# (empty for tools that install no long-running service).
+_tool_service() {
+    case $1 in
+        fail2ban) echo fail2ban ;;
+        suricata) echo suricata ;;
+        clamav)   echo clamav-freshclam ;;
+        auditd)   echo auditd ;;
+        arpwatch) echo arpwatch ;;
+        usbguard) echo usbguard ;;
+        crowdsec) echo crowdsec ;;
+        acct)     echo acct ;;
+        *)        echo "" ;;
+    esac
+}
+
 cmd_tools_install() {
     require_root "tools install"
-    local known="lynis rkhunter chkrootkit tiger checksecurity lsat aide debsecan \
-suricata fail2ban clamav openscap auditd arpwatch usbguard firejail logwatch acct crowdsec ossec"
+    local known; known=$(tools_list)
     [ $# -ge 1 ] || die "Usage: sudo auditxs tools install <name...>
 Known: $(echo $known | tr -s ' ')"
     local name pkg rc=0
@@ -116,6 +139,62 @@ Known: $(echo $known | tr -s ' ')"
                     rc=1
                 fi ;;
         esac
+    done
+    snapshot_finish
+    return $rc
+}
+
+# cmd_tools_uninstall <name...> — stop/disable any service, then remove the
+# package (keeps config; use 'repair' for a clean reinstall).
+cmd_tools_uninstall() {
+    require_root "tools uninstall"
+    [ $# -ge 1 ] || die "Usage: sudo auditxs tools uninstall <name...>"
+    local name pkg svc rc=0
+    for name in "$@"; do
+        name=${name,,}
+        pkg=$(_tool_pkg "$name")
+        if [ -z "$pkg" ]; then warn "Unknown tool '$name'. Known: $(tools_list)"; rc=1; continue; fi
+        if ! _tool_present "$name" && ! pkg_installed "$pkg"; then
+            ok "$name is not installed."; continue
+        fi
+        svc=$(_tool_service "$name")
+        if [ -n "$svc" ] && has_systemd; then
+            info "Stopping and disabling ${svc} …"
+            xrun_q systemctl disable --now "$svc" 2>/dev/null || true
+        fi
+        info "Removing $name ($pkg) …"
+        if xrun pkg_remove "$pkg"; then
+            ok "$name removed."
+            ledger "tools: uninstalled $name ($pkg)"
+        else
+            ax_error AX5001 "could not remove $pkg"; rc=1
+        fi
+    done
+    return $rc
+}
+
+# cmd_tools_repair <name...> — reinstall with FRESH configuration: purge the
+# package (removing its config), then install it again so package defaults are
+# laid down, then re-run post-install setup.
+cmd_tools_repair() {
+    require_root "tools repair"
+    [ $# -ge 1 ] || die "Usage: sudo auditxs tools repair <name...>"
+    local name pkg svc rc=0
+    for name in "$@"; do
+        name=${name,,}
+        pkg=$(_tool_pkg "$name")
+        if [ -z "$pkg" ]; then warn "Unknown tool '$name'. Known: $(tools_list)"; rc=1; continue; fi
+        svc=$(_tool_service "$name")
+        [ -n "$svc" ] && has_systemd && xrun_q systemctl stop "$svc" 2>/dev/null || true
+        info "Repairing $name — purging old configuration, then reinstalling …"
+        xrun pkg_purge "$pkg" >/dev/null 2>&1 || true    # ok if it was not installed
+        if pkg_install "$pkg"; then
+            ok "$name reinstalled with fresh default configuration."
+            _install_post "$name"
+            ledger "tools: repaired $name ($pkg) with fresh config"
+        else
+            ax_error AX5001 "could not reinstall $pkg"; rc=1
+        fi
     done
     snapshot_finish
     return $rc
@@ -338,10 +417,18 @@ cmd_tools() {
     local sub=${1:-status}
     [ $# -gt 0 ] && shift
     case $sub in
-        status)  cmd_tools_status ;;
-        install) cmd_tools_install "$@" ;;
-        scan)    cmd_tools_scan "$@" ;;
-        vpn)     cmd_tools_vpn ;;
-        *) die "Usage: auditxs tools status | install <name...> | scan [name] | vpn" ;;
+        status)            cmd_tools_status ;;
+        list)              tools_list | tr ' ' '\n' | sed '/^$/d' ;;   # machine-readable
+        state)             # one line per tool: "<name> installed|absent" (for GUIs)
+                           local _t
+                           for _t in $(tools_list); do
+                               if _tool_present "$_t"; then echo "$_t installed"; else echo "$_t absent"; fi
+                           done ;;
+        install)           cmd_tools_install "$@" ;;
+        uninstall|remove)  cmd_tools_uninstall "$@" ;;
+        repair|reinstall)  cmd_tools_repair "$@" ;;
+        scan)              cmd_tools_scan "$@" ;;
+        vpn)               cmd_tools_vpn ;;
+        *) die "Usage: auditxs tools status | list | install <name> | uninstall <name> | repair <name> | scan [name] | vpn" ;;
     esac
 }

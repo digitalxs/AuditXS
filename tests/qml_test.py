@@ -88,6 +88,10 @@ class StubBackend(QObject):
         return '{"running":false,"log":"$ true\\n"}'
 
     @Slot(result=str)
+    def toolsState(self):
+        return '[{"name":"lynis","installed":false},{"name":"auditd","installed":true}]'
+
+    @Slot(result=str)
     def fleetConfig(self):
         return '{"hosts":["admin@web01"],"key":"","sudo":true}'
 

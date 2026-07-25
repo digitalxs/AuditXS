@@ -116,11 +116,21 @@ via
 .B AUTO_UPDATE=1
 so scheduled audits apply security updates.
 .TP
-.B tools \fRstatus|install|scan|vpn\fP
-Inventory, install and run security tools (Lynis, rkhunter, chkrootkit, AIDE,
-ClamAV, OpenSCAP, auditd, Fail2ban, CrowdSec, Suricata, \[char46]\[char46]\[char46]);
-review VPN configuration. Installs go through the same snapshot/rollback
-machinery as every other change.
+.B tools \fRstatus|list|state|install|uninstall|repair|scan|vpn\fP
+Inventory, install, uninstall and repair security tools (Lynis, rkhunter,
+chkrootkit, AIDE, ClamAV, OpenSCAP, auditd, Fail2ban, CrowdSec, Suricata,
+Timeshift, \[char46]\[char46]\[char46]); review VPN configuration.
+.B install
+lays a tool down with its defaults;
+.B repair
+purges and reinstalls it with fresh configuration;
+.B uninstall
+removes it (stopping its service first). Each tool has individual
+Install/Uninstall/Repair buttons in the GUIs.
+.B list
+and
+.B state
+print machine-readable tool names / install state.
 .TP
 .B fleet \fR<host...> [options]\fP
 Audit many hosts over SSH and aggregate the results. Read-only by design \(em
