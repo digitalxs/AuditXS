@@ -635,14 +635,16 @@ run_webservice_gui() {
 }
 
 run_terminal_gui() {
-    local t
-    for t in x-terminal-emulator gnome-terminal konsole xfce4-terminal kgx tilix xterm; do
-        if command -v "$t" >/dev/null 2>&1; then
-            ( "$t" >/dev/null 2>&1 & ) ; return 0
-        fi
-    done
-    zenity --info --title "AuditXS" \
-        --text "No terminal emulator found. The full CLI is available as:\n<tt>sudo auditxs …</tt>" 2>/dev/null
+    # Open a real terminal (a shell), preferring Konsole. The engine handles
+    # the emulator preference order and offers to install one if none exists;
+    # it launches the emulator detached and returns immediately.
+    local out rc
+    out=$("$AUDITXS_BIN" terminal 2>&1); rc=$?
+    out=$(printf '%s' "$out" | sed 's/\x1b\[[0-9;]*m//g')
+    if [ "$rc" -ne 0 ]; then
+        zenity --info --title "AuditXS — terminal" --width 520 \
+            --text "${out:-Could not open a terminal.}\n\nThe full CLI is available as:\n<tt>sudo auditxs …</tt>" 2>/dev/null
+    fi
 }
 
 AXVER=$("$AUDITXS_BIN" version 2>/dev/null | sed 's/^AuditXS //')

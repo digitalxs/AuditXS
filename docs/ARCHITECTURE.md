@@ -150,6 +150,13 @@ New engine libraries:
   toggling the web UI on/off, local or (warned) remote. Holds the stable
   root-only access token in `/etc/auditxs/web-token` (`0600`). `auditxs web`
   gained `--bind`/`--token-file`/`--service` to support headless operation.
+- `lib/terminal.sh` — the `auditxs terminal` command: opens a real, fully
+  interactive terminal (a shell), preferring KDE Konsole and falling back
+  through the common emulators; offers to install Konsole if none is present.
+  Runs unprivileged. The Electron app additionally hosts an *embedded* terminal
+  in-window via `gui/electron/terminal.html` (xterm.js) + `pty-bridge.py`, a
+  dependency-free Python PTY broker (no native `node-pty` build), wired over
+  Electron IPC in `gui/electron/main.js`.
 
 Console & report styling:
 

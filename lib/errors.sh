@@ -43,6 +43,9 @@ _ax_def AX1003 "Operation requires root privileges" \
 _ax_def AX1004 "Invalid or missing profile" \
     "PROFILE is not 'server' or 'workstation', so AuditXS cannot decide which checks apply." \
     "Set PROFILE in /etc/auditxs/auditxs.conf (run the installer) or pass --profile server|workstation."
+_ax_def AX1006 "No terminal emulator available" \
+    "'auditxs terminal' could not open a terminal window: none of the known emulators is installed and Konsole could not be installed automatically." \
+    "Install a terminal emulator (e.g. 'konsole') and try again, or open your desktop's terminal manually."
 _ax_def AX1005 "State directory not writable" \
     "AuditXS could not create or write under its state directory (snapshots, reports, ledgers)." \
     "Ensure /var/lib/auditxs exists and is writable by root, and that the disk is not full."

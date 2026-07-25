@@ -44,6 +44,7 @@ QUIET=1
 . lib/update.sh
 . lib/fleet.sh
 . lib/webservice.sh
+. lib/terminal.sh
 for c in checks/*.sh; do . "$c"; done
 
 TMPD=$(mktemp -d)
@@ -300,6 +301,34 @@ t "_web_unit_field reads bind/port from a unit" "0.0.0.0 9443" "$(
 # AX8003 (referenced by webservice.sh) must exist in the catalogue.
 t "AX8003 web-service error is catalogued" "Web service management failed" \
     "${AX_ERR_TITLE[AX8003]:-}"
+
+# ---- terminal launcher (lib/terminal.sh) ---------------------------------
+t "cmd_terminal is defined" "yes" \
+    "$(type -t cmd_terminal >/dev/null 2>&1 && echo yes || echo no)"
+# Konsole is the most-preferred emulator, so it wins even when a lesser one
+# (xterm) is also present.
+t "_terminal_find prefers konsole" "konsole" "$(
+    have() { case "$1" in konsole|xterm) return 0 ;; *) return 1 ;; esac; }
+    _terminal_find
+)"
+# Falls through to the next installed emulator when konsole is absent.
+t "_terminal_find falls back past konsole" "xterm" "$(
+    have() { case "$1" in xterm) return 0 ;; *) return 1 ;; esac; }
+    _terminal_find
+)"
+t "_terminal_find fails when none installed" "1" "$(
+    have() { return 1; }
+    _terminal_find >/dev/null 2>&1; echo $?
+)"
+t "_terminal_pkg debian is konsole" "konsole" "$(DISTRO_FAMILY=debian _terminal_pkg)"
+t "_terminal_pkg suse is konsole"   "konsole" "$(DISTRO_FAMILY=suse _terminal_pkg)"
+# launch_terminal reports 'no display' when neither DISPLAY nor WAYLAND_DISPLAY set.
+t "launch_terminal needs a display" "2" "$(
+    unset DISPLAY WAYLAND_DISPLAY
+    launch_terminal >/dev/null 2>&1; echo $?
+)"
+t "AX1006 no-terminal error is catalogued" "No terminal emulator available" \
+    "${AX_ERR_TITLE[AX1006]:-}"
 
 # ---- Qt runtime preflight (dispatcher helpers) ---------------------------
 # The helpers live in the `auditxs` dispatcher, not a lib; pull just that block.

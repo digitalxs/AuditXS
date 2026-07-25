@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!--
+  AuditXS — embedded terminal window.
+
+  A real, fully-interactive terminal inside the AuditXS desktop app: xterm.js in
+  this renderer, a Python PTY broker (pty-bridge.py) in the main process. It runs
+  with the app's own unprivileged rights — a shell you could open yourself.
+
+  Loaded via loadFile(); all resources are local (node_modules), so the strict
+  Electron sandbox + contextIsolation apply. The only bridge to the main process
+  is the small `window.term` API from terminal-preload.js.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:;">
+<title>AuditXS — Terminal</title>
+<link rel="stylesheet" href="node_modules/@xterm/xterm/css/xterm.css">
+<style>
+  html, body { margin: 0; height: 100%; background: #121318; color: #e6e1e5; }
+  #term { position: absolute; inset: 8px; }
+  #msg  { position: absolute; inset: 0; display: none; place-content: center;
+          font: 14px/1.5 system-ui, sans-serif; padding: 2rem; text-align: center;
+          color: #f2b8b5; }
+  #msg.show { display: grid; }
+</style>
+</head>
+<body>
+  <div id="term"></div>
+  <div id="msg"></div>
+  <script src="node_modules/@xterm/xterm/lib/xterm.js"></script>
+  <script src="node_modules/@xterm/addon-fit/lib/addon-fit.js"></script>
+  <script>
+    'use strict';
+    (function () {
+      var fail = function (text) {
+        var m = document.getElementById('msg');
+        m.textContent = text;
+        m.classList.add('show');
+      };
+      if (!window.term || typeof window.Terminal === 'undefined') {
+        fail('The terminal front-end failed to load. Run the AuditXS terminal ' +
+             'from the CLI instead:  auditxs terminal');
+        return;
+      }
+
+      var term = new window.Terminal({
+        fontFamily: 'monospace',
+        fontSize: 13,
+        cursorBlink: true,
+        scrollback: 10000,
+        theme: { background: '#121318', foreground: '#e6e1e5' }
+      });
+      var fit = new window.FitAddon.FitAddon();
+      term.loadAddon(fit);
+      term.open(document.getElementById('term'));
+
+      function doFit() {
+        try { fit.fit(); } catch (e) { /* pre-layout */ }
+        window.term.resize(term.cols, term.rows);
+      }
+
+      // Renderer → PTY: keystrokes and window-size changes.
+      term.onData(function (d) { window.term.input(d); });
+      term.onResize(function (s) { window.term.resize(s.cols, s.rows); });
+      window.addEventListener('resize', doFit);
+
+      // PTY → renderer: raw bytes (Uint8Array) and session end.
+      window.term.onData(function (bytes) { term.write(bytes); });
+      window.term.onExit(function (code) {
+        term.write('\r\n\x1b[2m[process exited' +
+          (typeof code === 'number' ? ' — code ' + code : '') +
+          '. This window can be closed.]\x1b[0m\r\n');
+      });
+      window.term.onError(function (message) {
+        fail(message || 'Could not start the terminal.');
+      });
+
+      doFit();
+      term.focus();
+      window.term.start(term.cols, term.rows);
+    })();
+  </script>
+</body>
+</html>

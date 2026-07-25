@@ -1,8 +1,8 @@
 {
   "name": "auditxs-electron",
   "productName": "AuditXS",
-  "version": "0.16.0",
-  "description": "AuditXS desktop app — an Electron shell around the audited localhost web UI.",
+  "version": "0.21.0",
+  "description": "AuditXS desktop app — an Electron shell around the audited localhost web UI, with an embedded terminal.",
   "main": "main.js",
   "author": "DigitalXS — Programming & Development <luis@digitalxs.ca>",
   "license": "GPL-3.0-or-later",
@@ -10,6 +10,10 @@
   "private": true,
   "scripts": {
     "start": "electron ."
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0"
   },
   "devDependencies": {
     "electron": "^33.2.0"

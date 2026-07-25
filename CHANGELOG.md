@@ -7,6 +7,30 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.21.0]
+
+### Added
+- **A real, Konsole-like terminal.** AuditXS can now open a fully-interactive
+  terminal (a shell that runs TUI programs like vim, htop, less), not just the
+  line-based console:
+  - New command `auditxs terminal` opens your terminal emulator, **preferring
+    KDE Konsole** and falling back through the common emulators (kgx,
+    gnome-terminal, tilix, xfce4-terminal, alacritty, kitty, foot, xterm, …).
+    If none is installed it offers to install Konsole (elevating via pkexec/sudo).
+    It runs unprivileged — a shell you could open yourself.
+  - **Embedded terminal in the desktop app.** The Electron app now hosts a real
+    terminal *inside its own window* (menu **Terminal → New Terminal**, or
+    **Ctrl+Shift+T**), built with xterm.js and a dependency-free Python PTY
+    broker (`gui/electron/pty-bridge.py`) — no native `node-pty` build required.
+    Full interactivity and window-resize (SIGWINCH) support.
+  - **In every GUI.** A new **Terminal** tab in the Qt app and a rewired
+    **Terminal** entry in the zenity menu open the real terminal; the web UI's
+    console points to it (and to SSH) for a full shell.
+  - New error `AX1006` (*No terminal emulator available*).
+  - The web console remains deliberately restricted to `auditxs` subcommands —
+    a full remote shell is never exposed over the (optionally network-reachable)
+    web UI; use SSH for that.
+
 ## [0.20.0]
 
 ### Added

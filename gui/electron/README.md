@@ -42,6 +42,19 @@ AUDITXS_BIN=/opt/auditxs/auditxs npm start
 you). **Workstation profile only** — like the web/Qt/zenity interfaces, it
 refuses to start on a server (use `auditxs tui` there).
 
+## Embedded terminal
+
+The app hosts a **real, fully-interactive terminal inside its own window** —
+open it from **Terminal → New Terminal** or with **Ctrl+Shift+T**. It's a
+genuine PTY (runs vim, htop, less, and anything else), built with
+[xterm.js](https://xtermjs.org/) in the renderer and a dependency-free Python
+PTY broker (`pty-bridge.py`) in the main process — **no native `node-pty`
+build**, so it installs and runs anywhere Python does (already an AuditXS
+dependency). Each terminal window gets its own broker process; keystrokes and
+window-size changes are forwarded over Electron IPC, and the shell runs with the
+app's own **unprivileged** rights (a shell you could open yourself). If the
+front-end can't load, it points you at `auditxs terminal` on the CLI.
+
 ## Why three GUIs?
 
 - **zenity** — zero extra dependencies; always available on a desktop.
@@ -55,8 +68,13 @@ reversible engine.
 
 ## Files
 
-- `main.js` — the Electron main process (server lifecycle + secure window).
-- `package.json` — metadata and the Electron dev-dependency.
+- `main.js` — the Electron main process (server lifecycle, secure window,
+  menu, and the embedded-terminal IPC + PTY broker lifecycle).
+- `terminal.html` — the embedded terminal renderer (xterm.js UI).
+- `terminal-preload.js` — the small sandboxed IPC bridge (`window.term`).
+- `pty-bridge.py` — dependency-free Python PTY broker for the terminal.
+- `package.json` — metadata, the Electron dev-dependency, and the xterm.js
+  runtime dependencies.
 
 There is intentionally no bundled `node_modules` in the repository; the
-launcher (or `npm install`) fetches Electron on first use.
+launcher (or `npm install`) fetches Electron and xterm.js on first use.

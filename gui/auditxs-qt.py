@@ -244,6 +244,7 @@ def selftest():
           _elevate([_bin, "explain", "SSH-001"]) == [_bin, "explain", "SSH-001"])
     check("audit is treated as privileged", "audit" in _ROOT_CMDS)
     check("run_auditxs_root is callable", callable(run_auditxs_root))
+    check("terminal is a non-privileged op", "terminal" not in _ROOT_CMDS)
     check("explain rejects bad id", data_explain("a;b") == "invalid id")
     check("harden rejects bad id", data_harden("a b")["rc"] == 1)
     check("rollback rejects bad id", data_rollback("../x")["rc"] == 1)
@@ -512,6 +513,23 @@ def run_gui():
             if path and os.path.exists(path):
                 subprocess.Popen(["xdg-open", path],
                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        # Open a real, fully-interactive terminal window (a shell — prefers
+        # Konsole). Runs UNPRIVILEGED (a shell the user could open themselves);
+        # the engine launches the emulator detached. Returns "" on success or
+        # an error message to show.
+        @Slot(result=str)
+        def openTerminal(self):
+            bin_ = os.environ.get("AUDITXS_BIN", "auditxs")
+            try:
+                p = subprocess.run([bin_, "terminal"], capture_output=True,
+                                   text=True, timeout=60)
+            except (OSError, subprocess.SubprocessError) as e:
+                return str(e)
+            if p.returncode != 0:
+                return strip_ansi((p.stdout + p.stderr).strip()) or \
+                    "Could not open a terminal."
+            return ""
 
         @Slot(result=str)
         def openReport(self):

@@ -18,7 +18,7 @@
 AUDITXS_SELF=$(readlink -f "${BASH_SOURCE[0]}")
 AUDITXS_ROOT=$(dirname "$AUDITXS_SELF")
 
-for _lib in core errors distro backup registry waivers report fixlib maintenance cve tools update fleet alerts webservice; do
+for _lib in core errors distro backup registry waivers report fixlib maintenance cve tools update fleet alerts webservice terminal; do
     # shellcheck disable=SC1090
     . "$AUDITXS_ROOT/lib/$_lib.sh" || { echo "auditxs: missing library lib/$_lib.sh" >&2; exit 1; }
 done
@@ -57,6 +57,7 @@ ${BOLD}COMMANDS${RC}
   waivers     List accepted-risk waivers   ·   unwaive <ID> removes one
   alert       Configure/test drift & CVE alert sinks:  auditxs alert status | test
   errors      Browse the error-code catalogue:  auditxs errors [CODE|term|log]
+  terminal    Open a real, fully-interactive terminal (a shell) — prefers Konsole
   tui         Launch the terminal (ncurses) interface — works over SSH; server-friendly
   web         Launch the local web UI (Material Design 3) — workstation profile only
   webservice  Turn the web UI on/off as a service:  status | enable [--remote] | disable | token
@@ -290,7 +291,9 @@ ensure_electron_runtime() {   # <source app dir> — resolves ELECTRON_RUN_DIR
     if [ ! -w "$src" ]; then
         ELECTRON_RUN_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/auditxs/electron"
         mkdir -p "$ELECTRON_RUN_DIR" 2>/dev/null || { ax_error AX5001 "cannot create $ELECTRON_RUN_DIR"; return 1; }
-        cp -f "$src/main.js" "$src/package.json" "$ELECTRON_RUN_DIR/" 2>/dev/null
+        cp -f "$src/main.js" "$src/package.json" \
+              "$src/terminal.html" "$src/terminal-preload.js" "$src/pty-bridge.py" \
+              "$ELECTRON_RUN_DIR/" 2>/dev/null
     fi
     local eapp=$ELECTRON_RUN_DIR
     [ -x "$eapp/node_modules/.bin/electron" ] && return 0
@@ -459,6 +462,10 @@ main() {
         tools)
             cmd_tools "${ARGS[@]}"
             return $? ;;
+        terminal|console)
+            # Open a real, fully-interactive terminal (a shell) — prefers
+            # Konsole. Runs unprivileged (a shell you could open yourself).
+            cmd_terminal "${ARGS[@]}"; return $? ;;
         tui)
             require_root tui
             resolve_profile

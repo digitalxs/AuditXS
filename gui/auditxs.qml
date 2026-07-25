@@ -321,6 +321,7 @@ ApplicationWindow {
             TabButton { text: "Tools" }
             TabButton { text: "Fleet" }
             TabButton { text: "Web" ; onClicked: refreshWeb() }
+            TabButton { text: "Terminal" }
             TabButton { text: "Ops" }
         }
 
@@ -646,6 +647,41 @@ ApplicationWindow {
                         }
                     }
                     Button { text: "Refresh"; onClicked: refreshWeb() }
+                }
+                Item { Layout.fillHeight: true }
+            }
+
+            // --- Terminal (open a real, fully-interactive shell) ---
+            ColumnLayout {
+                spacing: 10
+                Label {
+                    padding: 12; wrapMode: Text.WordWrap; Layout.fillWidth: true; opacity: 0.85
+                    font.pixelSize: 12
+                    text: "Open a real, fully-interactive terminal — a shell like Konsole, able to "
+                        + "run TUI programs (vim, htop, less, nano) and anything else you'd type. "
+                        + "AuditXS opens your terminal emulator (preferring Konsole) and offers to "
+                        + "install one if none is present."
+                }
+                RowLayout {
+                    Layout.leftMargin: 12; Layout.rightMargin: 12; spacing: 8
+                    Button {
+                        text: "Open a terminal window"; highlighted: true
+                        onClicked: {
+                            var err = backend.openTerminal();
+                            if (err && err.length) {
+                                opText.text = err; opDialog.title = "Terminal";
+                                opDialog.open();
+                            }
+                        }
+                    }
+                    Item { Layout.fillWidth: true }
+                }
+                Label {
+                    Layout.leftMargin: 12; Layout.rightMargin: 12; Layout.fillWidth: true
+                    wrapMode: Text.WordWrap; font.pixelSize: 11; opacity: 0.6
+                    text: "For quick one-off commands without leaving this window, use the "
+                        + "collapsible console at the bottom (status bar → Console) — it runs "
+                        + "single commands with your own user's privileges."
                 }
                 Item { Layout.fillHeight: true }
             }

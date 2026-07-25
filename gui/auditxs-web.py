@@ -261,7 +261,9 @@ body{padding-bottom:3rem}
 
 <div class="console" id="console">
   <div class="out" id="conOut">AuditXS console — runs auditxs subcommands only (argv, never a shell).
-Try:  cve   ·   waivers   ·   errors AX6002   ·   schedule status   ·   list --framework cis</div>
+Try:  cve   ·   waivers   ·   errors AX6002   ·   schedule status   ·   list --framework cis
+For a full interactive shell (vim, htop, …): the desktop app's terminal (Ctrl+Shift+T) or
+`auditxs terminal` locally; over the web, SSH in — a remote shell is deliberately not exposed here.</div>
   <div class="inrow"><span>auditxs&nbsp;$</span><input id="conIn" placeholder="type an auditxs command and press Enter (e.g. cve)" autocomplete="off"></div>
 </div>
 <div class="statusbar">

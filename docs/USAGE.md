@@ -456,6 +456,7 @@ use any interface.
 |---|---|:---:|:---:|
 | Command line | `auditxs audit` / `harden` / … | ✔ | ✔ |
 | Terminal UI (ncurses) | `sudo auditxs tui` | ✔ | ✔ |
+| Real terminal (a shell) | `auditxs terminal` | – | ✔ |
 | Localhost web UI | `sudo auditxs web` | – | ✔ |
 | Native desktop app (Qt) | `sudo auditxs qt` | – | ✔ |
 | Graphical launcher (zenity) | `auditxs-gui` | – | ✔ |
@@ -478,6 +479,29 @@ and offers the full workflow — audit, turn controls on/off, roll back,
 CVE check, install/run security tools, generate a report, doctor — with the
 same mandatory *review before every change* screen as the CLI. Available on
 workstations too.
+
+## A real terminal (a shell)
+
+```bash
+auditxs terminal                 # open a fully-interactive terminal — prefers Konsole
+```
+
+Beyond the line-based console in the GUIs (handy for quick one-off commands),
+`auditxs terminal` opens a **real, fully-interactive terminal** — a shell that
+runs TUI programs (vim, htop, less, nano) and anything else you'd type. It opens
+your terminal emulator, **preferring KDE Konsole** and falling back through the
+common emulators (kgx, gnome-terminal, tilix, xfce4-terminal, alacritty, kitty,
+foot, xterm, …); if none is installed it offers to install Konsole. It runs with
+your own unprivileged rights — a shell you could open yourself.
+
+It's wired into every desktop GUI: a **Terminal** tab in the Qt app and a
+**Terminal** entry in the zenity menu. The **Electron desktop app** goes further
+and hosts a terminal **inside its own window** (menu **Terminal → New Terminal**,
+or **Ctrl+Shift+T**), built with xterm.js and a dependency-free Python PTY broker
+(no native modules to compile).
+
+Over the web UI a full shell is deliberately **not** exposed (the web console is
+restricted to `auditxs` subcommands) — for a remote shell, use SSH.
 
 ## The web UI (workstation profile)
 

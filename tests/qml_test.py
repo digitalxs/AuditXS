@@ -110,6 +110,10 @@ class StubBackend(QObject):
         return "Access token: TESTTOKEN"
 
     @Slot(result=str)
+    def openTerminal(self):
+        return ""
+
+    @Slot(result=str)
     def fleetConfig(self):
         return '{"hosts":["admin@web01"],"key":"","sudo":true}'
 
@@ -176,6 +180,8 @@ def main():
             # exercise the web-service tab bindings (v0.20)
             win.metaObject().invokeMethod(win, "refreshWeb")
             win.metaObject().invokeMethod(win, "webApplyEnable")
+            # exercise the terminal tab slot (v0.21)
+            backend.openTerminal()
         except Exception as e:  # noqa: BLE001 — report any driving failure
             failures.append(repr(e))
         finally:

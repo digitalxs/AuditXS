@@ -16,12 +16,14 @@
 
 'use strict';
 
-const { app, BrowserWindow, shell, dialog } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, shell, dialog } = require('electron');
 const { spawn } = require('child_process');
 const http = require('http');
 const net = require('net');
+const path = require('path');
 
 const AUDITXS = process.env.AUDITXS_BIN || 'auditxs';
+const PYTHON = process.env.AUDITXS_PYTHON || 'python3';
 
 let serverProc = null;
 let serverURL = null;
@@ -104,6 +106,101 @@ function quitServer() {
   });
 }
 
+// ---- embedded terminal -----------------------------------------------------
+// A real, fully-interactive terminal (like Konsole) inside the app: xterm.js in
+// the renderer, a dependency-free Python PTY broker (pty-bridge.py) here. It
+// runs with the app's own UNPRIVILEGED rights — a shell the user could open
+// themselves, so no privilege is added. One broker process per terminal window.
+const terms = new Map();   // webContents.id -> child process
+
+function writeResize(child, cols, rows) {
+  try {
+    const ctrl = child.stdio && child.stdio[3];
+    if (ctrl && ctrl.writable) {
+      ctrl.write(JSON.stringify({ resize: [Number(cols) || 80, Number(rows) || 24] }) + '\n');
+    }
+  } catch (e) { /* child may have exited */ }
+}
+
+function killTerm(id) {
+  const child = terms.get(id);
+  if (!child) return;
+  terms.delete(id);
+  try { child.stdin.end(); } catch (e) { /* ignore */ }
+  try { child.kill('SIGTERM'); } catch (e) { /* ignore */ }
+}
+
+function openTerminalWindow() {
+  const win = new BrowserWindow({
+    width: 900,
+    height: 560,
+    minWidth: 480,
+    minHeight: 280,
+    title: 'AuditXS — Terminal',
+    backgroundColor: '#121318',
+    autoHideMenuBar: true,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      preload: path.join(__dirname, 'terminal-preload.js'),
+    },
+  });
+  win.on('closed', () => killTerm(win.webContents.id));
+  win.loadFile(path.join(__dirname, 'terminal.html'));
+  return win;
+}
+
+// The renderer asks us to start its shell once xterm is laid out.
+ipcMain.on('term:start', (e, size) => {
+  const id = e.sender.id;
+  if (terms.has(id)) return;               // already running for this window
+  const send = (channel, payload) => {
+    if (!e.sender.isDestroyed()) e.sender.send(channel, payload);
+  };
+  let child;
+  try {
+    child = spawn(PYTHON, [path.join(__dirname, 'pty-bridge.py')], {
+      stdio: ['pipe', 'pipe', 'pipe', 'pipe'],
+      env: Object.assign({}, process.env, { TERM: 'xterm-256color' }),
+    });
+  } catch (err) {
+    send('term:error', 'Could not start the terminal: ' + err.message +
+      ' (is python3 installed?)');
+    return;
+  }
+  terms.set(id, child);
+  child.stdout.on('data', (d) => send('term:data', new Uint8Array(d)));
+  child.stderr.on('data', () => { /* the shell's stderr is on the PTY already */ });
+  child.on('error', (err) => send('term:error',
+    'Could not start the terminal: ' + err.message + ' (is python3 installed?)'));
+  child.on('exit', (code) => { terms.delete(id); send('term:exit', code); });
+  if (size) writeResize(child, size.cols, size.rows);
+});
+
+ipcMain.on('term:input', (e, data) => {
+  const child = terms.get(e.sender.id);
+  if (child) { try { child.stdin.write(data); } catch (err) { /* exited */ } }
+});
+
+ipcMain.on('term:resize', (e, size) => {
+  const child = terms.get(e.sender.id);
+  if (child && size) writeResize(child, size.cols, size.rows);
+});
+
+function buildMenu() {
+  const template = [
+    { label: 'AuditXS', submenu: [{ role: 'reload' }, { role: 'toggleDevTools' },
+      { type: 'separator' }, { role: 'quit' }] },
+    { label: 'Terminal', submenu: [
+      { label: 'New Terminal', accelerator: 'CmdOrCtrl+Shift+T', click: openTerminalWindow },
+    ] },
+    { role: 'editMenu' },
+    { role: 'viewMenu' },
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
@@ -136,6 +233,7 @@ function createWindow() {
 
 app.whenReady().then(async () => {
   try {
+    buildMenu();
     const port = await freePort();
     serverProc = await startServer(port);
     await createWindow();
@@ -155,6 +253,7 @@ let shuttingDown = false;
 async function shutdown() {
   if (shuttingDown) return;
   shuttingDown = true;
+  for (const id of Array.from(terms.keys())) killTerm(id);
   await quitServer();
   if (serverProc) { try { serverProc.kill('SIGTERM'); } catch (e) { /* ignore */ } }
 }

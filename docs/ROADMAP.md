@@ -23,6 +23,17 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.21
+
+- **A real, Konsole-like terminal.** `auditxs terminal` opens a fully
+  interactive shell (runs TUI programs — vim, htop, less), preferring KDE
+  Konsole and offering to install it if none is present. The **Electron app
+  embeds a terminal in-window** (menu Terminal / Ctrl+Shift+T) via xterm.js + a
+  dependency-free Python PTY broker (`pty-bridge.py`) — no native `node-pty`
+  build. Wired into the Qt (Terminal tab) and zenity GUIs; the web console
+  stays restricted to `auditxs` subcommands (use SSH for a remote shell). New
+  error `AX1006`.
+
 ## Shipped in v0.20
 
 - **Web UI on/off switch — local or remote** (`auditxs webservice

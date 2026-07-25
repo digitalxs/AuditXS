@@ -181,6 +181,15 @@ code; with a code, explain it; with a term, search; with
 show recent occurrences from
 .IR /var/lib/auditxs/errors.log .
 .TP
+.B terminal
+Open a real, fully-interactive terminal (a login-ish shell) in a terminal
+emulator, preferring KDE
+.BR konsole (1)
+and falling back through the common emulators. If none is installed, offers to
+install Konsole. Runs unprivileged \(em a shell you could open yourself. The
+Electron desktop app additionally hosts a terminal inside its own window
+(menu Terminal, or Ctrl+Shift+T).
+.TP
 .B tui
 Launch the ncurses terminal UI (requires
 .B whiptail
