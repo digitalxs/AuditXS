@@ -126,12 +126,9 @@ safer default and needs no extra infrastructure.
 
 - **Dashboard** — the hardening score ring, PASS/FAIL/WARN/SKIP chips, and
   every check grouped by category and domain, with severity, CIS id, level
-  and NIST mapping. A red banner appears if a package has a known CVE.
-- **Features** — real Material toggle switches, one per fixable control.
-  Flipping an *off* control *on* shows the exact `explain` text first (what
-  will change / how it reverts), then applies it; the change is recorded in
-  a snapshot. Controls already on are locked here — turn them off from
-  Snapshots (a rollback), preserving the reversibility model.
+  and NIST mapping. A red banner appears if a package has a known CVE. Each
+  FAIL row carries its own **Fix it** button (see below), so fixes are applied
+  right from the results — no separate toggle screen.
 - **Snapshots** — every hardening run, with a one-click **Roll back**.
 - **Tools** — which defensive tools are installed. Install/scan is done from
   the CLI (`sudo auditxs tools install lynis`, `sudo auditxs tools scan`).

@@ -43,6 +43,13 @@ remembers the authentication for a few minutes, so consecutive GUI actions
 prompt only once. The CLI relies on sudo's own credential cache.
 .SH COMMANDS
 .TP
+.B start
+Guided run for newcomers. Performs a read-only audit, summarises what failed,
+then offers each automatic fix in turn \(em every change is shown first, applied
+only with consent, and fully reversible. A one-command front door to the same
+audit and harden machinery. Aliases:
+.BR guide ", " wizard .
+.TP
 .B audit
 Run all applicable checks (read-only). Saves HTML and JSON reports and prints
 a severity-weighted hardening score and a CVE warning banner. The HTML report

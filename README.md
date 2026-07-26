@@ -8,13 +8,13 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.22.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.23.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![Checks](https://img.shields.io/badge/checks-122-8957e5)](docs/CHECKS.md)
 [![Frameworks](https://img.shields.io/badge/NIST%20CSF%202.0%20·%20CIS%20·%20STIG-informational)](docs/COMPLIANCE.md)
 
-**Current version: v0.22.0** — see the [changelog](CHANGELOG.md)
+**Current version: v0.23.0** — see the [changelog](CHANGELOG.md)
 
 **Debian** · **Ubuntu** · **Pop!\_OS** · **Arch** · **Fedora** · **openSUSE** *(and derivatives)*
 
@@ -48,7 +48,25 @@ terminal UI, a web UI (localhost or LAN) and a native desktop app.
 
 ## 🚀 Quick start
 
-**Debian / Ubuntu — build and install the `.deb`:**
+**Fastest — one line *(reads a real terminal for the Server/Workstation prompt)*:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/digitalxs/AuditXS/main/scripts/install.sh | sudo bash
+# non-interactive:  … | sudo bash -s -- --workstation -y
+```
+
+> It clones AuditXS and runs `setup.sh`. Please read the script before piping it
+> into a root shell — never run an unread script as root, least of all a security
+> tool. The clone-and-inspect paths below do exactly the same thing, by hand.
+
+**Debian / Ubuntu — prebuilt `.deb`:** download the latest `auditxs_<version>_all.deb`
+from the [Releases page](https://github.com/digitalxs/AuditXS/releases), then:
+
+```bash
+sudo apt install ./auditxs_*_all.deb
+```
+
+Or build it yourself from a checkout:
 
 ```bash
 git clone https://github.com/digitalxs/AuditXS.git && cd AuditXS
@@ -56,8 +74,8 @@ git clone https://github.com/digitalxs/AuditXS.git && cd AuditXS
 sudo apt install ./dist/auditxs_*_all.deb
 ```
 
-Installs to `/usr/share/auditxs`, provides the `auditxs`, `auditxs-gui` and
-`update-auditxs` commands, a man page (`man auditxs`) and a desktop launcher,
+The `.deb` installs to `/usr/share/auditxs`, provides the `auditxs`, `auditxs-gui`
+and `update-auditxs` commands, a man page (`man auditxs`) and a desktop launcher,
 and updates cleanly with `apt`.
 
 **Any distribution — source installer *(dxsbash-style)*:**
@@ -83,7 +101,15 @@ sudo ./setup.sh --uninstall
 Update later with `sudo update-auditxs`; remove with `sudo /opt/auditxs/uninstall.sh`
 (your snapshots are preserved).
 
-**First run:**
+**First run — the guided way:**
+
+```bash
+sudo auditxs start                   # audit, then fix issues one at a time (recommended)
+```
+
+`start` walks the whole workflow: a read-only audit, then it offers each fix in
+turn — shown first, applied only with your OK, every change reversible. Prefer
+the steps individually?
 
 ```bash
 sudo auditxs audit                   # read-only — nothing is changed

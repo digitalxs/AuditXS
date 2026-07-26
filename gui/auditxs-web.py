@@ -240,7 +240,6 @@ body{padding-bottom:3rem}
 <div class="wrap">
   <div class="tabs">
     <div class="tab active" data-tab="dashboard">Dashboard</div>
-    <div class="tab" data-tab="features">Features</div>
     <div class="tab" data-tab="snapshots">Snapshots</div>
     <div class="tab" data-tab="tools">Tools</div>
     <div class="tab" data-tab="fleet">Fleet</div>
@@ -328,7 +327,6 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
 
 function render(){
  if(TAB==="dashboard")renderDash();
- else if(TAB==="features")renderFeatures();
  else if(TAB==="snapshots")renderSnaps();
  else if(TAB==="tools")renderTools();
  else if(TAB==="fleet")renderFleet();
@@ -355,29 +353,7 @@ function renderDash(){
   h+="</div>";}
  $("#view").innerHTML=h;
 }
-function renderFeatures(){
- if(!RESULTS.length){$("#view").innerHTML='<div class="empty">Run an audit first.</div>';return;}
- const fixable=RESULTS.filter(r=>r.fixable);
- let h=`<div class="note">Each switch is a security control. Turning one <b>on</b> applies its fix (you review it first) and is fully reversible via Snapshots. Controls already on are locked here; turn them off from the Snapshots tab.</div>`;
- const g=groupByCat(fixable);
- for(const cat in g){h+=`<div class="sect">${cat} <small>— ${g[cat][0].domain} domain</small></div><div class="card">`;
-  g[cat].forEach(r=>{const on=r.status==="PASS";
-   h+=`<div class="row"><div class="rowmain"><div class="rowtitle"><span class="cid">${r.id}</span> ${esc(r.title)}</div>
-    <div class="meta">${r.severity} · Level ${r.level}${r.cis?" · CIS "+r.cis:""}</div></div>
-    <label class="sw"><input type="checkbox" ${on?"checked disabled":""} data-id="${r.id}" onchange="onToggle(this)">
-    <span class="track"><span class="thumb"></span></span></label></div>`;});
-  h+="</div>";}
- $("#view").innerHTML=h;
-}
 let PENDING=null;
-async function onToggle(el){
- const id=el.dataset.id;el.checked=false; // don't flip until confirmed
- try{const ex=await api("/api/explain?id="+encodeURIComponent(id));
-  PENDING=id;$("#mTitle").textContent="Turn on "+id+"?";
-  $("#mBody").innerHTML=`<p>Review exactly what this will change. It is recorded in a snapshot and reversible.</p><pre>${esc(ex.text)}</pre>`;
-  $("#mConfirm").style.display="";
-  $("#modal").classList.add("open");}catch(e){toast("Could not load details");}
-}
 // Fix it (reversible, consented) / How to fix (detailed manual guidance).
 async function onFix(id,canApply){
  try{const ex=await api("/api/explain?id="+encodeURIComponent(id));

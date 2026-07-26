@@ -178,69 +178,6 @@ run_harden_gui() {
         --text "Re-run the audit now to verify the new state?" 2>/dev/null && run_audit_gui
 }
 
-# Features on/off — the toggle view the user drives to enable security
-# controls. Checked = the control is ON (currently passing). Ticking an OFF
-# control and applying turns it ON (harden). Turning a control OFF is done via
-# Rollback (per-run, fully reversible) — noted in the dialog.
-run_features_gui() {
-    local out="$WORK_DIR/audit.tsv"
-    if [ ! -s "$out" ]; then
-        zenity --info --title "AuditXS" --text "Run an <b>Audit</b> first so AuditXS knows the current state of each feature." 2>/dev/null
-        return
-    fi
-    local rows=() status id sev cat fixable title detail state
-    while IFS=$'\t' read -r status id sev cat fixable title detail; do
-        [ "$fixable" = yes ] || continue
-        case $status in
-            PASS) state=TRUE ;;   # feature is ON
-            *)    state=FALSE ;;  # OFF / not applied
-        esac
-        rows+=("$state" "$id" "$([ "$state" = TRUE ] && echo 'ON ✓' || echo 'off')" "$cat" "$title")
-    done < "$out"
-    if [ ${#rows[@]} -eq 0 ]; then
-        zenity --info --title "AuditXS" --text "No toggleable security features in the last audit." 2>/dev/null
-        return
-    fi
-
-    local chosen
-    chosen=$(zenity --list --checklist --title "AuditXS — Security features (on/off)" \
-        --text "Each row is a security control. <b>Ticked = ON</b>. Tick an <b>off</b> control and press OK to turn it on — you will review exactly what changes first, and it is fully reversible.\nTo turn a control <b>off</b> again, use <b>Rollback</b>." \
-        --column "On" --column "ID" --column "State" --column "Category" --column "Feature" \
-        --width 940 --height 560 --separator " " "${rows[@]}" 2>/dev/null) || return
-    [ -n "$chosen" ] || return
-
-    # Enable only those that are ticked AND currently OFF (FAIL).
-    local to_enable="" c cur
-    for c in $chosen; do
-        cur=$(awk -F'\t' -v id="$c" '$2==id{print $1}' "$out")
-        [ "$cur" = PASS ] || to_enable+=" $c"
-    done
-    to_enable=${to_enable# }
-    if [ -z "$to_enable" ]; then
-        zenity --info --title "AuditXS" --text "Every ticked feature is already ON. Nothing to change.\n(To turn features off, use Rollback.)" 2>/dev/null
-        return
-    fi
-
-    # shellcheck disable=SC2086
-    "$AUDITXS_BIN" explain $to_enable 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' > "$WORK_DIR/explain.txt"
-    zenity --text-info --title "AuditXS — what turning these on will change" \
-        --filename "$WORK_DIR/explain.txt" \
-        --checkbox "I reviewed these changes and want to turn these features ON." \
-        --width 860 --height 600 2>/dev/null || return
-
-    local cmd=("$AUDITXS_BIN" harden --yes --quiet) log="$WORK_DIR/harden.log" prog="$WORK_DIR/harden.progress"
-    for c in $to_enable; do cmd+=(--check "$c"); done
-    : > "$prog"
-    ( elevate "${cmd[@]}" --progress-file "$prog" > "$log" 2>&1; echo $? > "$WORK_DIR/harden.rc" ) &
-    local fpid=$!
-    progress_feed "$fpid" "$prog" | zenity --progress --title "AuditXS" \
-        --text "Turning on selected features…" --percentage=0 --no-cancel --auto-close 2>/dev/null
-    wait "$fpid" 2>/dev/null
-    sed 's/\x1b\[[0-9;]*m//g' "$log" > "$log.clean" 2>/dev/null && mv "$log.clean" "$log"
-    zenity --text-info --title "AuditXS — result (every change is listed & reversible)" \
-        --filename "$log" --width 860 --height 600 2>/dev/null
-    zenity --question --title "AuditXS" --text "Re-run the audit to refresh feature states?" 2>/dev/null && run_audit_gui
-}
 
 # Security tooling submenu (status / install / scanners / VPN).
 run_tools_gui() {
@@ -655,7 +592,6 @@ while true; do
         --text "🛡️ <b>AuditXS ${AXVER:-}</b> · $AXHOST\nTransparent, reversible security auditing.\n<b>Audit</b> never changes anything; <b>Harden</b> asks before every fix; <b>Rollback</b> undoes it." \
         --column "Action" --column "Description" \
         "Audit"     "Run a read-only security audit of this system" \
-        "Features"  "Turn security controls on/off (reversible)" \
         "Harden"    "Review and apply fixes for failed checks (reversible)" \
         "Fleet"     "Audit remote hosts over SSH (read-only, aggregated dashboard)" \
         "Tools"     "Install and run security tools (Lynis, CrowdSec, Suricata…)" \
@@ -677,7 +613,6 @@ while true; do
 
     case $choice in
         Audit)     run_audit_gui; cve_warn_gui ;;
-        Features)  run_features_gui ;;
         Harden)    run_harden_gui ;;
         Fleet)     run_fleet_gui ;;
         Tools)     run_tools_gui ;;

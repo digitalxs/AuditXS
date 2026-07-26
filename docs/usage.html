@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.22.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.23.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg active" href="usage.html">User manual</a>
@@ -102,12 +102,13 @@
 <a class="pg" href="../index.html">AuditXS home</a>
 <a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
 <main>
-<h1 id="auditxs-user-manual">AuditXS user manual</h1><div class="onpage"><b>On this page</b><a href="#contents">Contents</a><a href="#concepts">Concepts</a><a href="#installation">Installation</a><a href="#auditing">Auditing</a><a href="#hardening">Hardening</a><a href="#rollback">Rollback</a><a href="#baselines--drift-detection">Baselines &amp; drift detection</a><a href="#scheduled-audits">Scheduled audits</a><a href="#vulnerability-cve-warnings">Vulnerability (CVE) warnings</a><a href="#applying-package-updates">Applying package updates</a><a href="#security-tooling">Security tooling</a><a href="#fleet-mode--auditing-many-hosts-over-ssh">Fleet mode — auditing many hosts over SSH</a><a href="#error-numbers">Error numbers</a><a href="#maintenance-doctor">Maintenance (doctor)</a><a href="#interfaces-by-profile">Interfaces by profile</a><a href="#the-terminal-ui-ncurses">The terminal UI (ncurses)</a><a href="#a-real-terminal-a-shell">A real terminal (a shell)</a><a href="#the-web-ui-both-profiles">The web UI (both profiles)</a><a href="#the-gui-workstation-profile">The GUI (workstation profile)</a><a href="#privileges--credential-caching">Privileges &amp; credential caching</a><a href="#debugging">Debugging</a><a href="#files--directories">Files &amp; directories</a><a href="#exit-codes">Exit codes</a></div>
+<h1 id="auditxs-user-manual">AuditXS user manual</h1><div class="onpage"><b>On this page</b><a href="#contents">Contents</a><a href="#concepts">Concepts</a><a href="#installation">Installation</a><a href="#getting-started--the-guided-run">Getting started — the guided run</a><a href="#auditing">Auditing</a><a href="#hardening">Hardening</a><a href="#rollback">Rollback</a><a href="#baselines--drift-detection">Baselines &amp; drift detection</a><a href="#scheduled-audits">Scheduled audits</a><a href="#vulnerability-cve-warnings">Vulnerability (CVE) warnings</a><a href="#applying-package-updates">Applying package updates</a><a href="#security-tooling">Security tooling</a><a href="#fleet-mode--auditing-many-hosts-over-ssh">Fleet mode — auditing many hosts over SSH</a><a href="#error-numbers">Error numbers</a><a href="#maintenance-doctor">Maintenance (doctor)</a><a href="#interfaces-by-profile">Interfaces by profile</a><a href="#the-terminal-ui-ncurses">The terminal UI (ncurses)</a><a href="#a-real-terminal-a-shell">A real terminal (a shell)</a><a href="#the-web-ui-both-profiles">The web UI (both profiles)</a><a href="#the-gui-workstation-profile">The GUI (workstation profile)</a><a href="#privileges--credential-caching">Privileges &amp; credential caching</a><a href="#debugging">Debugging</a><a href="#files--directories">Files &amp; directories</a><a href="#exit-codes">Exit codes</a></div>
 <p>AuditXS audits Linux systems against fundamental security baselines and — only with your explicit consent — hardens them with fully reversible changes. This manual covers the CLI, the GUI, and the operational workflows. See <a href="compliance.html">COMPLIANCE.md</a> for framework alignment and <a href="checks.html">CHECKS.md</a> for every check's documentation.</p>
 <h2 id="contents">Contents</h2>
 <ol>
 <li><a href="#concepts">Concepts</a></li>
 <li><a href="#installation">Installation</a></li>
+<li><a href="#getting-started--the-guided-run">Getting started — the guided run</a></li>
 <li><a href="#auditing">Auditing</a></li>
 <li><a href="#hardening">Hardening</a></li>
 <li><a href="#rollback">Rollback</a></li>
@@ -130,6 +131,10 @@
 <li><strong>Baseline</strong> — an approved audit report used to detect drift.</li>
 </ul>
 <h2 id="installation">Installation</h2>
+<p>Fastest — the one-line installer (it clones AuditXS and runs <code>setup.sh</code>, and reads a real terminal for the Server/Workstation prompt):</p>
+<pre class="lang-bash"><code>curl -fsSL https://raw.githubusercontent.com/digitalxs/AuditXS/main/scripts/install.sh | sudo bash
+# non-interactive:  … | sudo bash -s -- --workstation -y</code></pre>
+<p>Read the script before piping it into a root shell — never run an unread script as root, least of all a security tool. The manual paths below do the same thing:</p>
 <pre class="lang-bash"><code>git clone https://github.com/digitalxs/AuditXS.git
 cd AuditXS
 sudo ./setup.sh                    # interactive: mode + Server/Workstation
@@ -138,6 +143,12 @@ sudo ./setup.sh --workstation -y --no-gui
 sudo ./setup.sh --refresh          # repair/update files, keep configuration
 sudo update-auditxs                # update an existing installation
 sudo /opt/auditxs/uninstall.sh    # remove (asks before deleting snapshots)</code></pre>
+<p>On Debian/Ubuntu you can also install the prebuilt <code>.deb</code> from the <a href="https://github.com/digitalxs/AuditXS/releases">Releases page</a>: <code>sudo apt install ./auditxs_*_all.deb</code>.</p>
+<h2 id="getting-started--the-guided-run">Getting started — the guided run</h2>
+<p>New to AuditXS? One command walks the whole workflow:</p>
+<pre class="lang-bash"><code>sudo auditxs start</code></pre>
+<p><code>start</code> runs a read-only audit, shows what failed and why, then offers each automatic fix in turn — every change is shown first, applied only with your consent, and fully reversible (<code>sudo auditxs rollback latest</code> undoes the run). It is the friendly front door to the same engine the individual commands below use; reach for <code>audit</code> and <code>harden</code> directly once you know your way around.</p>
+<p>Not sure what a command is called? <code>auditxs</code> on its own (or <code>auditxs help</code>) lists the everyday commands; <code>auditxs help --full</code> prints the complete reference; and a mistyped command suggests the closest match.</p>
 <h2 id="auditing">Auditing</h2>
 <p>Audits are <strong>strictly read-only</strong> — nothing on the system changes.</p>
 <pre class="lang-bash"><code>sudo auditxs audit                          # everything applicable to the profile
@@ -314,7 +325,7 @@ auditxs errors log        # recent occurrences on this host</code></pre>
 <p>The web UI runs on <strong>both</strong> profiles — on a server it's a network-reachable control panel (localhost by default, <code>--remote</code> to expose it on the server's IP; see <em>A network-reachable web UI on a server</em> below). The <strong>desktop</strong> GUIs (<code>qt</code>, <code>electron</code>, <code>auditxs-gui</code>) need a display, so they refuse to start on the server profile and point you at <code>sudo auditxs tui</code> or the web UI. Check the active profile with <code>auditxs profile</code>; override per-run with <code>--profile workstation</code> (or edit <code>/etc/auditxs/auditxs.conf</code>).</p>
 <h2 id="the-terminal-ui-ncurses">The terminal UI (ncurses)</h2>
 <pre class="lang-bash"><code>sudo auditxs tui                 # menu-driven interface in the terminal</code></pre>
-<p>The recommended interface for servers: it runs entirely in the terminal over a plain SSH session — no browser, no tunnel, no X, no root web server. It is a thin front-end over the CLI (whiptail, or <code>dialog</code> as a fallback) and offers the full workflow — audit, turn controls on/off, roll back, CVE check, install/run security tools, generate a report, doctor — with the same mandatory <em>review before every change</em> screen as the CLI. Available on workstations too.</p>
+<p>The recommended interface for servers: it runs entirely in the terminal over a plain SSH session — no browser, no tunnel, no X, no root web server. It is a thin front-end over the CLI (whiptail, or <code>dialog</code> as a fallback) and offers the full workflow — audit, harden (review and apply fixes), roll back, CVE check, install/run security tools, generate a report, doctor — with the same mandatory <em>review before every change</em> screen as the CLI. Available on workstations too.</p>
 <h2 id="a-real-terminal-a-shell">A real terminal (a shell)</h2>
 <pre class="lang-bash"><code>auditxs terminal                 # open a fully-interactive terminal — prefers Konsole</code></pre>
 <p>Beyond the line-based console in the GUIs (handy for quick one-off commands), <code>auditxs terminal</code> opens a <strong>real, fully-interactive terminal</strong> — a shell that runs TUI programs (vim, htop, less, nano) and anything else you'd type. It opens your terminal emulator, <strong>preferring KDE Konsole</strong> and falling back through the common emulators (kgx, gnome-terminal, tilix, xfce4-terminal, alacritty, kitty, foot, xterm, …); if none is installed it offers to install Konsole. It runs with your own unprivileged rights — a shell you could open yourself.</p>
@@ -352,7 +363,6 @@ AUDITXS_GUI=zenity  auditxs-gui      # use the classic zenity dialogs</code></pr
 <p>The Qt window runs unprivileged and elevates each action with pkexec, so it displays normally on both X11 and Wayland. The zenity flow (below) behaves the same way.</p>
 <ul>
 <li><strong>Audit</strong> — read-only audit with a sortable results table; a CVE warning pops up afterwards if vulnerable packages are found.</li>
-<li><strong>Features</strong> — the on/off toggle view: every security control with its live ON/OFF state. Tick an off control and apply to turn it on (with the mandatory review screen); turn controls off again via Rollback.</li>
 <li><strong>Harden</strong> — pick fixes from a checklist, review <em>exactly what will change</em> (mandatory review screen), apply, see the full change log.</li>
 <li><strong>Tools</strong> — install security tools, run scanners, review VPN config.</li>
 <li><strong>Report</strong> — generate and open the Material-style HTML report.</li>
@@ -369,7 +379,7 @@ AUDITXS_GUI=zenity  auditxs-gui      # use the classic zenity dialogs</code></pr
 <li><strong>web</strong> (<code>auditxs web</code>) — a browser tab; also reachable over an SSH tunnel.</li>
 <li><strong>Electron</strong> (<code>auditxs electron</code>) — the web UI as a standalone desktop app. It runs unprivileged and elevates the web server once with <code>pkexec</code> (one prompt per session with the polkit <em>keep</em> policy). Needs Node.js; the Electron runtime is fetched per-user on first launch, so the first <code>auditxs electron</code> may take a moment while it downloads.</li>
 </ul>
-<p>Every button and control is wired to a real action: <strong>Fix it</strong> applies a reversible fix after review; the <strong>Feature</strong> on/off switches turn the corresponding control on when toggled (after the mandatory review step); the <strong>Fleet</strong> controls run remote audits; the <strong>console</strong> runs commands. These flows are exercised end-to-end in the test suite (browser-driven for the web UI, offscreen-QML plus a data-layer selftest for Qt).</p>
+<p>Every button and control is wired to a real action: <strong>Fix it</strong> applies a reversible fix after review; the <strong>Fleet</strong> controls run remote audits; the <strong>console</strong> runs commands. These flows are exercised end-to-end in the test suite (browser-driven for the web UI, offscreen-QML plus a data-layer selftest for Qt).</p>
 <h3 id="the-guis-do-everything-the-cli-does-v014">The GUIs do everything the CLI does (v0.14)</h3>
 <ul>
 <li><strong>Fix it on every finding.</strong> Each FAIL/WARN row (Qt dashboard, web dashboard, and the zenity results list via <em>Fix / Details</em>) carries a button: <strong>Fix it</strong> runs the review → consent → reversible-fix → verify flow for that one check; <strong>How to fix</strong> shows detailed manual guidance (the exact change to make, and how it would be reverted) when no automatic fix exists.</li>

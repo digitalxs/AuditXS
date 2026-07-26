@@ -151,12 +151,9 @@ ApplicationWindow {
         chips.text = summary.pass + " passed · " + summary.fail + " failed · "
                    + summary.warn + " warnings · " + summary.skip + " skipped";
         dashModel.clear();
-        featModel.clear();
         var rs = d.results ? d.results : [];
         for (var i = 0; i < rs.length; i++) {
             dashModel.append(rs[i]);
-            if (rs[i].fixable)
-                featModel.append(rs[i]);
         }
     }
 
@@ -316,7 +313,6 @@ ApplicationWindow {
             id: tabs
             Layout.fillWidth: true
             TabButton { text: "Dashboard" }
-            TabButton { text: "Features" }
             TabButton { text: "Snapshots"; onClicked: refreshSnaps() }
             TabButton { text: "Tools" }
             TabButton { text: "Fleet" }
@@ -369,34 +365,6 @@ ApplicationWindow {
                                 reviewDialog.title = reviewDialog.canApply
                                     ? ("Fix " + id + "? (reversible — snapshotted)")
                                     : ("How to fix " + id);
-                                reviewDialog.open();
-                            }
-                        }
-                    }
-                }
-            }
-
-            // --- Features (toggle switches) ---
-            ListView {
-                clip: true
-                model: ListModel { id: featModel }
-                delegate: ItemDelegate {
-                    width: ListView.view ? ListView.view.width : 0
-                    contentItem: RowLayout {
-                        spacing: 12
-                        ColumnLayout {
-                            Layout.fillWidth: true; spacing: 2
-                            Label { text: id + "   " + title; font.pixelSize: 14; Layout.fillWidth: true; elide: Text.ElideRight }
-                            Label { text: severity + " · Level " + level + (cis ? " · CIS " + cis : ""); opacity: 0.55; font.pixelSize: 11 }
-                        }
-                        Switch {
-                            checked: status === "PASS"
-                            enabled: status !== "PASS" && !win.busy   // already-on controls: turn off via Snapshots
-                            onClicked: {
-                                checked = false;          // don't flip until confirmed
-                                reviewDialog.cid = id;
-                                reviewText.text = backend.explain(id);
-                                reviewDialog.title = "Turn on " + id + "?";
                                 reviewDialog.open();
                             }
                         }

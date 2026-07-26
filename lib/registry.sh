@@ -346,7 +346,14 @@ cmd_harden() {
     print_audit_header
     run_audit
     print_summary
+    harden_apply_loop
+}
 
+# harden_apply_loop — the interactive, per-check fix loop. It assumes an audit
+# has just run (RESULT_STATUS populated) and applies the reversible fixes with
+# per-check consent. Shared by 'harden' and the 'start' wizard so neither has
+# to run the audit twice.
+harden_apply_loop() {
     local targets=() id
     for id in "${CHECK_IDS[@]}"; do
         [ "${RESULT_STATUS[$id]:-}" = "FAIL" ] || continue
@@ -403,6 +410,49 @@ cmd_harden() {
     hr
     say "Hardening summary: ${GREEN}$applied applied${RC} · ${DIM}$skipped skipped${RC} · ${YELLOW}$notdone not applied/verified${RC}"
     snapshot_finish
+}
+
+# ---------------------------------------------------------------- start
+# cmd_start — the guided, first-run-friendly flow. One command walks the whole
+# workflow: audit (read-only) → show what failed → offer to apply fixes
+# interactively (each shown first, each reversible) → point at rollback. It
+# reuses the exact audit and harden machinery, so there are no separate code
+# paths to keep in sync and the system is only audited once.
+cmd_start() {
+    nala_box "Welcome to AuditXS"
+    nala_row "A guided run, in three steps:"
+    nala_row "  ${BOLD}1${RC}  Audit this system — ${GREEN}read-only${RC}, nothing is changed."
+    nala_row "  ${BOLD}2${RC}  Show what failed, and why."
+    nala_row "  ${BOLD}3${RC}  Offer to fix each issue — shown first, applied only with your OK, and reversible."
+    nala_end
+    say ""
+
+    # Steps 1 & 2 — the audit (identical to 'auditxs audit').
+    print_audit_header
+    run_audit
+    print_summary
+    cve_scan; cve_banner
+    save_reports
+
+    if [ "${N_FAIL:-0}" -eq 0 ]; then
+        say ""
+        ok "Nothing to fix — no failing checks. This system is in good shape."
+        info "Re-run any time with ${BOLD}sudo auditxs start${RC}, or turn on daily drift alerts with ${BOLD}sudo auditxs schedule enable${RC}."
+        return 0
+    fi
+
+    # Step 3 — offer the interactive, reversible fix loop.
+    say ""
+    [ "$DRYRUN" = 1 ] && info "${BOLD}Dry-run:${RC} fixes will be shown but nothing is changed."
+    if ! confirm "Review and apply the fixes now? (each change is shown first, and is reversible)"; then
+        say ""
+        info "No changes made. When you're ready, run ${BOLD}sudo auditxs harden${RC}, or ${BOLD}sudo auditxs start${RC} to run this guide again."
+        return 0
+    fi
+    say ""
+    harden_apply_loop
+    say ""
+    info "All set. Undo everything from this run with ${BOLD}sudo auditxs rollback latest${RC} (list snapshots: ${BOLD}sudo auditxs snapshots${RC})."
 }
 
 # ------------------------------------------------------------- list/explain

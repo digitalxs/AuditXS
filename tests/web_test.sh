@@ -64,11 +64,11 @@ curl -s -H "X-Auth-Token: $TOKEN" "$base/api/audit" \
     && ck "audit returns JSON with summary" yes yes || ck "audit returns JSON with summary" yes no
 
 # The interactive wiring must be present in the served page (regression guard
-# for the buttons/toggles verified end-to-end in a browser): Fix it / How to
-# fix (onFix), Feature toggles (onToggle), the harden call, the fleet run with
-# credential fields, and the console.
+# for the buttons verified end-to-end in a browser): Fix it / How to fix
+# (onFix), the harden call, the fleet run with credential fields, and the
+# console.
 PAGEHTML=$(curl -s -H "X-Auth-Token: $TOKEN" "$base/")
-for pat in 'onclick="onFix(' 'onchange="onToggle(this)"' '/api/harden' \
+for pat in 'onclick="onFix(' '/api/harden' \
            'id="fleetRun"' 'id="fleetPass"' 'id="fleetSudoPass"' \
            'data-tab="web"' 'function renderWeb' 'id="webEnable"' '/api/webservice' \
            'id="conIn"' 'id="conToggle"' '/api/cli'; do

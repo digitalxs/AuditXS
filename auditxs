@@ -37,6 +37,7 @@ ${BOLD}USAGE${RC}
   auditxs <command> [options]
 
 ${BOLD}COMMANDS${RC}
+  start       Guided run for newcomers: audit, then fix issues one at a time
   audit       Run all applicable checks (read-only — never changes anything)
   harden      Review failed checks and apply fixes one by one, with consent
   rollback    Revert a hardening snapshot:  auditxs rollback <id> | latest
@@ -105,6 +106,7 @@ ${BOLD}FLEET OPTIONS${RC} (auditxs fleet — read-only audit over SSH)
   --insecure-host-key            Disable host-key checking (trusted networks only)
 
 ${BOLD}EXAMPLES${RC}
+  sudo auditxs start                        Guided run — audit, then fix issues one by one
   sudo auditxs audit                        Full read-only audit + HTML/JSON report
   sudo auditxs harden --dry-run             Preview every change without applying
   sudo auditxs harden --category SSH        Harden SSH only, one fix at a time
@@ -117,6 +119,84 @@ ${BOLD}EXAMPLES${RC}
 Supported: Debian, Ubuntu, Pop!_OS, Arch, Fedora, openSUSE (and derivatives).
 Profiles:  server, workstation — chosen during installation (see /etc/auditxs/auditxs.conf).
 EOF
+}
+
+# Concise help — the everyday commands only. Shown by bare 'auditxs' and
+# 'auditxs help'; the full 26-command reference is 'auditxs help --full'.
+usage_core() {
+    cat <<EOF
+${BOLD}AuditXS v$AUDITXS_VERSION${RC} — transparent, reversible Linux security auditing
+
+${BOLD}START HERE${RC}
+  ${BOLD}sudo auditxs start${RC}   Guided run: audit, then fix issues one at a time (recommended)
+
+${BOLD}EVERYDAY COMMANDS${RC}
+  audit       Read-only audit — score + report, never changes anything
+  harden      Review failed checks and apply fixes one by one, with consent
+  rollback    Undo a hardening run:  ${BOLD}auditxs rollback latest${RC}
+  report      Write or print a report (--format html|json|tsv|csv|sarif)
+  list        Browse the check catalogue      explain   Full docs for a check ID
+  tui         Terminal (ncurses) UI           web       Material web UI (--remote for the LAN)
+  doctor      Diagnose the installation
+
+${BOLD}EXAMPLES${RC}
+  sudo auditxs start                     The easy path — audit, then guided fixes
+  sudo auditxs audit                     Full read-only audit + HTML/JSON report
+  sudo auditxs harden --dry-run          Preview every change without applying
+  sudo auditxs rollback latest           Undo the most recent hardening run
+
+More commands — fleet, baseline, schedule, cve, tools, waivers, alerts, errors, and
+every option:  ${BOLD}auditxs help --full${RC}   ·   docs: https://auditxs.digitalxs.ca/docs
+EOF
+}
+
+# A fresh install that has never produced a report. Best-effort and quiet: only
+# claims "first run" when it can positively see there are no saved reports.
+first_run() {
+    local rdir="${REPORT_DIR:-/var/lib/auditxs/reports}"
+    [ -d "$rdir" ] || return 0
+    ! compgen -G "$rdir/*.json" >/dev/null 2>&1
+}
+
+welcome_banner() {
+    printf '%b\n' "${GREEN}Welcome to AuditXS.${RC} Looks like a fresh install — the quickest start is:"
+    printf '%b\n\n' "  ${BOLD}sudo auditxs start${RC}   (audit this system, then fix issues one at a time — every change reversible)"
+}
+
+# Levenshtein edit distance between two short strings (pure Bash) — used to
+# suggest the intended command when someone mistypes one.
+_edit_distance() { # <a> <b> -> prints distance
+    local a=$1 b=$2 la=${#1} lb=${#2} i j cost m del ins sub
+    local -a prev cur
+    for ((j = 0; j <= lb; j++)); do prev[j]=$j; done
+    for ((i = 1; i <= la; i++)); do
+        cur[0]=$i
+        for ((j = 1; j <= lb; j++)); do
+            [ "${a:i-1:1}" = "${b:j-1:1}" ] && cost=0 || cost=1
+            del=$((prev[j] + 1)); ins=$((cur[j-1] + 1)); sub=$((prev[j-1] + cost))
+            m=$del; [ "$ins" -lt "$m" ] && m=$ins; [ "$sub" -lt "$m" ] && m=$sub
+            cur[j]=$m
+        done
+        for ((j = 0; j <= lb; j++)); do prev[j]=${cur[j]}; done
+    done
+    echo "${prev[lb]}"
+}
+
+# Suggest the closest real command to a mistyped one (edit distance ≤ 2).
+suggest_command() { # <typed> -> prints suggestion or nothing
+    local typed=$1 c best="" bestd=99 bestfc=0 d fc
+    local -a known=(start audit harden rollback snapshots list explain report diff
+        baseline schedule doctor cve update tools fleet waive waivers unwaive alert
+        errors terminal tui web webservice qt electron profile version help)
+    for c in "${known[@]}"; do
+        d=$(_edit_distance "$typed" "$c")
+        [ "${c:0:1}" = "${typed:0:1}" ] && fc=1 || fc=0
+        # closest wins; ties broken toward a shared first letter (wbe → web, not cve)
+        if [ "$d" -lt "$bestd" ] || { [ "$d" -eq "$bestd" ] && [ "$fc" -gt "$bestfc" ]; }; then
+            bestd=$d; best=$c; bestfc=$fc
+        fi
+    done
+    [ -n "$best" ] && [ "$bestd" -le 2 ] && echo "$best"
 }
 
 resolve_profile() {
@@ -320,6 +400,8 @@ ensure_electron_runtime() {   # <source app dir> — resolves ELECTRON_RUN_DIR
 }
 
 main() {
+    local no_args=0
+    [ $# -eq 0 ] && no_args=1
     local cmd=${1:-help}
     [ $# -gt 0 ] && shift
 
@@ -381,7 +463,11 @@ main() {
             echo "AuditXS v$AUDITXS_VERSION"
             return 0 ;;
         help|--help|-h)
-            usage
+            case " ${ARGS[*]} " in
+                *" full "*|*" --full "*|*" all "*) usage ;;
+                *)  [ "$no_args" = 1 ] && first_run && welcome_banner
+                    usage_core ;;
+            esac
             return 0 ;;
         list)
             resolve_profile
@@ -430,6 +516,12 @@ main() {
             resolve_profile
             log "harden started (profile=$PROFILE dry-run=$DRYRUN yes=$ASSUME_YES)"
             cmd_harden
+            return 0 ;;
+        start|guide|wizard)
+            require_root start
+            resolve_profile
+            log "start wizard (profile=$PROFILE dry-run=$DRYRUN)"
+            cmd_start
             return 0 ;;
         snapshots)
             require_root snapshots
@@ -542,7 +634,11 @@ main() {
             cmd_schedule "${ARGS[@]}"
             return $? ;;
         *)
-            die "Unknown command: $cmd (see 'auditxs help')" ;;
+            local _sugg; _sugg=$(suggest_command "$cmd")
+            if [ -n "$_sugg" ]; then
+                die "Unknown command: '$cmd'. Did you mean '${BOLD}$_sugg${RC}'?  (run 'auditxs help')"
+            fi
+            die "Unknown command: '$cmd' (run 'auditxs help' for the command list)" ;;
     esac
 }
 

@@ -10,17 +10,18 @@ workflows. See [COMPLIANCE.md](COMPLIANCE.md) for framework alignment and
 
 1. [Concepts](#concepts)
 2. [Installation](#installation)
-3. [Auditing](#auditing)
-4. [Hardening](#hardening)
-5. [Rollback](#rollback)
-6. [Baselines & drift detection](#baselines--drift-detection)
-7. [Scheduled audits](#scheduled-audits)
-8. [Maintenance (doctor)](#maintenance-doctor)
-9. [The GUI](#the-gui-workstation-profile)
-10. [Privileges & credential caching](#privileges--credential-caching)
-11. [Debugging](#debugging)
-12. [Files & directories](#files--directories)
-13. [Exit codes](#exit-codes)
+3. [Getting started — the guided run](#getting-started--the-guided-run)
+4. [Auditing](#auditing)
+5. [Hardening](#hardening)
+6. [Rollback](#rollback)
+7. [Baselines & drift detection](#baselines--drift-detection)
+8. [Scheduled audits](#scheduled-audits)
+9. [Maintenance (doctor)](#maintenance-doctor)
+10. [The GUI](#the-gui-workstation-profile)
+11. [Privileges & credential caching](#privileges--credential-caching)
+12. [Debugging](#debugging)
+13. [Files & directories](#files--directories)
+14. [Exit codes](#exit-codes)
 
 ## Concepts
 
@@ -43,6 +44,17 @@ workflows. See [COMPLIANCE.md](COMPLIANCE.md) for framework alignment and
 
 ## Installation
 
+Fastest — the one-line installer (it clones AuditXS and runs `setup.sh`, and
+reads a real terminal for the Server/Workstation prompt):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/digitalxs/AuditXS/main/scripts/install.sh | sudo bash
+# non-interactive:  … | sudo bash -s -- --workstation -y
+```
+
+Read the script before piping it into a root shell — never run an unread script
+as root, least of all a security tool. The manual paths below do the same thing:
+
 ```bash
 git clone https://github.com/digitalxs/AuditXS.git
 cd AuditXS
@@ -53,6 +65,28 @@ sudo ./setup.sh --refresh          # repair/update files, keep configuration
 sudo update-auditxs                # update an existing installation
 sudo /opt/auditxs/uninstall.sh    # remove (asks before deleting snapshots)
 ```
+
+On Debian/Ubuntu you can also install the prebuilt `.deb` from the
+[Releases page](https://github.com/digitalxs/AuditXS/releases):
+`sudo apt install ./auditxs_*_all.deb`.
+
+## Getting started — the guided run
+
+New to AuditXS? One command walks the whole workflow:
+
+```bash
+sudo auditxs start
+```
+
+`start` runs a read-only audit, shows what failed and why, then offers each
+automatic fix in turn — every change is shown first, applied only with your
+consent, and fully reversible (`sudo auditxs rollback latest` undoes the run).
+It is the friendly front door to the same engine the individual commands below
+use; reach for `audit` and `harden` directly once you know your way around.
+
+Not sure what a command is called? `auditxs` on its own (or `auditxs help`)
+lists the everyday commands; `auditxs help --full` prints the complete
+reference; and a mistyped command suggests the closest match.
 
 ## Auditing
 
@@ -479,10 +513,10 @@ sudo auditxs tui                 # menu-driven interface in the terminal
 The recommended interface for servers: it runs entirely in the terminal
 over a plain SSH session — no browser, no tunnel, no X, no root web server.
 It is a thin front-end over the CLI (whiptail, or `dialog` as a fallback)
-and offers the full workflow — audit, turn controls on/off, roll back,
-CVE check, install/run security tools, generate a report, doctor — with the
-same mandatory *review before every change* screen as the CLI. Available on
-workstations too.
+and offers the full workflow — audit, harden (review and apply fixes), roll
+back, CVE check, install/run security tools, generate a report, doctor — with
+the same mandatory *review before every change* screen as the CLI. Available
+on workstations too.
 
 ## A real terminal (a shell)
 
@@ -589,9 +623,6 @@ same way.
 
 - **Audit** — read-only audit with a sortable results table; a CVE warning
   pops up afterwards if vulnerable packages are found.
-- **Features** — the on/off toggle view: every security control with its
-  live ON/OFF state. Tick an off control and apply to turn it on (with the
-  mandatory review screen); turn controls off again via Rollback.
 - **Harden** — pick fixes from a checklist, review *exactly what will
   change* (mandatory review screen), apply, see the full change log.
 - **Tools** — install security tools, run scanners, review VPN config.
@@ -620,9 +651,8 @@ whichever fits:
   `auditxs electron` may take a moment while it downloads.
 
 Every button and control is wired to a real action: **Fix it** applies a
-reversible fix after review; the **Feature** on/off switches turn the
-corresponding control on when toggled (after the mandatory review step); the
-**Fleet** controls run remote audits; the **console** runs commands. These
+reversible fix after review; the **Fleet** controls run remote audits; the
+**console** runs commands. These
 flows are exercised end-to-end in the test suite (browser-driven for the web
 UI, offscreen-QML plus a data-layer selftest for Qt).
 

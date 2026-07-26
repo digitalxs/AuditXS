@@ -7,6 +7,34 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.23.0]
+
+### Added
+- **`auditxs start` — a guided run for newcomers.** One command walks the whole
+  workflow: a read-only audit, a plain-language summary of what failed, then it
+  offers each automatic fix in turn — every change shown first, applied only
+  with consent, and fully reversible. It reuses the exact audit and harden
+  machinery (the fix loop is now a shared `harden_apply_loop`), so the system
+  is audited only once and there is no separate code path to drift.
+- **Friendlier help.** Bare `auditxs` and `auditxs help` now show a short
+  everyday-commands view; `auditxs help --full` prints the complete reference.
+- **"Did you mean …?" suggestions.** A mistyped command (e.g. `audti`, `wbe`)
+  now suggests the closest real command (Levenshtein ≤ 2, first-letter
+  tie-break) instead of a bare error.
+- **First-run nudge.** On a fresh install with no saved reports, bare `auditxs`
+  greets you and points at `sudo auditxs start`.
+- **One-line installer** (`scripts/install.sh`): `curl -fsSL …/install.sh |
+  sudo bash` clones AuditXS and runs `setup.sh`, feeding it a real terminal for
+  the Server/Workstation prompt even over a pipe. The README/USAGE now also
+  surface the prebuilt `.deb` from the Releases page.
+
+### Changed
+- **The "Features" (turn-controls-on/off) section is gone from every GUI.** It
+  duplicated hardening behind a confusing on/off metaphor. Hardening is
+  unchanged and still one click away: the **Fix it** buttons on the Dashboard
+  (Qt + web), the **Harden** menu (zenity), and the TUI's menu entry — renamed
+  from *Features* to **Harden** — all apply the same reviewed, reversible fixes.
+
 ## [0.22.0]
 
 ### Changed

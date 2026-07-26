@@ -23,6 +23,23 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.23
+
+- **Ease of use — a guided front door.** `auditxs start` runs the whole
+  workflow in one command (audit → plain-language findings → offer each
+  reversible fix with consent), so a newcomer never has to assemble the
+  audit → harden → rollback sequence themselves. It shares the exact fix loop
+  with `harden`, so there is one code path, not two.
+- **Friendlier CLI.** Bare `auditxs`/`auditxs help` show a short everyday
+  view (full reference under `auditxs help --full`); mistyped commands get a
+  "did you mean …?" suggestion; a fresh install nudges toward `auditxs start`.
+- **One-line install.** `scripts/install.sh` (`curl … | sudo bash`) clones and
+  runs the installer, and the prebuilt `.deb` is surfaced from Releases.
+- **Simpler GUIs.** The redundant "Features" on/off toggle section was removed
+  from all four interfaces; hardening stays one click away via the Dashboard
+  **Fix it** buttons, the zenity **Harden** menu, and the TUI's **Harden**
+  entry — a deliberate reduction in surface area, not a loss of capability.
+
 ## Shipped in v0.22
 
 - **Web UI on the server profile + LAN access.** The web UI is no longer

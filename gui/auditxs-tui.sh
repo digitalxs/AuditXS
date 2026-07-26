@@ -90,17 +90,17 @@ do_audit() {
     textbox "Audit results ($pass pass / $fail fail / $warn warn)" "$WORK/audit.txt"
 }
 
-do_features() {
-    [ -s "$RESULTS" ] || { msgbox "Features" "Run an Audit first so AuditXS knows the current state."; return; }
+do_harden() {
+    [ -s "$RESULTS" ] || { msgbox "Harden" "Run an Audit first so AuditXS knows the current state."; return; }
     local args=() status id sev cat fixable title detail
     while IFS=$'\t' read -r status id sev cat fixable title detail; do
         [ "$status" = FAIL ] && [ "$fixable" = yes ] || continue
         args+=("$id" "$title" OFF)
     done < "$RESULTS"
-    [ ${#args[@]} -gt 0 ] || { msgbox "Features" "No automatically fixable findings in the last audit.\nWARN items need manual review (see the report)."; return; }
+    [ ${#args[@]} -gt 0 ] || { msgbox "Harden" "No automatically fixable findings in the last audit.\nWARN items need manual review (see the report)."; return; }
     local chosen
-    chosen=$("$DIALOG" --title "Enable security controls" --backtitle "$BT" \
-        --checklist "Space to select controls to turn ON. You will review each change before it is applied; every change is reversible." \
+    chosen=$("$DIALOG" --title "Apply fixes" --backtitle "$BT" \
+        --checklist "Space to select the fixes to apply. You will review each change before it is applied; every change is reversible." \
         22 82 12 "${args[@]}" 3>&1 1>&2 2>&3) || return
     chosen=$(echo "$chosen" | tr -d '"')
     [ -n "$chosen" ] || return
@@ -108,7 +108,7 @@ do_features() {
     # shellcheck disable=SC2086
     "$AUDITXS_BIN" explain $chosen 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' > "$WORK/explain.txt"
     textbox "What will change (review carefully)" "$WORK/explain.txt"
-    yesno "Apply changes" "Turn ON the selected control(s) now?\nEach change is recorded in a snapshot and reversible." || return
+    yesno "Apply changes" "Apply the selected fix(es) now?\nEach change is recorded in a snapshot and reversible." || return
     local cmd=("$AUDITXS_BIN" harden --yes --quiet) c
     for c in $chosen; do cmd+=(--check "$c"); done
     gauge_progress "Applying selected fixes (snapshotted & reversible)…" \
@@ -188,9 +188,9 @@ do_doctor() {
 
 # --------------------------------------------------------------- main ---
 while true; do
-    action=$(menu "Main menu" "Transparent, reversible security auditing.\nAudit never changes anything; Features/Harden ask before every change." \
+    action=$(menu "Main menu" "Transparent, reversible security auditing.\nAudit never changes anything; Harden asks before every change." \
         audit     "Run a read-only security audit" \
-        features  "Turn security controls on/off (reversible)" \
+        harden    "Review and apply fixes for failed checks (reversible)" \
         snapshots "Roll back a previous hardening run" \
         cve       "Check for known vulnerabilities (CVEs)" \
         tools     "Install and run security tools" \
@@ -199,7 +199,7 @@ while true; do
         quit      "Exit") || break
     case $action in
         audit)     do_audit ;;
-        features)  do_features ;;
+        harden)    do_harden ;;
         snapshots) do_snapshots ;;
         cve)       do_cve ;;
         tools)     do_tools ;;
