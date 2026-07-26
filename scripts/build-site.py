@@ -33,7 +33,7 @@ PAGES = [
     ("docs/COMPLIANCE.md", "compliance.html", "Compliance",
      "CIS Benchmark, DISA STIG alignment and NIST CSF 2.0 mappings."),
     ("docs/WEBUI.md", "webui.html", "Web UI",
-     "The localhost Material web interface: security model and usage."),
+     "The Material Design web interface — local by default, or reachable on the network — its security model and usage."),
     ("docs/ROADMAP.md", "roadmap.html", "Roadmap",
      "What shipped in each release, what comes next, and deliberate non-goals."),
     ("CHANGELOG.md", "changelog.html", "Changelog",
@@ -541,8 +541,8 @@ def build_landing():
     <p>Approve a baseline, schedule daily audits, and get webhook or e-mail alerts the
     moment configuration drifts or a CVE lands.</p></div>
   <div class="f"><span class="ic">\U0001F5A5️</span><b>Every interface</b>
-    <p>CLI, ncurses terminal UI for servers, localhost web UI, native Qt desktop app
-    and a zenity GUI — same engine, same consent model.</p></div>
+    <p>CLI, ncurses terminal UI, a web UI (localhost or your LAN), native Qt and
+    Electron desktop apps and a zenity GUI — same engine, same consent model.</p></div>
 </div>
 
 <h2 class="sec">Install in a minute</h2>

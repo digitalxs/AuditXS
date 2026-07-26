@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.19.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.22.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -181,6 +181,8 @@ fix_SSH_001() { sshd_set PermitRootLogin no &amp;&amp; sshd_apply; }</code></pre
 <ul>
 <li><code>lib/cve.sh</code> — known-vulnerability awareness from the distribution's own security data (Debian debsecan / apt-security suite, dnf updateinfo, zypper patches). Populates <code>CVE_COUNT</code>/<code>CVE_SOURCE</code>/<code>CVE_LIST</code>, surfaced by check <code>VULN-001</code>, the console/HTML banners and <code>auditxs cve</code>.</li>
 <li><code>lib/tools.sh</code> — the <code>auditxs tools</code> subcommand: <code>status</code>, <code>install</code>, <code>scan</code>, <code>vpn</code>. Installs go through the snapshot machinery; scanners (Lynis, rkhunter, tiger, chkrootkit, checksecurity, lsat) are run and their reports collected under <code>/var/lib/auditxs/reports/tools/</code>. CrowdSec and OSSEC/Wazuh, which need third-party installers, are handled with guidance rather than piping remote scripts to a shell.</li>
+<li><code>lib/webservice.sh</code> — the <code>auditxs webservice</code> on/off switch: manages a <code>systemd</code> unit (<code>auditxs-web.service</code>) that runs <code>auditxs web --service</code>, toggling the web UI on/off, local or (warned) remote. Holds the stable root-only access token in <code>/etc/auditxs/web-token</code> (<code>0600</code>). <code>auditxs web</code> gained <code>--bind</code>/<code>--token-file</code>/<code>--service</code> to support headless operation.</li>
+<li><code>lib/terminal.sh</code> — the <code>auditxs terminal</code> command: opens a real, fully interactive terminal (a shell), preferring KDE Konsole and falling back through the common emulators; offers to install Konsole if none is present. Runs unprivileged. The Electron app additionally hosts an <em>embedded</em> terminal in-window via <code>gui/electron/terminal.html</code> (xterm.js) + <code>pty-bridge.py</code>, a dependency-free Python PTY broker (no native <code>node-pty</code> build), wired over Electron IPC in <code>gui/electron/main.js</code>.</li>
 </ul>
 <p>Console &amp; report styling:</p>
 <ul>

@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.19.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.22.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -102,20 +102,20 @@
 <a class="pg" href="../index.html">AuditXS home</a>
 <a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
 <main>
-<h1 id="auditxs-web-ui">AuditXS web UI</h1><div class="onpage"><b>On this page</b><a href="#why-a-web-ui-and-who-it-is-for">Why a web UI (and who it is for)</a><a href="#launching">Launching</a><a href="#using-it-on-a-remote-headless-server">Using it on a remote (headless) server</a><a href="#what-you-can-do">What you can do</a><a href="#security-model">Security model</a><a href="#when-to-use-which-interface">When to use which interface</a></div>
+<h1 id="auditxs-web-ui">AuditXS web UI</h1><div class="onpage"><b>On this page</b><a href="#why-a-web-ui-and-who-it-is-for">Why a web UI (and who it is for)</a><a href="#launching">Launching</a><a href="#using-it-on-a-remote-headless-server">Using it on a remote (headless) server</a><a href="#turning-it-onoff-as-a-service--local-or-remote-v020">Turning it on/off as a service — local or remote (v0.20)</a><a href="#what-you-can-do">What you can do</a><a href="#security-model">Security model</a><a href="#when-to-use-which-interface">When to use which interface</a></div>
 <p>A local, <strong>Material Design 3</strong> web interface for AuditXS. It is a thin front-end over the <code>auditxs</code> command — everything it does is a command you could type — so the transparency and reversibility guarantees are unchanged.</p>
 <h2 id="why-a-web-ui-and-who-it-is-for">Why a web UI (and who it is for)</h2>
-<p>The web UI is the graphical interface for <strong>workstations</strong> — run it and it opens in your browser, with the full audit/harden/rollback workflow behind a Material Design 3 surface.</p>
-<p>It is <strong>disabled on the <code>server</code> profile</strong> by design. Servers are kept to text interfaces only, so a headless box never runs a root web server: use the ncurses terminal UI over a plain SSH session instead —</p>
+<p>The web UI opens in your browser with the full audit/harden/rollback workflow behind a Material Design 3 surface. It runs on <strong>both profiles</strong>: on a workstation it's your graphical interface; on a <strong>headless server</strong> it's a network-reachable control panel (bound to localhost by default, or to the network with <code>--remote</code> — see below).</p>
+<p>The <em>desktop</em> GUIs — the Qt app, the Electron app and the zenity launcher — stay <strong>workstation-only</strong>, because they need a graphical display. On a server without a desktop, use the web UI, the ncurses terminal UI, or the CLI:</p>
 <pre class="lang-bash"><code>sudo auditxs tui                 # menu-driven, works over SSH, no browser/tunnel</code></pre>
-<p>— or the CLI directly. If a machine really is a desktop that was installed with the server profile, override for a one-off with <code>--profile workstation</code> (then the tunnel workflow below applies).</p>
 <h2 id="launching">Launching</h2>
-<pre class="lang-bash"><code>sudo auditxs web                 # starts on http://127.0.0.1:9000 and opens a browser
+<pre class="lang-bash"><code>sudo auditxs web                 # localhost: http://127.0.0.1:9000 (opens a browser)
 sudo auditxs web --port 8080     # choose a different port
-sudo auditxs web --no-open       # don&#x27;t auto-open a browser (print the URL only)</code></pre>
-<p>The default port is <strong>9000</strong>; override it any time with <code>--port</code>.</p>
-<p>It requires the <strong>workstation</strong> profile, <code>python3</code> (standard library only — no framework, no pip installs) and root, because auditing reads privileged files such as <code>/etc/shadow</code>.</p>
-<p>On launch it prints a URL that contains a one-time token:</p>
+sudo auditxs web --no-open       # don&#x27;t auto-open a browser (print the URL only)
+sudo auditxs web --remote        # reachable on the network at this host&#x27;s IP
+sudo auditxs web --bind 10.0.0.5 # bind one specific address</code></pre>
+<p>The default port is <strong>9000</strong>; override it any time with <code>--port</code>. It needs <code>python3</code> (standard library only — no framework, no pip installs) and root, because auditing reads privileged files such as <code>/etc/shadow</code>.</p>
+<p>On launch it prints a URL that contains the access token:</p>
 <pre><code>╭─ AuditXS web UI ───────────────────────────────╮
 │  Open: http://127.0.0.1:9000/?t=&lt;token&gt;
 │  Bound to 127.0.0.1 only. Remote server? Tunnel first:
@@ -123,7 +123,8 @@ sudo auditxs web --no-open       # don&#x27;t auto-open a browser (print the URL
 │  Stop with Ctrl-C.
 ╰────────────────────────────────────────────────╯</code></pre>
 <h2 id="using-it-on-a-remote-headless-server">Using it on a remote (headless) server</h2>
-<p>The server binds <code>127.0.0.1</code> <strong>only</strong> — it is never exposed to the network. Reach it through an SSH tunnel from your workstation:</p>
+<p>You have two ways to reach the web UI on a server.</p>
+<p><strong>Safest — localhost + SSH tunnel</strong> (nothing exposed to the network):</p>
 <pre class="lang-bash"><code># on the server
 sudo auditxs web --no-open
 
@@ -131,6 +132,34 @@ sudo auditxs web --no-open
 ssh -L 9000:127.0.0.1:9000 user@server
 
 # then open the printed http://127.0.0.1:9000/?t=&lt;token&gt; URL in your browser</code></pre>
+<p><strong>On the internal network at the server's IP</strong> — an explicit, warned opt-in (the web UI drives privileged operations, so the access token is the only credential):</p>
+<pre class="lang-bash"><code># one-off (foreground): bind all interfaces, reachable at this host&#x27;s IP
+sudo auditxs web --remote
+#   → prints  http://&lt;server-ip&gt;:9000/?t=&lt;token&gt;
+
+# persistent (recommended for a server): a systemd service, on at boot
+sudo auditxs webservice enable --remote
+sudo auditxs webservice status            # shows the http://&lt;server-ip&gt;:9000/?t=… URL</code></pre>
+<p>Put <strong>TLS / a reverse proxy</strong> in front and <strong>firewall the port</strong> to the hosts that need it. Rotate the token any time with <code>sudo auditxs webservice token --reset</code>.</p>
+<h2 id="turning-it-onoff-as-a-service--local-or-remote-v020">Turning it on/off as a service — local or remote <em>(v0.20)</em></h2>
+<p>By default <code>auditxs web</code> is a <strong>foreground</strong> command you start when you need it and stop with Ctrl-C. If you'd rather have an <strong>on/off switch</strong> — a background service that stays up and starts at boot, reachable locally or (as an explicit, warned opt-in) from the network — use <code>auditxs webservice</code>:</p>
+<pre class="lang-bash"><code>sudo auditxs webservice enable            # ON, localhost only (reach via SSH tunnel)
+sudo auditxs webservice enable --remote   # ON, reachable from the network (0.0.0.0)
+sudo auditxs webservice enable --port 9443 --remote
+sudo auditxs webservice status            # is it on?  bind/port + access-token URL
+sudo auditxs webservice token             # show the access token
+sudo auditxs webservice token --reset     # rotate the token (restarts the service)
+sudo auditxs webservice disable           # OFF (stops it and removes the unit)</code></pre>
+<p>The same switch is in every GUI: a <strong>Web</strong> tab in the Qt and web apps and a <strong>WebService</strong> entry in the zenity menu (turn on/off, pick local vs. remote, show/rotate the token).</p>
+<p>It installs a systemd unit (<code>auditxs-web.service</code>) that runs <code>auditxs web --service</code> and enables it at boot. Unlike the transient command, a service needs a <strong>stable</strong> credential, so the access token is stored in a root-only file (<code>/etc/auditxs/web-token</code>, mode <code>0600</code>) and reused across restarts — the URL printed by <code>webservice status</code> keeps working.</p>
+<h3 id="remote-access-is-a-deliberate-guarded-choice">Remote access is a deliberate, guarded choice</h3>
+<p>Local mode (the default) binds <code>127.0.0.1</code> — nothing on the network can reach it; use the SSH tunnel above. <code>--remote</code> (or <code>--bind ADDR</code>) binds a routable address so you can open it from another machine. Because the web UI drives <strong>privileged</strong> operations, remote mode is guarded and loudly warned:</p>
+<ul>
+<li>The bearer <strong>access token is the only credential</strong> — anyone who can reach the port <em>and</em> holds the token can run privileged operations on this host.</li>
+<li>Put <strong>TLS / a reverse proxy</strong> in front (the service speaks plain HTTP) and <strong>restrict the port with your firewall</strong> to the hosts that need it.</li>
+<li>Rotate the token with <code>webservice token --reset</code> if it may have leaked.</li>
+</ul>
+<p>If you don't need network access, prefer local mode + SSH tunnel — it's the safer default and needs no extra infrastructure.</p>
 <h2 id="what-you-can-do">What you can do</h2>
 <ul>
 <li><strong>Dashboard</strong> — the hardening score ring, PASS/FAIL/WARN/SKIP chips, and every check grouped by category and domain, with severity, CIS id, level and NIST mapping. A red banner appears if a package has a known CVE.</li>
@@ -147,19 +176,19 @@ ssh -L 9000:127.0.0.1:9000 user@server
 <p>Because the UI drives root operations, it is built defensively:</p>
 <div class="tablewrap"><table>
 <tr><th>Control</th><th>Behaviour</th></tr>
-<tr><td><strong>Network exposure</strong></td><td>Binds <code>127.0.0.1</code> only, always. It cannot be made to listen on a routable address.</td></tr>
-<tr><td><strong>Authentication</strong></td><td>A fresh random bearer token every launch; required on every request. The launch URL carries it once, then the page sends it as <code>X-Auth-Token</code>.</td></tr>
-<tr><td><strong>CSRF</strong></td><td>State-changing actions are POST-only and require the token in a header (not a cookie/query), and the <code>Host</code> must be loopback.</td></tr>
+<tr><td><strong>Network exposure</strong></td><td>Binds <code>127.0.0.1</code> by default. Remote binding (<code>web --remote</code> / <code>web --bind</code> / <code>webservice enable --remote</code>) is an explicit, warned opt-in — never the default — and prints guidance to add TLS/a reverse proxy and firewall the port.</td></tr>
+<tr><td><strong>Authentication</strong></td><td>A bearer token is required on every request (sent as <code>X-Auth-Token</code>). The transient command mints a fresh token per launch; the service keeps a stable root-only token (<code>/etc/auditxs/web-token</code>, <code>0600</code>) you can rotate with <code>webservice token --reset</code>.</td></tr>
+<tr><td><strong>CSRF</strong></td><td>State-changing actions are POST-only and require the token in a header (not a cookie/query). In local mode the <code>Host</code> must be loopback; in remote mode the token is the authenticator.</td></tr>
 <tr><td><strong>Command injection</strong></td><td>Every <code>auditxs</code> call uses an argv list — never a shell. Check IDs and snapshot IDs are validated against <code>[A-Za-z0-9-]</code>.</td></tr>
 <tr><td><strong>Consent</strong></td><td><code>harden</code> is only ever run after you review the change text and confirm.</td></tr>
 <tr><td><strong>Content policy</strong></td><td>A strict <code>Content-Security-Policy</code> (<code>default-src &#x27;self&#x27;</code>) and <code>X-Content-Type-Options: nosniff</code> are sent on every response.</td></tr>
 <tr><td><strong>Least authority</strong></td><td>The server is a front-end; it holds no state and runs the same commands you could run by hand.</td></tr>
 </table></div>
-<p>Do <strong>not</strong> port-forward this UI to <code>0.0.0.0</code> or expose it publicly. If you need multi-user or remote access, put it behind your own authenticated reverse proxy with TLS — but the intended model is localhost + SSH tunnel.</p>
+<p>The intended model is <strong>localhost + SSH tunnel</strong>. If you do expose it to the network (<code>webservice enable --remote</code>), treat the token as a root credential: put the service behind your own <strong>TLS reverse proxy</strong> and <strong>firewall the port</strong> to the hosts that need it. Don't leave a plain-HTTP <code>--remote</code> instance open on an untrusted network.</p>
 <h2 id="when-to-use-which-interface">When to use which interface</h2>
 <div class="tablewrap"><table>
 <tr><th></th><th>CLI</th><th>Web UI</th><th>Qt app</th><th>zenity GUI</th></tr>
-<tr><td>Headless server</td><td>✔</td><td>✔ (SSH tunnel)</td><td>✗</td><td>✗</td></tr>
+<tr><td>Headless server</td><td>✔</td><td>✔ (SSH tunnel or <code>--remote</code>)</td><td>✗</td><td>✗</td></tr>
 <tr><td>Workstation</td><td>✔</td><td>✔</td><td>✔</td><td>✔</td></tr>
 <tr><td>Material look, live toggles</td><td>–</td><td>✔</td><td>✔</td><td>–</td></tr>
 <tr><td>Cross-desktop consistent</td><td>n/a</td><td>✔</td><td>✔</td><td>follows GTK theme</td></tr>

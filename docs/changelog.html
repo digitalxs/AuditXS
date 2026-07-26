@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.19.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.22.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -102,11 +102,50 @@
 <a class="pg" href="../index.html">AuditXS home</a>
 <a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
 <main>
-<h1 id="changelog">Changelog</h1><div class="onpage"><b>On this page</b><a href="#0190">[0.19.0]</a><a href="#0180">[0.18.0]</a><a href="#0170">[0.17.0]</a><a href="#0160">[0.16.0]</a><a href="#0150">[0.15.0]</a><a href="#0141">[0.14.1]</a><a href="#0140">[0.14.0]</a><a href="#0130">[0.13.0]</a><a href="#0120">[0.12.0]</a><a href="#0111">[0.11.1]</a><a href="#0110">[0.11.0]</a><a href="#0101">[0.10.1]</a><a href="#0100">[0.10.0]</a><a href="#091">[0.9.1]</a><a href="#090">[0.9.0]</a><a href="#082">[0.8.2]</a><a href="#081">[0.8.1]</a><a href="#080">[0.8.0]</a><a href="#070--072">[0.7.0] – [0.7.2]</a><a href="#060">[0.6.0]</a><a href="#050">[0.5.0]</a><a href="#040">[0.4.0]</a><a href="#030">[0.3.0]</a><a href="#020">[0.2.0]</a><a href="#010">[0.1.0]</a></div>
+<h1 id="changelog">Changelog</h1><div class="onpage"><b>On this page</b><a href="#0220">[0.22.0]</a><a href="#0210">[0.21.0]</a><a href="#0200">[0.20.0]</a><a href="#0190">[0.19.0]</a><a href="#0180">[0.18.0]</a><a href="#0170">[0.17.0]</a><a href="#0160">[0.16.0]</a><a href="#0150">[0.15.0]</a><a href="#0141">[0.14.1]</a><a href="#0140">[0.14.0]</a><a href="#0130">[0.13.0]</a><a href="#0120">[0.12.0]</a><a href="#0111">[0.11.1]</a><a href="#0110">[0.11.0]</a><a href="#0101">[0.10.1]</a><a href="#0100">[0.10.0]</a><a href="#091">[0.9.1]</a><a href="#090">[0.9.0]</a><a href="#082">[0.8.2]</a><a href="#081">[0.8.1]</a><a href="#080">[0.8.0]</a><a href="#070--072">[0.7.0] – [0.7.2]</a><a href="#060">[0.6.0]</a><a href="#050">[0.5.0]</a><a href="#040">[0.4.0]</a><a href="#030">[0.3.0]</a><a href="#020">[0.2.0]</a><a href="#010">[0.1.0]</a></div>
 <p>All notable changes to <strong>AuditXS</strong> are recorded here. The format follows <a href="https://keepachangelog.com/">Keep a Changelog</a>, and the project uses <a href="https://semver.org/">Semantic Versioning</a>. The repository-root <code>VERSION</code> file is the single source of truth for the current version.</p>
 <hr>
-<h2 id="0190">[0.19.0]</h2>
+<h2 id="0220">[0.22.0]</h2>
+<h3 id="changed">Changed</h3>
+<ul>
+<li><strong>The web UI now runs on the server profile too.</strong> It's no longer workstation-only: on a headless server it's a network-reachable control panel. Only the <em>desktop</em> GUIs (Qt, Electron, zenity) stay workstation-only (they need a display).</li>
+</ul>
 <h3 id="added">Added</h3>
+<ul>
+<li><strong>Network / LAN-IP access for the web UI.</strong> <code>auditxs web</code> gained <code>--remote</code> (bind all interfaces, <code>0.0.0.0</code>) alongside the existing <code>--bind ADDR</code>. When bound to the network the printed URL uses the <strong>server's own IP</strong> (best-effort primary address), and any other reachable addresses are listed. Remote access stays a deliberate, warned opt-in — the access token is the only credential, so AuditXS prints TLS / reverse-proxy / firewall guidance. For a persistent server control panel, <code>auditxs webservice enable --remote</code> remains the recommended path.</li>
+</ul>
+<h3 id="fixed">Fixed</h3>
+<ul>
+<li>An <strong>empty</strong> <code>--token-file</code> is now (re)populated with the token instead of being left empty, so reconnecting to a running service always works.</li>
+</ul>
+<h2 id="0210">[0.21.0]</h2>
+<h3 id="added-1">Added</h3>
+<ul>
+<li><strong>A real, Konsole-like terminal.</strong> AuditXS can now open a fully-interactive terminal (a shell that runs TUI programs like vim, htop, less), not just the line-based console:
+<ul>
+<li>New command <code>auditxs terminal</code> opens your terminal emulator, <strong>preferring KDE Konsole</strong> and falling back through the common emulators (kgx, gnome-terminal, tilix, xfce4-terminal, alacritty, kitty, foot, xterm, …). If none is installed it offers to install Konsole (elevating via pkexec/sudo). It runs unprivileged — a shell you could open yourself.</li>
+<li><strong>Embedded terminal in the desktop app.</strong> The Electron app now hosts a real terminal <em>inside its own window</em> (menu <strong>Terminal → New Terminal</strong>, or <strong>Ctrl+Shift+T</strong>), built with xterm.js and a dependency-free Python PTY broker (<code>gui/electron/pty-bridge.py</code>) — no native <code>node-pty</code> build required. Full interactivity and window-resize (SIGWINCH) support.</li>
+<li><strong>In every GUI.</strong> A new <strong>Terminal</strong> tab in the Qt app and a rewired <strong>Terminal</strong> entry in the zenity menu open the real terminal; the web UI's console points to it (and to SSH) for a full shell.</li>
+<li>New error <code>AX1006</code> (<em>No terminal emulator available</em>).</li>
+<li>The web console remains deliberately restricted to <code>auditxs</code> subcommands — a full remote shell is never exposed over the (optionally network-reachable) web UI; use SSH for that.</li>
+</ul></li>
+</ul>
+<h2 id="0200">[0.20.0]</h2>
+<h3 id="added-2">Added</h3>
+<ul>
+<li><strong>Web UI on/off switch — local or remote.</strong> The web UI can now run as a managed background service instead of only a foreground command:
+<ul>
+<li><code>auditxs webservice enable</code> turns it on as a systemd service (<code>auditxs-web.service</code>) that starts at boot. It binds to <code>127.0.0.1</code> by default — reach it over an SSH tunnel.</li>
+<li><code>auditxs webservice enable --remote</code> (or <code>--bind ADDR</code>) exposes it to the network (<code>0.0.0.0</code>). This is a deliberate, loudly warned opt-in: the web UI drives privileged operations, so a stable bearer <strong>access token</strong> is required on every request and AuditXS tells you to put TLS / a reverse proxy in front and firewall the port.</li>
+<li><code>auditxs webservice status</code> shows whether it is on, the bind address/port and the access-token URL; <code>auditxs webservice disable</code> turns it off and removes the unit; <code>auditxs webservice token [--reset]</code> shows or rotates the token (rotating restarts the service).</li>
+<li>The token lives in a root-only file (<code>/etc/auditxs/web-token</code>, <code>0600</code>) so a running service keeps a stable credential you can reconnect with.</li>
+<li><strong>On/off switch in every GUI.</strong> A new <strong>Web</strong> tab in the Qt and web apps and a <strong>WebService</strong> entry in the zenity menu turn the service on/off, choose local vs. remote, and show/rotate the token — with the remote-exposure warning gated behind an explicit confirmation.</li>
+<li><code>auditxs web</code> gained <code>--bind ADDR</code>, <code>--token-file PATH</code> and <code>--service</code>; in <code>--service</code> mode it runs headless (no desktop-session requirement) and reads/creates the persistent token.</li>
+<li>New error <strong>AX8003</strong> (<em>Web service management failed</em>) and token-gated web routes <code>GET</code>/<code>POST /api/webservice</code>.</li>
+</ul></li>
+</ul>
+<h2 id="0190">[0.19.0]</h2>
+<h3 id="added-3">Added</h3>
 <ul>
 <li><strong>Per-tool Install / Uninstall / Repair.</strong> Every security tool now has its own three buttons in the GUIs (Tools tab in the web and Qt apps; a <em>Manage</em> flow in the zenity Tools menu) and matching CLI verbs:
 <ul>
@@ -119,7 +158,7 @@
 </ul></li>
 </ul>
 <h2 id="0180">[0.18.0]</h2>
-<h3 id="added-1">Added</h3>
+<h3 id="added-4">Added</h3>
 <ul>
 <li><strong>Timeshift-backed updates — package upgrades you can roll back.</strong> AuditXS now integrates with Timeshift (filesystem snapshots), which <em>can</em> undo a software upgrade that <code>auditxs rollback</code> cannot:
 <ul>
@@ -128,13 +167,13 @@
 <li><code>timeshift</code> added to <code>auditxs tools install</code>. New error <code>AX5006</code> (Timeshift snapshot failed).</li>
 </ul></li>
 </ul>
-<h3 id="fixed">Fixed</h3>
+<h3 id="fixed-1">Fixed</h3>
 <ul>
 <li><strong>Fleet password auth now installs <code>sshpass</code> automatically</strong> instead of failing with <code>AX6004</code>: directly when root (CLI / web UI), or elevated with <code>pkexec</code>/<code>sudo</code> when launched unprivileged from the Qt/zenity GUIs.</li>
 <li><strong>No more <code>errors.log: Permission denied</code> leak.</strong> When AuditXS runs unprivileged (e.g. a fleet audit from a GUI), the error-ledger write is now writability-checked first, so a failed append no longer prints a stray "Permission denied" line (<code>&gt;&gt; file 2&gt;/dev/null</code> can't suppress an open failure).</li>
 </ul>
 <h2 id="0170">[0.17.0]</h2>
-<h3 id="added-2">Added</h3>
+<h3 id="added-5">Added</h3>
 <ul>
 <li><strong>Package updating</strong> — AuditXS can now apply updates, three consented ways:
 <ul>
@@ -145,7 +184,7 @@
 </ul></li>
 </ul>
 <h2 id="0160">[0.16.0]</h2>
-<h3 id="added-3">Added</h3>
+<h3 id="added-6">Added</h3>
 <ul>
 <li><strong>Electron desktop app</strong> (<code>auditxs electron</code>) — a fourth graphical interface: the audited localhost web UI in a standalone, locked-down desktop window. It reuses the web UI wholesale (loopback-only bind, per-launch token, CSRF, argv-only calls, strict CSP), runs <strong>unprivileged</strong>, and elevates the web server once with <code>pkexec</code> (a single prompt per session under the polkit keep policy). Node.js required; the Electron runtime is fetched per-user on first launch (never shipped in the package). New <code>POST /api/quit</code> (token-gated) lets the app stop its server cleanly on window close, and <code>SIGTERM</code>/<code>SIGINT</code>/<code>SIGHUP</code> handlers cover logout/kill.</li>
 </ul>
@@ -154,7 +193,7 @@
 <li><strong>GUI interaction verification</strong> — the web UI's buttons and controls were driven end-to-end in a headless browser: <strong>Fix it</strong> (review + Apply), <strong>How to fix</strong> (manual guidance, no Apply), the <strong>Feature</strong> on/off switches (toggle → review modal → correct <code>POST /api/harden</code>), and tab rendering, all with zero JS errors. The served page's interactive wiring is now a web-test regression guard, and the Qt data-layer selftest gained checks for the op whitelist and fleet config round-trip (18 checks).</li>
 </ul>
 <h2 id="0150">[0.15.0]</h2>
-<h3 id="added-4">Added</h3>
+<h3 id="added-7">Added</h3>
 <ul>
 <li><strong>SSH login + interactive sudo for fleet audits.</strong> You can now scan remote hosts by logging in over SSH and using <code>sudo</code> <strong>with a password</strong> — no passwordless sudo required.
 <ul>
@@ -164,13 +203,13 @@
 </ul></li>
 </ul>
 <h2 id="0141">[0.14.1]</h2>
-<h3 id="fixed-1">Fixed</h3>
+<h3 id="fixed-2">Fixed</h3>
 <ul>
 <li><strong>Qt GUI: no concurrent privileged operations.</strong> The "Run audit" button and the Fix it / Feature-toggle / Roll back initiators were disabled only while an audit was running, not while a background Ops/Tools/Fleet operation was — so a second elevated <code>auditxs</code> process could be launched over a running one (both writing the shared progress file and potentially both touching snapshots). A single <code>busy</code> guard now gates every action initiator, so only one operation runs at a time.</li>
 </ul>
 <h2 id="0140">[0.14.0]</h2>
 <p>A major GUI release — the graphical interfaces reach feature parity with the CLI.</p>
-<h3 id="added-5">Added</h3>
+<h3 id="added-8">Added</h3>
 <ul>
 <li><strong>"Fix it" everywhere</strong> — every FAIL/WARN row in the Qt app, the web UI and the zenity results list now carries a button: <em>Fix it</em> (review → consent → reversible fix → verify) when an automatic fix exists, <em>How to fix</em> with detailed, explicit manual guidance when it does not.</li>
 <li><strong>Fleet management from the GUI</strong> — a Fleet tab (Qt, web) / submenu (zenity): add and remove <code>user@host</code> entries, choose the SSH key, toggle remote sudo, and one <strong>Audit fleet</strong> button with live percentage progress, finishing with the aggregated overview dashboard. Qt and zenity share the same user-level inventory (<code>~/.config/auditxs/fleet-hosts</code>); the web UI (root) manages <code>/var/lib/auditxs/fleet-hosts</code>.</li>
@@ -178,12 +217,12 @@
 <li><strong>Full CLI parity</strong> — new Ops tab (Qt) and menu entries (zenity) for every remaining operation: CVE scan, doctor, schedule (status/enable/disable/run), baseline, waivers (list/add/remove), alerts (status/test), the error catalogue and the check catalogue; the web console covers the same surface.</li>
 <li><strong>Status bar</strong> — Qt and the web UI show a permanent bottom bar with the AuditXS version, profile and host, the live operation progress (percentage) and the console toggle; the zenity menu header shows version and host.</li>
 </ul>
-<h3 id="changed">Changed</h3>
+<h3 id="changed-1">Changed</h3>
 <ul>
 <li>The Qt app's long operations all run in a worker thread with progress in the status bar (the window never freezes). New <code>/api/cli</code>, <code>/api/fleet/*</code> web routes are token-authenticated and argv-whitelisted like every other route. Web tests grown to 14 (console auth + whitelist).</li>
 </ul>
 <h2 id="0130">[0.13.0]</h2>
-<h3 id="added-6">Added</h3>
+<h3 id="added-9">Added</h3>
 <ul>
 <li><strong>Live progress with percentage in every interface.</strong> The audit engine now counts its work and reports it as it goes:
 <ul>
@@ -196,7 +235,7 @@
 </ul></li>
 </ul>
 <h2 id="0120">[0.12.0]</h2>
-<h3 id="added-7">Added</h3>
+<h3 id="added-10">Added</h3>
 <ul>
 <li><strong>Authenticate once, not per click</strong> — a polkit policy (<code>com.digitalxs.auditxs.policy</code>, default <code>auth_admin_keep</code>) ships with both install methods: the first pkexec-elevated GUI action prompts, and polkit then remembers the authorization for the active session (~5 minutes), so a burst of consecutive Qt/zenity actions asks for the password once. The policy is installed by <code>setup.sh</code> and the <code>.deb</code>, removed on uninstall, and applies only to the canonical installed binary paths. A new <em>Privileges &amp; credential caching</em> section in the manual explains the model for every interface (CLI sudo cache, GUI polkit keep, web/tui root-once).</li>
 <li><strong>Documentation website</strong> — <code>scripts/build-site.py</code> (Python stdlib only) renders every guide to a branded, theme-aware, self-contained HTML page in <code>docs/</code> (sidebar navigation, on-page contents, cross-links rewritten), plus a <code>docs/index.html</code> hub — ready to publish at &lt;https://auditxs.digitalxs.ca/docs&gt;.</li>
@@ -204,7 +243,7 @@
 <li>CI now builds the site and validates the polkit policy XML on every push.</li>
 </ul>
 <h2 id="0111">[0.11.1]</h2>
-<h3 id="added-8">Added</h3>
+<h3 id="added-11">Added</h3>
 <ul>
 <li><strong>Interactive HTML report</strong> (still a single self-contained file):
 <ul>
@@ -214,23 +253,23 @@
 </ul></li>
 </ul>
 <h2 id="0110">[0.11.0]</h2>
-<h3 id="added-9">Added</h3>
+<h3 id="added-12">Added</h3>
 <ul>
 <li><strong>Fleet overview dashboard</strong> — every <code>auditxs fleet</code> run now writes an aggregated, self-contained HTML dashboard (<code>index.html</code>) next to the per-host reports: fleet-average score dial, clean/findings/errored host chips, and a per-host table with score bars and relative links to each host's saved JSON/HTML reports. Unreachable and errored hosts are shown, not hidden. Covered by unit tests.</li>
 <li><strong>Fleet walkthrough</strong> in <code>docs/USAGE.md</code> — end-to-end setup (install on targets, dedicated audit user + key, narrow sudoers rule, inventory file, run, review, drift-diff) plus a troubleshooting table mapping fleet states to their <code>AX6xxx</code> error numbers.</li>
 </ul>
-<h3 id="changed-1">Changed</h3>
+<h3 id="changed-2">Changed</h3>
 <ul>
 <li><code>docs/ARCHITECTURE.md</code> gained a fleet-mode section (data flow, invariants, dashboard design); <code>digitalxs-dev-doc.MD</code> §9 documents the <code>ov[]</code> record format and the coding workflow for extending the dashboard.</li>
 </ul>
 <h2 id="0101">[0.10.1]</h2>
-<h3 id="added-10">Added</h3>
+<h3 id="added-13">Added</h3>
 <ul>
 <li><strong>Qt runtime preflight</strong> — <code>auditxs qt</code> now detects when PySide6 and its QtQuick QML modules (Controls, Layouts, Window) are missing and offers to install the correct packages for the current distribution instead of failing with a raw <code>ImportError</code>. The prompt is shown in the terminal when attached to a tty, or as a zenity dialog when launched from the desktop; privileges are elevated with <code>pkexec</code> (graphical) or <code>sudo</code> as appropriate, and a declined prompt prints fall-back guidance for the web and terminal UIs. Package-install failures report error <code>AX5001</code>.</li>
 </ul>
 <h2 id="0100">[0.10.0]</h2>
 <p>Governance, integrations and a big coverage expansion — <strong>122 checks across 26 categories</strong>.</p>
-<h3 id="added-11">Added</h3>
+<h3 id="added-14">Added</h3>
 <ul>
 <li><strong>Accepted-risk waivers</strong> — <code>auditxs waive &lt;ID&gt; &quot;reason&quot; [--until DATE]</code>, <code>auditxs waivers</code>, <code>auditxs unwaive &lt;ID&gt;</code>. A waived finding renders as <strong>WAIVED</strong> (not FAIL/WARN) in audits, reports and drift alerts, keeps the original result in its detail, is excluded from the hardening score, and is emitted as a proper <strong>SARIF suppression</strong>. Expired waivers stop applying.</li>
 <li><strong>SARIF 2.1.0 and CSV export</strong> — <code>report --format sarif|csv</code>. SARIF carries <code>security-severity</code>, CIS/NIST properties and waiver suppressions, ready for <strong>GitHub code scanning</strong>, Azure DevOps and security dashboards.</li>
@@ -243,33 +282,33 @@
 <li><strong>Graphical installer</strong> — <code>install-gui.sh</code>, a branded zenity wizard (welcome → profile → options → install → done).</li>
 <li>New error codes <code>AX2005/2006/7001/8001/8002</code>, wired into the new subsystems.</li>
 </ul>
-<h3 id="changed-2">Changed</h3>
+<h3 id="changed-3">Changed</h3>
 <ul>
 <li>Fixture tests for the container/boot/database checks and waiver unit tests (72 unit / 45 fixture tests). Docs, man page and generated catalogues refreshed.</li>
 </ul>
 <h2 id="091">[0.9.1]</h2>
-<h3 id="added-12">Added</h3>
+<h3 id="added-15">Added</h3>
 <ul>
 <li>GUI branding across the web UI, Qt app, HTML report and zenity About: gradient brand logo, "by DigitalXS", and a footer — <em>🛡️ AuditXS · Made with ❤ from Canada 🍁 · © 2026 DigitalXS — Programming &amp; Development</em>.</li>
 </ul>
 <h2 id="090">[0.9.0]</h2>
-<h3 id="added-13">Added</h3>
+<h3 id="added-16">Added</h3>
 <ul>
 <li>Web-stack &amp; CMS coverage: <strong>nginx</strong> (obsolete TLS, HSTS), <strong>Varnish</strong> (admin binding, secret permissions), a <strong>WebApps</strong> category (WordPress, Drupal, Laravel, Roundcube), <strong>BIND</strong> (AXFR restriction, DNSSEC), and <strong>Network</strong> (promiscuous-mode interfaces, NTP time-sync).</li>
 <li><code>auditxs fleet --remote-report</code> leaves a full HTML report on each audited host.</li>
 </ul>
 <h2 id="082">[0.8.2]</h2>
-<h3 id="added-14">Added</h3>
+<h3 id="added-17">Added</h3>
 <ul>
 <li>Dedicated <strong>Fail2ban</strong> category: service enabled at boot, ban-policy sanity, recidive jail, <code>ignoreip</code> breadth.</li>
 </ul>
 <h2 id="081">[0.8.1]</h2>
-<h3 id="changed-3">Changed</h3>
+<h3 id="changed-4">Changed</h3>
 <ul>
 <li>Web UI default port is now <strong>9000</strong> (override with <code>--port</code>).</li>
 </ul>
 <h2 id="080">[0.8.0]</h2>
-<h3 id="added-15">Added</h3>
+<h3 id="added-18">Added</h3>
 <ul>
 <li><strong>Fleet mode</strong> (<code>auditxs fleet</code>): read-only audits across many hosts over SSH (key or password auth), aggregated scores and per-host reports.</li>
 <li><strong>Error-code system</strong> (<code>auditxs errors</code>): stable <code>AXnnnn</code> codes with a plain why/fix, an occurrence ledger, and a generated <code>docs/ERRORS.md</code>.</li>
@@ -277,39 +316,39 @@
 <li>Developer &amp; maintainer guide (<code>digitalxs-dev-doc.MD</code>).</li>
 </ul>
 <h2 id="070--072">[0.7.0] – [0.7.2]</h2>
-<h3 id="added-16">Added</h3>
+<h3 id="added-19">Added</h3>
 <ul>
 <li><strong>Profile-gated interfaces</strong>: servers are text-only (CLI + a new ncurses <strong>terminal UI</strong>, <code>auditxs tui</code>); the web UI, Qt app and zenity GUI are workstation-only.</li>
 <li>Expanded, capability-grouped security-tool integration (ClamAV, OpenSCAP, auditd, USBGuard, Firejail, arpwatch, Logwatch, osquery, Trivy, …).</li>
 <li>Native window chrome for the Qt app (frameless window with in-app minimize/maximize/move/resize); the graphical launcher prefers the Qt app.</li>
 </ul>
 <h2 id="060">[0.6.0]</h2>
-<h3 id="added-17">Added</h3>
+<h3 id="added-20">Added</h3>
 <ul>
 <li>Localhost <strong>Material Design web UI</strong> (<code>auditxs web</code>) and an optional <strong>Qt/QML</strong> desktop app (<code>auditxs-gui-qt</code>); cybersecurity best-practices guide.</li>
 </ul>
 <h2 id="050">[0.5.0]</h2>
-<h3 id="added-18">Added</h3>
+<h3 id="added-21">Added</h3>
 <ul>
 <li>CIS Benchmark IDs + Level 1/2 metadata and filters; fixture-testable checks via an <code>AX_ROOT</code> path prefix; Debian <strong>.deb</strong> packaging with a man page.</li>
 </ul>
 <h2 id="040">[0.4.0]</h2>
-<h3 id="added-19">Added</h3>
+<h3 id="added-22">Added</h3>
 <ul>
 <li>Debian 13 awareness; service hardening (PHP, MySQL/MariaDB, Apache, Postfix, Dovecot, BIND, Unbound, ufw); CVE/known-vulnerability warnings; security-tool integration (<code>auditxs tools</code>); nala-style console + Material HTML report.</li>
 </ul>
 <h2 id="030">[0.3.0]</h2>
-<h3 id="added-20">Added</h3>
+<h3 id="added-23">Added</h3>
 <ul>
 <li>Five assessment domains and NIST CSF 2.0 mappings; <code>doctor</code>, <code>baseline</code>, <code>schedule</code>; debug mode; unit tests; the documentation set.</li>
 </ul>
 <h2 id="020">[0.2.0]</h2>
-<h3 id="added-21">Added</h3>
+<h3 id="added-24">Added</h3>
 <ul>
 <li>fail2ban/sshguard, SELinux/AppArmor status and <code>pam_pwquality</code> checks; baseline diff mode; the CI workflow and containerised smoke tests.</li>
 </ul>
 <h2 id="010">[0.1.0]</h2>
-<h3 id="added-22">Added</h3>
+<h3 id="added-25">Added</h3>
 <ul>
 <li>Initial release: the read-only audit engine, snapshot/rollback, ~40 checks, the CLI and zenity GUI, and the dxsbash-style installer.</li>
 </ul>
