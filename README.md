@@ -30,7 +30,7 @@ to the **NIST Cybersecurity Framework 2.0**) and — only if you ask it to —
 hardens it. Every change is explained before it happens, applied only with
 your consent, and can be undone completely. It is written in portable Bash,
 ships as a `.deb` or a source installer, and offers a CLI, an ncurses
-terminal UI, a localhost web UI and a native desktop app.
+terminal UI, a web UI (localhost or LAN) and a native desktop app.
 
 <div align="center">
 
@@ -198,7 +198,7 @@ nothing runs a browser or a root web server on a headless box:
 |---|---|:--:|:--:|
 | Command line | `auditxs audit` / `harden` / … | ✔ | ✔ |
 | Terminal UI (ncurses, works over SSH) | `sudo auditxs tui` | ✔ | ✔ |
-| Localhost web UI (Material Design) | `sudo auditxs web` | – | ✔ |
+| Web UI (Material Design, localhost or LAN) | `sudo auditxs web` | – | ✔ |
 | Native desktop app (Qt) | `sudo auditxs qt` | – | ✔ |
 | Electron desktop app | `auditxs electron` | – | ✔ |
 | Graphical launcher (zenity) | `auditxs-gui` | – | ✔ |
@@ -387,7 +387,7 @@ no external assets).
 |---|---|
 | [docs/USAGE.md](docs/USAGE.md) | Full user manual — CLI, all interfaces, workflows, files, exit codes |
 | [docs/SECURITY-GUIDE.md](docs/SECURITY-GUIDE.md) | **Cybersecurity best-practices playbook** — the reasoning behind every control |
-| [docs/WEBUI.md](docs/WEBUI.md) | The localhost web UI (`auditxs web`) and its security model |
+| [docs/WEBUI.md](docs/WEBUI.md) | The web UI (`auditxs web`), local or on the network, and its security model |
 | [docs/CHECKS.md](docs/CHECKS.md) | Every check: what/why, what the fix changes, how it reverts *(generated from code)* |
 | [docs/ERRORS.md](docs/ERRORS.md) | The `AXnnnn` error catalogue — every code, why it happens, how to resolve *(generated)* |
 | [docs/COMPLIANCE.md](docs/COMPLIANCE.md) | Domains, NIST CSF 2.0, CIS/STIG alignment, assessor evidence |
