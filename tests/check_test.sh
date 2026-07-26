@@ -36,6 +36,7 @@ QUIET=1
 . lib/maintenance.sh
 . lib/cve.sh
 . lib/tools.sh
+. lib/lynis.sh
 for c in checks/*.sh; do . "$c"; done
 AX_ROOT="$FIX"          # belt-and-suspenders (already set from the env at source time)
 mkdir -p "$FIX/etc"
@@ -178,6 +179,45 @@ DISTRO_VERSION=13 DISTRO_CODENAME=trixie;   audit_DEB_002; ck "DEB-002 Debian 13
 DISTRO_VERSION=12 DISTRO_CODENAME=bookworm; audit_DEB_002; ck "DEB-002 Debian 12 → PASS" 0 $?
 DISTRO_VERSION=11 DISTRO_CODENAME=bullseye; audit_DEB_002; ck "DEB-002 Debian 11 → WARN" 2 $?
 DISTRO_VERSION=10 DISTRO_CODENAME=buster;   audit_DEB_002; ck "DEB-002 Debian 10 (EOL) → FAIL" 1 $?
+
+echo "== SMB hardening (SMB-001/002) against fixtures =="
+mkdir -p "$FIX/etc/samba"
+# SMB-001 — SMBv1/NT1 must be refused via 'server min protocol'.
+rm -f "$FIX/etc/samba/smb.conf"
+audit_SMB_001; ck "SMB-001 no Samba → SKIP" 3 $?
+printf '[global]\n   workgroup = WG\n' > "$FIX/etc/samba/smb.conf"
+audit_SMB_001; ck "SMB-001 min protocol unset → FAIL" 1 $?
+printf '[global]\n   server min protocol = NT1\n' > "$FIX/etc/samba/smb.conf"
+audit_SMB_001; ck "SMB-001 NT1 → FAIL" 1 $?
+printf '[global]\n   server min protocol = SMB2\n' > "$FIX/etc/samba/smb.conf"
+audit_SMB_001; ck "SMB-001 SMB2 → PASS" 0 $?
+# SMB-002 — signing (or encryption) must be enforced.
+printf '[global]\n   server min protocol = SMB2\n' > "$FIX/etc/samba/smb.conf"
+audit_SMB_002; ck "SMB-002 signing unset → FAIL" 1 $?
+printf '[global]\n   server signing = mandatory\n' > "$FIX/etc/samba/smb.conf"
+audit_SMB_002; ck "SMB-002 signing mandatory → PASS" 0 $?
+printf '[global]\n   smb encrypt = required\n' > "$FIX/etc/samba/smb.conf"
+audit_SMB_002; ck "SMB-002 smb encrypt required → PASS" 0 $?
+rm -rf "${FIX:?}/etc/samba"
+
+echo "== Inactive accounts (ACC-010) human-account helper =="
+printf 'UID_MIN\t1000\n' > "$FIX/etc/login.defs"
+printf 'root:x:0:0::/root:/bin/bash\ndaemon:x:1:1::/x:/usr/sbin/nologin\nalice:x:1001:1001::/home/alice:/bin/bash\nbob:x:1002:1002::/home/bob:/usr/sbin/nologin\ncarol:x:1003:1003::/home/carol:/bin/zsh\n' > "$FIX/etc/passwd"
+ck "ACC-010 human login accounts" "alice carol" "$(_human_login_accounts | tr '\n' ' ' | sed 's/ $//')"
+
+echo "== Lynis report parser =="
+cat > "$FIX/lynis-report.dat" <<'LYN'
+lynis_version=3.0.9
+hardening_index=64
+warning[]=SSH-7408|SSH configuration is not hardened|-|-
+warning[]=KRNL-5820|Ptrace protection is not enabled|-|-
+suggestion[]=AUTH-9328|Default umask could be more strict|-|-
+LYN
+ck "Lynis hardening_index parsed"   "64" "$(_lynis_report_get "$FIX/lynis-report.dat" hardening_index)"
+ck "Lynis warnings parsed"          "2"  "$(_lynis_report_get "$FIX/lynis-report.dat" 'warning[]' | wc -l | tr -d ' ')"
+ck "Lynis finding id formatting"    "SSH-7408: SSH configuration is not hardened" \
+   "$(_lynis_finding_id 'SSH-7408|SSH configuration is not hardened|-|-')"
+ck "Lynis missing report → rc1"     "1" "$(_lynis_report_get "$FIX/none.dat" hardening_index >/dev/null 2>&1; echo $?)"
 
 echo
 echo "check tests: $PASS passed, $FAILED failed"

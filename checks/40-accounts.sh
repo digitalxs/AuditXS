@@ -253,3 +253,37 @@ audit_ACC_009() {
     DETAIL="Password reuse is not limited. Add 'pam_pwhistory.so remember=5' to the PAM password stack ($files)."
     return 2
 }
+
+register_check "ACC-010" "Accounts" "medium" "server,workstation" \
+    "Interactive accounts have authenticated recently"
+set_meta ACC-010 desc "Flags interactive user accounts (UID >= UID_MIN with a real login shell) that have not authenticated within AUDITXS_INACTIVE_DAYS days (default 90; set it as low as 30 for tighter control). Dormant accounts are a favoured foothold: they tend to keep weak or reused credentials and their misuse goes unnoticed. Report-only — locking an account is a judgement call (a rarely-used admin, or a login identity for automation, can be legitimate), so AuditXS lists the accounts with the exact lock/expire command instead of acting on its own."
+set_meta ACC-010 revert "No change is made (report-only)."
+
+# Interactive login accounts: UID in [UID_MIN, 65533] with a real login shell
+# (one username per line). Reused by the inactivity check and unit-testable
+# against a fixture /etc/passwd.
+_human_login_accounts() {
+    local uid_min; uid_min=$(_logindefs_val UID_MIN); uid_min=${uid_min:-1000}
+    awk -F: -v m="$uid_min" \
+        '($3 >= m && $3 < 65534 && $7 != "" && $7 !~ /(nologin|false|\/sync|\/shutdown|\/halt)$/) {print $1}' \
+        "$(axpath /etc/passwd)" 2>/dev/null
+}
+
+audit_ACC_010() {
+    local days=${AUDITXS_INACTIVE_DAYS:-90}
+    local humans; humans=$(_human_login_accounts)
+    [ -n "$humans" ] || { DETAIL="No interactive user accounts to evaluate"; return 0; }
+    have lastlog || { DETAIL="lastlog is not available — cannot determine last-login times (install util-linux / the shadow utilities)."; return 3; }
+    local stale="" u rest
+    while read -r u rest; do
+        [ -n "$u" ] || continue
+        grep -qx "$u" <<<"$humans" || continue
+        if echo "$rest" | grep -q "Never logged in"; then stale+="${u}(never) "; else stale+="${u} "; fi
+    done < <(lastlog -b "$days" 2>/dev/null | awk 'NR>1')
+    if [ -n "$stale" ]; then
+        DETAIL="Interactive account(s) not authenticated in the last ${days} day(s): ${stale}— review and, if unused, lock ('sudo passwd -l <user>') or expire ('sudo chage -E \$(date +%F) <user>'). AuditXS does not auto-lock accounts."
+        return 2
+    fi
+    DETAIL="All interactive accounts have authenticated within the last ${days} day(s)"
+    return 0
+}

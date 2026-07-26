@@ -18,7 +18,7 @@
 AUDITXS_SELF=$(readlink -f "${BASH_SOURCE[0]}")
 AUDITXS_ROOT=$(dirname "$AUDITXS_SELF")
 
-for _lib in core errors distro backup registry waivers report fixlib maintenance cve tools update fleet alerts webservice terminal; do
+for _lib in core errors distro backup registry waivers report fixlib maintenance cve tools lynis update fleet alerts webservice terminal; do
     # shellcheck disable=SC1090
     . "$AUDITXS_ROOT/lib/$_lib.sh" || { echo "auditxs: missing library lib/$_lib.sh" >&2; exit 1; }
 done
@@ -53,6 +53,7 @@ ${BOLD}COMMANDS${RC}
   cve         Warn about installed packages with a known vulnerability / CVE
   update      Apply pending package updates (security by default; --all, --dry-run)
   tools       Security tooling:  status | list | install/uninstall/repair <name> | scan | vpn
+  lynis       Run Lynis (independent host audit) and fold its findings in (--report to reuse the last run)
   fleet       Audit many hosts over SSH (read-only):  auditxs fleet <host...> [options]
   waive       Accept a finding as a documented risk:  auditxs waive <ID> "reason" [--until DATE]
   waivers     List accepted-risk waivers   ·   unwaive <ID> removes one
@@ -186,8 +187,8 @@ _edit_distance() { # <a> <b> -> prints distance
 suggest_command() { # <typed> -> prints suggestion or nothing
     local typed=$1 c best="" bestd=99 bestfc=0 d fc
     local -a known=(start audit harden rollback snapshots list explain report diff
-        baseline schedule doctor cve update tools fleet waive waivers unwaive alert
-        errors terminal tui web webservice qt electron profile version help)
+        baseline schedule doctor cve update tools lynis fleet waive waivers unwaive
+        alert errors terminal tui web webservice qt electron profile version help)
     for c in "${known[@]}"; do
         d=$(_edit_distance "$typed" "$c")
         [ "${c:0:1}" = "${typed:0:1}" ] && fc=1 || fc=0
@@ -441,6 +442,7 @@ main() {
             --service)   ARGS+=("--service") ;;                                     # web: run as unattended service
             --remote)    ARGS+=("--remote") ;;                                      # passthrough to webservice enable
             --all|--full|--security|--snapshot|--no-snapshot) ARGS+=("$1") ;;       # passthrough to 'update'
+            --run|--report) ARGS+=("$1") ;;                                         # passthrough to 'lynis'
             # fleet-mode options — passed through to 'auditxs fleet'
             --hosts|--inventory|--user|--key|--timeout|--output|--until)
                          ARGS+=("$1" "${2:?"$1 needs a value"}"); shift ;;
@@ -478,9 +480,10 @@ main() {
             cmd_explain "${ARGS[@]}"
             return 0 ;;
         audit)
-            require_root audit
+            # Runs privileged (full) or unprivileged (limited — root-only checks
+            # report as skipped). print_audit_header shows which mode is active.
             resolve_profile
-            log "audit started (profile=$PROFILE distro=$DISTRO_ID format=$FORMAT)"
+            log "audit started (profile=$PROFILE distro=$DISTRO_ID format=$FORMAT unpriv=$(ax_unprivileged && echo 1 || echo 0))"
             case $FORMAT in
                 text)
                     print_audit_header
@@ -498,7 +501,8 @@ main() {
             esac
             return 0 ;;
         report)
-            require_root report
+            # Read-only; runs privileged or unprivileged (root-only checks
+            # report as skipped in the output).
             resolve_profile
             QUIET=1
             run_audit
@@ -554,6 +558,12 @@ main() {
             return $? ;;
         tools)
             cmd_tools "${ARGS[@]}"
+            return $? ;;
+        lynis)
+            # Run Lynis (the independent host auditor) and fold its findings
+            # into an AuditXS-style summary. Read-only; Lynis never changes
+            # anything. '--report' summarises the last run without re-running.
+            cmd_lynis "${ARGS[@]}"
             return $? ;;
         terminal|console)
             # Open a real, fully-interactive terminal (a shell) — prefers

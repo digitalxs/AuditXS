@@ -23,6 +23,21 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.24
+
+- **Broader coverage where it was genuinely missing.** New SMB hardening
+  checks (SMBv1 refused; SMB signing/encryption enforced) and inactive-account
+  auditing (interactive accounts idle beyond a configurable 30–90 day
+  threshold). Port/service/protocol hardening was already covered by the
+  existing Network and Services checks, so nothing was duplicated there.
+- **Lynis, absorbed rather than reimplemented.** `auditxs lynis` runs Lynis and
+  folds its hardening index, warnings and suggestions into AuditXS's output.
+  The dedup boundary is explicit: AuditXS owns the reversible fixes; Lynis owns
+  breadth; overlapping controls are surfaced, not re-detected.
+- **Privileged and unprivileged modes.** The read-only audit now runs without
+  root (root-only checks report as skipped, clearly flagged); hardening and
+  rollback stay privileged.
+
 ## Shipped in v0.23
 
 - **Ease of use — a guided front door.** `auditxs start` runs the whole

@@ -1,6 +1,6 @@
 # AuditXS check catalogue
 
-Generated from the check registry by `auditxs list --markdown` (v0.19.0).
+Generated from the check registry by `auditxs list --markdown` (v0.24.0).
 
 Legend: checks with an **automatic fix** are only ever applied by
 `auditxs harden` after showing you exactly what will change, and every
@@ -509,6 +509,16 @@ Checks that PAM locks an account after repeated failed logins (pam_faillock, or 
 
 Checks that PAM remembers previous passwords (pam_pwhistory 'remember=N') so users cannot immediately cycle back to an old password when forced to change. Report-only.
 
+### ACC-010 — Interactive accounts have authenticated recently
+
+- **Severity:** medium
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** PR.AA-01, PR.AA-05
+- **Fix:** manual (report-only)
+
+Flags interactive user accounts (UID >= UID_MIN with a real login shell) that have not authenticated within AUDITXS_INACTIVE_DAYS days (default 90; set it as low as 30 for tighter control). Dormant accounts are a favoured foothold: they tend to keep weak or reused credentials and their misuse goes unnoticed. Report-only — locking an account is a judgement call (a rarely-used admin, or a login identity for automation, can be legitimate), so AuditXS lists the accounts with the exact lock/expire command instead of acting on its own.
+
 ## Privileged — Server Hardening domain
 
 ### PRV-001 — sudo sessions use a pty and are logged
@@ -886,6 +896,36 @@ Checks that the bluetooth service is not running. Servers rarely use Bluetooth; 
 - **Fix:** manual (report-only)
 
 Summarizes 'systemd-analyze security', which scores every running service by how much sandboxing (namespaces, capability limits, syscall filters) it uses. Informational: use it to pick services worth confining with systemd hardening directives.
+
+## SMB — Network Security domain
+
+### SMB-001 — SMBv1 (NT1) is disabled on the Samba server
+
+- **Severity:** high
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** 
+- **Fix:** automatic (reversible)
+
+Checks that the Samba server does not accept the obsolete SMBv1 (NT1) dialect. SMBv1 has no meaningful integrity protection and is the vector for relay and downgrade attacks (and worms like WannaCry). Modern Samba defaults to SMB2, but the protection must be explicit: this check requires 'server min protocol' to be set to SMB2 or higher.
+
+**What the fix changes:** Sets 'server min protocol = SMB2' in the [global] section of /etc/samba/smb.conf (backed up first, validated with testparm, and smbd reloaded). SMBv1 clients can no longer negotiate.
+
+**How it is reverted:** 'sudo auditxs rollback' restores the saved smb.conf exactly as it was.
+
+### SMB-002 — SMB signing (or encryption) is required on the Samba server
+
+- **Severity:** high
+- **Profiles:** server,workstation
+- **CIS Benchmark:** — · **Level:** 1
+- **NIST CSF 2.0:** 
+- **Fix:** automatic (reversible)
+
+Checks that the Samba server mandates SMB signing (or the stronger SMB encryption). Without enforced signing, an on-path attacker can tamper with or relay SMB sessions. 'server signing = mandatory' rejects unsigned sessions; 'smb encrypt = required' additionally encrypts them (and implies signing).
+
+**What the fix changes:** Sets 'server signing = mandatory' in the [global] section of /etc/samba/smb.conf (backed up first, validated with testparm, and smbd reloaded). Existing shares keep working; clients that refuse signing are rejected.
+
+**How it is reverted:** 'sudo auditxs rollback' restores the saved smb.conf exactly as it was.
 
 ## Applications — Application Hardening domain
 

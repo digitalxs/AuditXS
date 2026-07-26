@@ -8,13 +8,13 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.23.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.24.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
-[![Checks](https://img.shields.io/badge/checks-122-8957e5)](docs/CHECKS.md)
+[![Checks](https://img.shields.io/badge/checks-125-8957e5)](docs/CHECKS.md)
 [![Frameworks](https://img.shields.io/badge/NIST%20CSF%202.0%20·%20CIS%20·%20STIG-informational)](docs/COMPLIANCE.md)
 
-**Current version: v0.23.0** — see the [changelog](CHANGELOG.md)
+**Current version: v0.24.0** — see the [changelog](CHANGELOG.md)
 
 **Debian** · **Ubuntu** · **Pop!\_OS** · **Arch** · **Fedora** · **openSUSE** *(and derivatives)*
 
@@ -270,7 +270,7 @@ Full detail: [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
 
 ## 📋 What is covered
 
-**122 checks across 26 categories.** The full catalogue — with per-check
+**125 checks across 26 categories.** The full catalogue — with per-check
 documentation generated from the code itself — lives in
 [docs/CHECKS.md](docs/CHECKS.md) (or run `auditxs list --markdown`).
 
@@ -429,7 +429,7 @@ no external assets).
 ```text
 auditxs             CLI entry point
 lib/                engine — core, distro, snapshot/rollback, registry, reports, fix helpers, maintenance
-checks/             26 self-registering, self-documenting check modules (122 checks)
+checks/             27 self-registering, self-documenting check modules (125 checks)
 gui/                terminal UI (ncurses), zenity GUI, web UI, Qt/QML app + desktop launcher
 setup.sh            installer (Server / Workstation selection)
 uninstall.sh        uninstaller (protects your snapshots)

@@ -88,6 +88,7 @@ declare -A DOMAIN_OF_CATEGORY=(
     [Firewall]="Network Security"
     [Fail2ban]="Network Security"
     [Network]="Network Security"
+    [SMB]="Network Security"
     [DNS]="Network Security"
     [TLS]="Network Security"
     [Services]="Application Hardening"
@@ -226,6 +227,9 @@ print_audit_header() {
     nala_row "Host:    $(hostname 2>/dev/null)"
     nala_row "System:  ${DISTRO_NAME}"
     nala_row "Profile: ${BOLD}${PROFILE}${RC}  ·  $(date '+%F %T')"
+    if ax_unprivileged; then
+        nala_row "${YELLOW}Unprivileged mode${RC} — running without root. Checks that need root are reported as ${DIM}skipped${RC}; re-run with ${BOLD}sudo auditxs audit${RC} for the complete picture."
+    fi
     nala_row "${DIM}Audit mode is read-only — nothing on this system is changed.${RC}"
     nala_end
 }

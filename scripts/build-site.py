@@ -518,7 +518,7 @@ def build_landing():
   <div class="badges">
     <span class="b ok">v@VERSION@</span>
     <span class="b">GPL-3.0</span>
-    <span class="b">122 checks · 26 categories</span>
+    <span class="b">125 checks · 26 categories</span>
     <span class="b">CIS · STIG aligned</span>
     <span class="b">NIST CSF 2.0 mapped</span>
   </div>

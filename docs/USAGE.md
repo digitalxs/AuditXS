@@ -94,12 +94,20 @@ Audits are **strictly read-only** — nothing on the system changes.
 
 ```bash
 sudo auditxs audit                          # everything applicable to the profile
+auditxs audit                               # unprivileged: runs without sudo (see below)
 sudo auditxs audit --category SSH           # one category
 sudo auditxs audit --domain "Database"      # one assessment domain
 sudo auditxs audit --check SSH-001 --check FW-002
 sudo auditxs audit --profile server         # override the configured profile
 sudo auditxs audit --format json            # machine-readable to stdout (also: tsv, html)
 ```
+
+**Privileged vs. unprivileged.** `auditxs audit` (and `auditxs report`) run
+either way. With `sudo` you get the complete audit. Without it, AuditXS runs an
+**unprivileged** audit: checks that need root (e.g. reading `/etc/shadow`)
+report as *skipped* rather than failing, and the header flags the mode and
+points to `sudo` for the full picture. State-changing commands — `harden`,
+`rollback`, `start` — always require root.
 
 Every console audit saves timestamped HTML and JSON reports under
 `/var/lib/auditxs/reports/` (plus `latest.json` / `latest.html`) and ends
@@ -312,6 +320,24 @@ the machine-readable tool list and per-tool install state.
 Scanner reports are saved under `/var/lib/auditxs/reports/tools/<timestamp>/`.
 CrowdSec and OSSEC/Wazuh require third-party installers — AuditXS prints the
 official steps rather than piping a remote script into your shell.
+
+### Lynis — an independent second opinion
+
+AuditXS does not reimplement [Lynis](https://github.com/CISOfy/lynis); it runs
+it and folds the results in. `auditxs lynis` runs Lynis and prints an
+AuditXS-style summary — the Lynis hardening index, its warnings and its
+suggestions — so you can cross-verify AuditXS's own findings:
+
+```bash
+sudo auditxs lynis            # install with 'auditxs tools install lynis' first
+sudo auditxs lynis --report   # re-read the last run without re-running
+```
+
+The division of labour is deliberate: **AuditXS owns the reversible, consented
+fixes** (snapshot + rollback); **Lynis owns breadth** — deep detective checks
+AuditXS does not duplicate. Where a Lynis test and an AuditXS check overlap,
+AuditXS keeps its check (because it can also *fix* the finding) and simply shows
+Lynis's opinion alongside. Lynis never changes the system.
 
 ## Fleet mode — auditing many hosts over SSH
 

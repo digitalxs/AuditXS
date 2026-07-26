@@ -7,6 +7,36 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.24.0]
+
+### Added
+- **SMB hardening checks (new `SMB` category).** `SMB-001` verifies the Samba
+  server refuses SMBv1/NT1 (requires `server min protocol = SMB2` or higher);
+  `SMB-002` verifies SMB signing — or encryption — is enforced (`server signing
+  = mandatory` / `smb encrypt = required`) to block SMB relay and tampering.
+  Both carry reversible, testparm-validated fixes and skip cleanly when Samba
+  is not installed.
+- **Inactive-account auditing (`ACC-010`).** Flags interactive accounts (real
+  login shell, UID ≥ UID_MIN) that have not authenticated within
+  `AUDITXS_INACTIVE_DAYS` days (default 90; set as low as 30). Advisory —
+  it lists the accounts and the exact lock/expire command rather than
+  auto-locking, since a dormant admin or automation identity can be legitimate.
+- **Lynis integration — `auditxs lynis`.** Runs Lynis (the independent host
+  auditor) and folds its findings — hardening index, warnings, suggestions —
+  into an AuditXS-style summary. `auditxs lynis --report` re-reads the last run
+  without re-running. Read-only: Lynis never changes anything.
+- **Unprivileged audit mode.** `auditxs audit` and `auditxs report` now run
+  without root — root-only checks report as *skipped* and a banner points to
+  `sudo` for the complete picture. State-changing commands (`harden`,
+  `rollback`, `start`) still require root.
+
+### Changed
+- **Deliberate de-duplication with Lynis.** AuditXS owns the reversible,
+  consented fixes; Lynis owns breadth. AuditXS does not reimplement Lynis's
+  tests — it surfaces them. Port/service/protocol hardening remains covered by
+  the existing `NET-001/002/004` and `SVC-001..004` checks (no parallel checks
+  were added).
+
 ## [0.23.0]
 
 ### Added

@@ -195,6 +195,11 @@ require_root() {
     [ "$(id -u)" -eq 0 ] || die "This operation requires root. Re-run with: ${BOLD}sudo auditxs $*${RC}"
 }
 
+# ax_unprivileged — true when NOT running as root. The read-only audit still
+# runs unprivileged (root-only checks report as skipped); state-changing
+# operations (harden, rollback, start) keep requiring root via require_root.
+ax_unprivileged() { [ "$(id -u)" -ne 0 ]; }
+
 has_systemd() { [ -d /run/systemd/system ]; }
 
 svc_active()  { has_systemd && systemctl is-active --quiet "$1" 2>/dev/null; }

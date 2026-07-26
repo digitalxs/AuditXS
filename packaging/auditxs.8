@@ -51,7 +51,9 @@ audit and harden machinery. Aliases:
 .BR guide ", " wizard .
 .TP
 .B audit
-Run all applicable checks (read-only). Saves HTML and JSON reports and prints
+Run all applicable checks (read-only). Runs with or without root: unprivileged,
+the checks that need root report as skipped and a banner advises re-running with
+sudo for the complete picture. Saves HTML and JSON reports and prints
 a severity-weighted hardening score and a CVE warning banner. The HTML report
 is interactive: a "show only findings" toggle hides passed/skipped/waived
 checks, and every FAIL/WARN row carries a "Fix it" / "How to fix" button that
@@ -138,6 +140,15 @@ Install/Uninstall/Repair buttons in the GUIs.
 and
 .B state
 print machine-readable tool names / install state.
+.TP
+.B lynis \fR[--run | --report]\fP
+Run Lynis (the independent open-source host auditor) and fold its findings \(em
+hardening index, warnings and suggestions \(em into an AuditXS-style summary.
+AuditXS does not reimplement Lynis's tests; it surfaces them and keeps its own
+reversible fixes for overlapping controls.
+.B --report
+summarises the last saved report (/var/log/lynis-report.dat) without re-running.
+Read-only \(em Lynis never changes the system.
 .TP
 .B fleet \fR<host...> [options]\fP
 Audit many hosts over SSH and aggregate the results. Read-only by design \(em
