@@ -31,6 +31,10 @@ echo "== version / list / explain / doctor =="
 ./auditxs list > /dev/null
 ./auditxs list --markdown > /dev/null
 ./auditxs explain SSH-001 ACC-003 NET-002 MAC-001 PRV-001 DB-001 PHP-001 PFX-001 BND-001 VULN-001 > /dev/null
+for _lvl in menu simple intermediate advanced pro all; do
+    ./auditxs tutorial "$_lvl" > /dev/null || fail "tutorial $_lvl exited non-zero"
+done
+./auditxs tutorial simple | grep -q "auditxs start" || fail "tutorial simple missing the start command"
 ./auditxs doctor > /tmp/doctor.log || true   # containers legitimately miss tools
 grep -q "AuditXS doctor" /tmp/doctor.log || fail "doctor produced no output"
 

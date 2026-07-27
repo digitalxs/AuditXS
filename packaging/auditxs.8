@@ -50,6 +50,15 @@ only with consent, and fully reversible. A one-command front door to the same
 audit and harden machinery. Aliases:
 .BR guide ", " wizard .
 .TP
+.B tutorial \fR[simple|intermediate|advanced|pro|all]\fP
+Tiered, in-terminal tutorial that teaches AuditXS at increasing depth \(em from
+a one-command first run (\fBsimple\fP) through \fBintermediate\fP and
+\fBadvanced\fP to \fBpro\fP (automation, fleet, CI, compliance, extending). With
+no argument it prints the menu;
+.B all
+prints every level. Read-only guidance. Aliases:
+.BR learn .
+.TP
 .B audit
 Run all applicable checks (read-only). Runs with or without root: unprivileged,
 the checks that need root report as skipped and a banner advises re-running with

@@ -23,6 +23,14 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.26
+
+- **A tutorial that meets you where you are.** `auditxs tutorial` teaches the
+  tool in four progressive levels — *simple* (one-command first run) through
+  *intermediate* and *advanced* to *pro* (automation, fleet, CI, compliance,
+  extending). Read-only guidance in the house style; the GUIs will surface the
+  same four levels next as part of the wider GUI/UX pass.
+
 ## Shipped in v0.25
 
 - **One report, many scanners.** `auditxs audit --with-tools` folds Lynis,

@@ -88,6 +88,18 @@ Not sure what a command is called? `auditxs` on its own (or `auditxs help`)
 lists the everyday commands; `auditxs help --full` prints the complete
 reference; and a mistyped command suggests the closest match.
 
+Prefer to learn by reading? The built-in tutorial teaches AuditXS at four
+increasing depths — start shallow and go as deep as you like:
+
+```bash
+auditxs tutorial              # the menu
+auditxs tutorial simple       # first run in one command
+auditxs tutorial intermediate # everyday commands, scope, undo
+auditxs tutorial advanced     # baselines, external scanners, waivers, profiles
+auditxs tutorial pro          # automation, fleet, CI, compliance, extending
+auditxs tutorial all          # everything, top to bottom
+```
+
 ## Auditing
 
 Audits are **strictly read-only** — nothing on the system changes.

@@ -18,7 +18,7 @@
 AUDITXS_SELF=$(readlink -f "${BASH_SOURCE[0]}")
 AUDITXS_ROOT=$(dirname "$AUDITXS_SELF")
 
-for _lib in core errors distro backup registry waivers report fixlib maintenance cve tools lynis update fleet alerts webservice terminal; do
+for _lib in core errors distro backup registry waivers report fixlib maintenance cve tools lynis tutorial update fleet alerts webservice terminal; do
     # shellcheck disable=SC1090
     . "$AUDITXS_ROOT/lib/$_lib.sh" || { echo "auditxs: missing library lib/$_lib.sh" >&2; exit 1; }
 done
@@ -38,6 +38,7 @@ ${BOLD}USAGE${RC}
 
 ${BOLD}COMMANDS${RC}
   start       Guided run for newcomers: audit, then fix issues one at a time
+  tutorial    Tiered tutorial:  auditxs tutorial [simple|intermediate|advanced|pro|all]
   audit       Run all applicable checks (read-only — never changes anything)
   harden      Review failed checks and apply fixes one by one, with consent
   rollback    Revert a hardening snapshot:  auditxs rollback <id> | latest
@@ -188,8 +189,8 @@ _edit_distance() { # <a> <b> -> prints distance
 # Suggest the closest real command to a mistyped one (edit distance ≤ 2).
 suggest_command() { # <typed> -> prints suggestion or nothing
     local typed=$1 c best="" bestd=99 bestfc=0 d fc
-    local -a known=(start audit harden rollback snapshots list explain report diff
-        baseline schedule doctor cve update tools lynis fleet waive waivers unwaive
+    local -a known=(start tutorial audit harden rollback snapshots list explain report
+        diff baseline schedule doctor cve update tools lynis fleet waive waivers unwaive
         alert errors terminal tui web webservice qt electron profile version help)
     for c in "${known[@]}"; do
         d=$(_edit_distance "$typed" "$c")
@@ -569,6 +570,10 @@ main() {
             # into an AuditXS-style summary. Read-only; Lynis never changes
             # anything. '--report' summarises the last run without re-running.
             cmd_lynis "${ARGS[@]}"
+            return $? ;;
+        tutorial|learn|guide-me)
+            # Tiered, in-terminal tutorial (simple → pro). Read-only guidance.
+            cmd_tutorial "${ARGS[@]}"
             return $? ;;
         terminal|console)
             # Open a real, fully-interactive terminal (a shell) — prefers

@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.25.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.26.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg active" href="usage.html">User manual</a>
@@ -149,6 +149,13 @@ sudo /opt/auditxs/uninstall.sh    # remove (asks before deleting snapshots)</cod
 <pre class="lang-bash"><code>sudo auditxs start</code></pre>
 <p><code>start</code> runs a read-only audit, shows what failed and why, then offers each automatic fix in turn — every change is shown first, applied only with your consent, and fully reversible (<code>sudo auditxs rollback latest</code> undoes the run). It is the friendly front door to the same engine the individual commands below use; reach for <code>audit</code> and <code>harden</code> directly once you know your way around.</p>
 <p>Not sure what a command is called? <code>auditxs</code> on its own (or <code>auditxs help</code>) lists the everyday commands; <code>auditxs help --full</code> prints the complete reference; and a mistyped command suggests the closest match.</p>
+<p>Prefer to learn by reading? The built-in tutorial teaches AuditXS at four increasing depths — start shallow and go as deep as you like:</p>
+<pre class="lang-bash"><code>auditxs tutorial              # the menu
+auditxs tutorial simple       # first run in one command
+auditxs tutorial intermediate # everyday commands, scope, undo
+auditxs tutorial advanced     # baselines, external scanners, waivers, profiles
+auditxs tutorial pro          # automation, fleet, CI, compliance, extending
+auditxs tutorial all          # everything, top to bottom</code></pre>
 <h2 id="auditing">Auditing</h2>
 <p>Audits are <strong>strictly read-only</strong> — nothing on the system changes.</p>
 <pre class="lang-bash"><code>sudo auditxs audit                          # everything applicable to the profile

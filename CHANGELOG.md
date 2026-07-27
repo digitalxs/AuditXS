@@ -7,6 +7,25 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.26.0]
+
+### Added
+- **Tiered in-terminal tutorial — `auditxs tutorial`.** Four progressive
+  levels teach the tool at the depth you want:
+  - **simple** — the whole workflow in one command (`auditxs start`), your
+    score, and how to undo everything;
+  - **intermediate** — audit vs harden, targeting a category/check/domain,
+    `explain`, snapshots/rollback, unprivileged audit, scheduling;
+  - **advanced** — profiles, baselines/drift, the external-scanner join
+    (`--with-tools`), waivers, CVE/updates, the alternate interfaces;
+  - **pro** — unattended runs and exit codes, SARIF/CSV for CI, fleet over
+    SSH, alerts, NIST/CIS/STIG compliance mapping, the reversibility model,
+    and writing your own checks.
+  `auditxs tutorial` with no argument shows the menu; `all` prints every
+  level. Read-only guidance — it never changes the system. Typo-suggestions
+  and `learn`/`guide-me` aliases included. The GUIs will surface the same four
+  levels next.
+
 ## [0.25.0]
 
 ### Added
