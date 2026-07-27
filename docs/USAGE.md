@@ -321,23 +321,39 @@ Scanner reports are saved under `/var/lib/auditxs/reports/tools/<timestamp>/`.
 CrowdSec and OSSEC/Wazuh require third-party installers — AuditXS prints the
 official steps rather than piping a remote script into your shell.
 
-### Lynis — an independent second opinion
+### External scanners — a second opinion, folded in
 
-AuditXS does not reimplement [Lynis](https://github.com/CISOfy/lynis); it runs
-it and folds the results in. `auditxs lynis` runs Lynis and prints an
-AuditXS-style summary — the Lynis hardening index, its warnings and its
-suggestions — so you can cross-verify AuditXS's own findings:
+AuditXS does not reimplement third-party scanners; it runs them and folds their
+results into its own report. Two ways to see them:
 
 ```bash
-sudo auditxs lynis            # install with 'auditxs tools install lynis' first
-sudo auditxs lynis --report   # re-read the last run without re-running
+sudo auditxs lynis                     # Lynis only, as its own summary
+sudo auditxs lynis --report            # re-read Lynis's last run, no re-scan
+
+sudo auditxs audit --with-tools        # ONE audit + Lynis + rkhunter + chkrootkit + debsecan
+sudo auditxs audit --tools-cached      # same, but reuse each tool's last report (fast)
 ```
 
+With `--with-tools`, the audit gains an **External tool findings** section — in
+the console, the HTML report and the JSON (`external` array) — listing:
+
+| Tool | What it contributes |
+|------|---------------------|
+| **Lynis** | hardening warnings and suggestions (+ its hardening index via `auditxs lynis`) |
+| **rkhunter** | rootkit / anomaly warnings from its log |
+| **chkrootkit** | rootkit / suspicious-file warnings |
+| **debsecan** | CVEs affecting installed packages, with a fix available (Debian) |
+
+These are **advisory and never scored** — they do not move the AuditXS
+hardening score, which stays a measure of AuditXS's own reversible-fixable
+checks. Missing scanners are simply skipped; each tool is run only as root,
+otherwise its last saved report is read.
+
 The division of labour is deliberate: **AuditXS owns the reversible, consented
-fixes** (snapshot + rollback); **Lynis owns breadth** — deep detective checks
-AuditXS does not duplicate. Where a Lynis test and an AuditXS check overlap,
-AuditXS keeps its check (because it can also *fix* the finding) and simply shows
-Lynis's opinion alongside. Lynis never changes the system.
+fixes** (snapshot + rollback); **the scanners own breadth** — deep detective
+checks AuditXS does not duplicate. Where a scanner finding and an AuditXS check
+overlap, AuditXS keeps its check (because it can also *fix* it) and simply shows
+the scanner's opinion alongside. The scanners never change the system.
 
 ## Fleet mode — auditing many hosts over SSH
 

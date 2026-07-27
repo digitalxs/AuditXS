@@ -107,3 +107,165 @@ cmd_lynis() {
     fi
     _lynis_summary "$LYNIS_REPORT"
 }
+
+# =====================================================================
+# Joined external-tool findings — fold Lynis + rkhunter results into the
+# AuditXS audit report (console, HTML and JSON). Advisory ONLY: these never
+# affect the AuditXS hardening score, which reflects AuditXS's own
+# reversible-fixable checks. Enabled per run with `auditxs audit --with-tools`.
+# =====================================================================
+
+RKHUNTER_LOG="${RKHUNTER_LOG:-/var/log/rkhunter.log}"
+WITH_TOOLS="${WITH_TOOLS:-0}"          # set to 1 by --with-tools
+# Tools that print findings to stdout (no canonical report file) get their
+# output cached here so `--tools-cached` can re-read it without a re-scan.
+AUDITXS_TOOLCACHE="${AUDITXS_TOOLCACHE:-/var/lib/auditxs/toolcache}"
+
+declare -gA EXT_TOOL EXT_STATUS EXT_DETAIL
+EXT_IDS=()
+N_EXT_WARN=0
+N_EXT_INFO=0
+
+_ext_add() { # <id> <tool> <status:WARN|INFO> <detail>
+    EXT_IDS+=("$1"); EXT_TOOL[$1]=$2; EXT_STATUS[$1]=$3; EXT_DETAIL[$1]=$4
+    case $3 in WARN) N_EXT_WARN=$((N_EXT_WARN + 1)) ;; *) N_EXT_INFO=$((N_EXT_INFO + 1)) ;; esac
+}
+
+# rkhunter logs "[time] Warning: <message>" lines; collect the unique messages.
+_rkhunter_warnings() {
+    [ -f "$RKHUNTER_LOG" ] || return 1
+    awk -F'Warning: ' '/Warning: /{ w=$2; sub(/[ \t]+$/,"",w); if (w!="") print w }' \
+        "$RKHUNTER_LOG" | sort -u
+}
+
+# _fold_file_lines <file> <id-prefix> <tool> <status> [keep-regex] — add each
+# non-empty line of <file> as an external finding (optionally only lines that
+# match keep-regex). Used for tools that print plain-text findings to stdout
+# (chkrootkit, debsecan). Testable against a fixture file.
+_fold_file_lines() {
+    local file=$1 prefix=$2 tool=$3 status=$4 keep=${5:-} v i=0
+    [ -f "$file" ] || return 0
+    while IFS= read -r v; do
+        v=${v%$'\r'}
+        [ -n "$v" ] || continue
+        [ -n "$keep" ] && { printf '%s' "$v" | grep -qiE "$keep" || continue; }
+        i=$((i + 1))
+        _ext_add "$(printf '%s-%03d' "$prefix" "$i")" "$tool" "$status" "$v"
+    done < "$file"
+}
+
+# collect_external_findings — populate the EXT_* arrays from Lynis and rkhunter.
+# When WITH_TOOLS_RUN=1 (default, and only if root) the tools are run fresh
+# first; otherwise the last saved reports are read as-is. Safe when neither tool
+# is installed (it simply collects nothing).
+collect_external_findings() {
+    EXT_IDS=(); N_EXT_WARN=0; N_EXT_INFO=0
+    local run=${WITH_TOOLS_RUN:-1} v i
+
+    if have lynis; then
+        if [ "$run" = 1 ] && [ "$(id -u)" -eq 0 ]; then
+            info "  running Lynis (folding its findings into this report)…"
+            lynis audit system --quiet --no-colors >/dev/null 2>&1 || true
+        fi
+        if [ -f "$LYNIS_REPORT" ]; then
+            i=0
+            while IFS= read -r v; do [ -n "$v" ] || continue; i=$((i + 1))
+                _ext_add "$(printf 'LYNIS-W%03d' "$i")" Lynis WARN "$(_lynis_finding_id "$v")"
+            done < <(_lynis_report_get "$LYNIS_REPORT" 'warning[]')
+            i=0
+            while IFS= read -r v; do [ -n "$v" ] || continue; i=$((i + 1))
+                _ext_add "$(printf 'LYNIS-S%03d' "$i")" Lynis INFO "$(_lynis_finding_id "$v")"
+            done < <(_lynis_report_get "$LYNIS_REPORT" 'suggestion[]')
+        fi
+    fi
+
+    if have rkhunter; then
+        if [ "$run" = 1 ] && [ "$(id -u)" -eq 0 ]; then
+            info "  running rkhunter (folding its findings into this report)…"
+            rkhunter --check --sk --nocolors >/dev/null 2>&1 || true
+        fi
+        i=0
+        while IFS= read -r v; do [ -n "$v" ] || continue; i=$((i + 1))
+            _ext_add "$(printf 'RKH-%03d' "$i")" rkhunter WARN "$v"
+        done < <(_rkhunter_warnings)
+    fi
+
+    # ---- chkrootkit (rootkit/anomaly scanner; prints findings to stdout) ----
+    if have chkrootkit; then
+        local ckfile="$AUDITXS_TOOLCACHE/chkrootkit.out"
+        if [ "$run" = 1 ] && [ "$(id -u)" -eq 0 ]; then
+            info "  running chkrootkit (folding its findings into this report)…"
+            mkdir -p "$AUDITXS_TOOLCACHE" 2>/dev/null
+            chkrootkit -q > "$ckfile" 2>/dev/null || true
+        fi
+        # -q already suppresses "nothing found" noise; keep only lines that name
+        # a real concern so occasional benign chatter does not become a finding.
+        _fold_file_lines "$ckfile" CHKR chkrootkit WARN \
+            'INFECTED|Vulnerable|Warning|suspicious|PACKET SNIFFER|Possible'
+    fi
+
+    # ---- debsecan (Debian Security Analyzer; CVEs in installed packages) ----
+    if have debsecan; then
+        local dsfile="$AUDITXS_TOOLCACHE/debsecan.out"
+        if [ "$run" = 1 ] && [ "$(id -u)" -eq 0 ]; then
+            info "  running debsecan (folding its findings into this report)…"
+            mkdir -p "$AUDITXS_TOOLCACHE" 2>/dev/null
+            # --only-fixed: vulnerabilities with a fix available (actionable).
+            debsecan --only-fixed 2>/dev/null | sort -u > "$dsfile" || true
+        fi
+        _fold_file_lines "$dsfile" DSEC debsecan WARN
+    fi
+    return 0
+}
+
+# print_external_findings — console rendering of the joined findings (advisory).
+# Shows every warning; caps suggestions with a pointer to the full report.
+print_external_findings() {
+    [ "$QUIET" = 1 ] && return 0
+    [ "${#EXT_IDS[@]}" -gt 0 ] || return 0
+    local id shown=0 cap=${EXT_MAX_INFO:-15} wcap=${EXT_MAX_WARN:-25} wshown=0
+    nala_box "External tool findings  ·  advisory (not scored)"
+    nala_row "Folded in from independent scanners: ${RED}${N_EXT_WARN} warning(s)${RC} · ${YELLOW}${N_EXT_INFO} suggestion(s)${RC}"
+    nala_end
+    for id in "${EXT_IDS[@]}"; do
+        [ "${EXT_STATUS[$id]}" = WARN ] || continue
+        [ "$wshown" -lt "$wcap" ] || continue
+        say "  ${RED}!${RC} ${DIM}[${EXT_TOOL[$id]}]${RC} ${EXT_DETAIL[$id]}"
+        wshown=$((wshown + 1))
+    done
+    [ "$N_EXT_WARN" -gt "$wcap" ] && \
+        say "  ${DIM}… and $((N_EXT_WARN - wcap)) more warning(s) — see the saved HTML/JSON report.${RC}"
+    for id in "${EXT_IDS[@]}"; do
+        [ "${EXT_STATUS[$id]}" = INFO ] || continue
+        [ "$shown" -lt "$cap" ] || continue
+        say "  ${YELLOW}•${RC} ${DIM}[${EXT_TOOL[$id]}]${RC} ${EXT_DETAIL[$id]}"
+        shown=$((shown + 1))
+    done
+    [ "$N_EXT_INFO" -gt "$cap" ] && \
+        say "  ${DIM}… and $((N_EXT_INFO - cap)) more suggestion(s) — see the saved HTML/JSON report.${RC}"
+    say ""
+    say "${DIM}Advisory: from Lynis/rkhunter, shown for cross-verification. AuditXS does not"
+    say "auto-fix these; where they overlap an AuditXS check, use ${RC}${BOLD}sudo auditxs harden${RC}${DIM}.${RC}"
+}
+
+# _html_external_section — an HTML card listing the joined findings (empty
+# output when there are none). Reuses the report's badge/filter classes so it
+# participates in the "show only findings" toggle.
+_html_external_section() {
+    [ "${#EXT_IDS[@]}" -gt 0 ] || return 0
+    local id badge
+    printf '<h2 class="cat">External tool findings <small>— advisory, not scored</small></h2>\n'
+    printf '<div class="card catcard" style="padding:.5rem .5rem"><div class="tablewrap"><table>\n'
+    printf '<tr><th>Level</th><th>Tool</th><th>Finding</th></tr>\n'
+    for id in "${EXT_IDS[@]}"; do
+        if [ "${EXT_STATUS[$id]}" = WARN ]; then
+            badge='<span class="badge WARN">Warning</span>'
+        else
+            badge='<span class="badge SKIP">Suggestion</span>'
+        fi
+        printf '<tr data-st="%s"><td>%s</td><td>%s</td><td>%s</td></tr>\n' \
+            "${EXT_STATUS[$id]}" "$badge" "$(html_escape "${EXT_TOOL[$id]}")" \
+            "$(html_escape "${EXT_DETAIL[$id]}")"
+    done
+    printf '</table></div></div>\n'
+}

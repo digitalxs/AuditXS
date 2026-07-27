@@ -219,6 +219,27 @@ ck "Lynis finding id formatting"    "SSH-7408: SSH configuration is not hardened
    "$(_lynis_finding_id 'SSH-7408|SSH configuration is not hardened|-|-')"
 ck "Lynis missing report → rc1"     "1" "$(_lynis_report_get "$FIX/none.dat" hardening_index >/dev/null 2>&1; echo $?)"
 
+echo "== External-tool join (rkhunter parser + finding accounting) =="
+printf '[10:00:00] Warning: Test warning one\n[10:00:01] Info: not a warning\n[10:00:02] Warning: Test warning two\n[10:00:03] Warning: Test warning one\n' > "$FIX/rkhunter.log"
+RKHUNTER_LOG="$FIX/rkhunter.log"
+ck "rkhunter warnings parsed (deduped)" "2" "$(_rkhunter_warnings | wc -l | tr -d ' ')"
+EXT_IDS=(); N_EXT_WARN=0; N_EXT_INFO=0
+_ext_add RKH-001 rkhunter WARN "Test warning one"
+_ext_add LYNIS-S001 Lynis INFO "AUTH-1: tidy something"
+ck "external warning tally"    "1" "$N_EXT_WARN"
+ck "external suggestion tally" "1" "$N_EXT_INFO"
+ck "external ids recorded"     "2" "${#EXT_IDS[@]}"
+ck "external detail stored"    "Test warning one" "${EXT_DETAIL[RKH-001]}"
+# chkrootkit/debsecan folding via _fold_file_lines (plain-text stdout tools).
+printf 'Checking bindshell... INFECTED\na benign progress line\nsuspicious file /tmp/x found\n' > "$FIX/ck.out"
+EXT_IDS=(); N_EXT_WARN=0; N_EXT_INFO=0
+_fold_file_lines "$FIX/ck.out" CHKR chkrootkit WARN 'INFECTED|suspicious|Warning|Vulnerable'
+ck "chkrootkit keep-regex drops benign" "2" "${#EXT_IDS[@]}"
+printf 'CVE-2023-0001 openssl\n\nCVE-2023-0002 curl\n' > "$FIX/ds.out"
+EXT_IDS=(); N_EXT_WARN=0; N_EXT_INFO=0
+_fold_file_lines "$FIX/ds.out" DSEC debsecan WARN
+ck "debsecan folds non-empty lines"     "2" "${#EXT_IDS[@]}"
+
 echo
 echo "check tests: $PASS passed, $FAILED failed"
 [ "$FAILED" -eq 0 ]

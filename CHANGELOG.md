@@ -7,6 +7,30 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.25.0]
+
+### Added
+- **Joined external-tool findings in the audit report — `auditxs audit
+  --with-tools`.** One audit now folds the findings of four independent
+  scanners into the same report: **Lynis** (hardening warnings + suggestions),
+  **rkhunter** and **chkrootkit** (rootkit/anomaly warnings) and **debsecan**
+  (CVEs in installed packages, Debian). They appear in a dedicated *External
+  tool findings* section in the console, the HTML report and the JSON (`external`
+  array) — clearly labelled **advisory (not scored)**, so they never move the
+  AuditXS hardening score, which stays a measure of AuditXS's own
+  reversible-fixable checks.
+- **`--tools-cached`** — same join but reads each tool's last report instead of
+  re-scanning, for a fast refresh. Lynis and rkhunter use their canonical files
+  (`/var/log/lynis-report.dat`, `/var/log/rkhunter.log`); chkrootkit and
+  debsecan output is cached under `/var/lib/auditxs/toolcache/`.
+- **debsecan** added to `auditxs tools scan` (chkrootkit, Lynis and rkhunter
+  were already there).
+
+### Notes
+- The join is opt-in: a plain `auditxs audit` stays fast and self-contained.
+  With `--with-tools`, missing scanners are simply skipped, and each tool is run
+  only when root; otherwise its last report is read.
+
 ## [0.24.0]
 
 ### Added

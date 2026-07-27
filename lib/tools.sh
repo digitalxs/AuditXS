@@ -347,6 +347,7 @@ cmd_tools_scan() {
     _run_scan lynis          lynis audit system --quick --no-colors
     _run_scan rkhunter       rkhunter --check --sk --nocolors
     _run_scan chkrootkit     chkrootkit -q
+    _run_scan debsecan       debsecan --only-fixed
     _run_scan tiger          tiger -q
     _run_scan checksecurity  checksecurity
     _run_scan lsat           lsat -o /dev/stdout

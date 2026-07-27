@@ -85,6 +85,8 @@ ${BOLD}OPTIONS${RC}
   --check <ID>                   Only this check (repeatable)
   --format text|tsv|json|html|sarif|csv   Output format (audit/report; SARIF for code-scanning)
   --baseline <report.json>       audit: compare results against a saved report
+  --with-tools                   audit: also run Lynis + rkhunter and fold their findings into the report
+  --tools-cached                 audit: as --with-tools but reuse their last reports (no re-scan)
   --dry-run                      harden: show every intended change, change nothing
   --yes, -y                      Assume "yes" to confirmations (automation)
   --quiet, -q                    Suppress progress output
@@ -443,6 +445,8 @@ main() {
             --remote)    ARGS+=("--remote") ;;                                      # passthrough to webservice enable
             --all|--full|--security|--snapshot|--no-snapshot) ARGS+=("$1") ;;       # passthrough to 'update'
             --run|--report) ARGS+=("$1") ;;                                         # passthrough to 'lynis'
+            --with-tools)   WITH_TOOLS=1 ;;                                          # fold Lynis/rkhunter into audit
+            --tools-cached) WITH_TOOLS=1; WITH_TOOLS_RUN=0 ;;                        # …from the last saved reports
             # fleet-mode options — passed through to 'auditxs fleet'
             --hosts|--inventory|--user|--key|--timeout|--output|--until)
                          ARGS+=("$1" "${2:?"$1 needs a value"}"); shift ;;
@@ -489,6 +493,7 @@ main() {
                     print_audit_header
                     run_audit
                     print_summary
+                    print_external_findings
                     cve_scan; cve_banner
                     save_reports
                     [ -n "$BASELINE_FILE" ] && diff_current_against "$BASELINE_FILE" ;;

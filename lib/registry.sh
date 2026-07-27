@@ -291,6 +291,9 @@ run_audit() {
     done
     progress_end
     compute_score
+    # Optionally fold independent scanners (Lynis/rkhunter) into this report.
+    # Advisory only — collect_external_findings never touches the score above.
+    [ "${WITH_TOOLS:-0}" = 1 ] && collect_external_findings
 }
 
 compute_score() {
@@ -350,6 +353,7 @@ cmd_harden() {
     print_audit_header
     run_audit
     print_summary
+    print_external_findings
     harden_apply_loop
 }
 
@@ -435,6 +439,7 @@ cmd_start() {
     print_audit_header
     run_audit
     print_summary
+    print_external_findings
     cve_scan; cve_banner
     save_reports
 

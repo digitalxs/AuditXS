@@ -53,7 +53,16 @@ audit and harden machinery. Aliases:
 .B audit
 Run all applicable checks (read-only). Runs with or without root: unprivileged,
 the checks that need root report as skipped and a banner advises re-running with
-sudo for the complete picture. Saves HTML and JSON reports and prints
+sudo for the complete picture. With
+.B --with-tools
+it also runs Lynis, rkhunter, chkrootkit and debsecan and folds their findings
+into an
+.I External tool findings
+section of the console/HTML/JSON report (advisory \(em never affects the
+score);
+.B --tools-cached
+does the same but reuses each tool's last report instead of re-scanning. Saves
+HTML and JSON reports and prints
 a severity-weighted hardening score and a CVE warning banner. The HTML report
 is interactive: a "show only findings" toggle hides passed/skipped/waived
 checks, and every FAIL/WARN row carries a "Fix it" / "How to fix" button that

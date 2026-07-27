@@ -121,7 +121,21 @@ results_json() {
             "${RESULT_STATUS[$id]}" "$fixable" \
             "$(json_escape "${CHECK_TITLE[$id]}")" "$(json_escape "${RESULT_DETAIL[$id]}")"
     done
-    printf '\n  ]\n}\n'
+    printf '\n  ],\n'
+    # External tool findings (Lynis/rkhunter), folded in with --with-tools.
+    # Advisory — not part of "results" and not reflected in "summary.score".
+    printf '  "external": [\n'
+    local ei efirst=1
+    if [ "${#EXT_IDS[@]}" -gt 0 ]; then
+        for ei in "${EXT_IDS[@]}"; do
+            [ "$efirst" = 1 ] || printf ',\n'; efirst=0
+            printf '    { "id": "%s", "tool": "%s", "status": "%s", "detail": "%s" }' \
+                "$ei" "$(json_escape "${EXT_TOOL[$ei]}")" "${EXT_STATUS[$ei]}" \
+                "$(json_escape "${EXT_DETAIL[$ei]}")"
+        done
+        printf '\n'
+    fi
+    printf '  ]\n}\n'
 }
 
 # results_html — self-contained Material Design 3 report (theme-aware,
@@ -309,6 +323,9 @@ HTMLHEAD
             "$(html_escape "$(cis_of "$id")")" "$(html_escape "$(nist_of "$id")")"
     done
     [ -n "$cat" ] && printf '</table></div></div>\n'
+
+    # External tool findings (Lynis/rkhunter) folded in with --with-tools.
+    _html_external_section
 
     cat <<'HTMLFOOT'
 <footer>

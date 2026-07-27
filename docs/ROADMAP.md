@@ -23,6 +23,16 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.25
+
+- **One report, many scanners.** `auditxs audit --with-tools` folds Lynis,
+  rkhunter, chkrootkit and debsecan findings into a single audit — a dedicated
+  *External tool findings* section across the console, HTML and JSON outputs.
+  It is advisory and never affects the AuditXS score; `--tools-cached` reuses
+  each tool's last report for a fast refresh. The dedup boundary holds: AuditXS
+  owns the reversible fixes, the scanners provide breadth, nothing is
+  re-implemented.
+
 ## Shipped in v0.24
 
 - **Broader coverage where it was genuinely missing.** New SMB hardening
