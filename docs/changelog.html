@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.26.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.27.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -102,9 +102,21 @@
 <a class="pg" href="../index.html">AuditXS home</a>
 <a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
 <main>
-<h1 id="changelog">Changelog</h1><div class="onpage"><b>On this page</b><a href="#0260">[0.26.0]</a><a href="#0250">[0.25.0]</a><a href="#0240">[0.24.0]</a><a href="#0230">[0.23.0]</a><a href="#0220">[0.22.0]</a><a href="#0210">[0.21.0]</a><a href="#0200">[0.20.0]</a><a href="#0190">[0.19.0]</a><a href="#0180">[0.18.0]</a><a href="#0170">[0.17.0]</a><a href="#0160">[0.16.0]</a><a href="#0150">[0.15.0]</a><a href="#0141">[0.14.1]</a><a href="#0140">[0.14.0]</a><a href="#0130">[0.13.0]</a><a href="#0120">[0.12.0]</a><a href="#0111">[0.11.1]</a><a href="#0110">[0.11.0]</a><a href="#0101">[0.10.1]</a><a href="#0100">[0.10.0]</a><a href="#091">[0.9.1]</a><a href="#090">[0.9.0]</a><a href="#082">[0.8.2]</a><a href="#081">[0.8.1]</a><a href="#080">[0.8.0]</a><a href="#070--072">[0.7.0] – [0.7.2]</a><a href="#060">[0.6.0]</a><a href="#050">[0.5.0]</a><a href="#040">[0.4.0]</a><a href="#030">[0.3.0]</a><a href="#020">[0.2.0]</a><a href="#010">[0.1.0]</a></div>
+<h1 id="changelog">Changelog</h1><div class="onpage"><b>On this page</b><a href="#0270">[0.27.0]</a><a href="#0260">[0.26.0]</a><a href="#0250">[0.25.0]</a><a href="#0240">[0.24.0]</a><a href="#0230">[0.23.0]</a><a href="#0220">[0.22.0]</a><a href="#0210">[0.21.0]</a><a href="#0200">[0.20.0]</a><a href="#0190">[0.19.0]</a><a href="#0180">[0.18.0]</a><a href="#0170">[0.17.0]</a><a href="#0160">[0.16.0]</a><a href="#0150">[0.15.0]</a><a href="#0141">[0.14.1]</a><a href="#0140">[0.14.0]</a><a href="#0130">[0.13.0]</a><a href="#0120">[0.12.0]</a><a href="#0111">[0.11.1]</a><a href="#0110">[0.11.0]</a><a href="#0101">[0.10.1]</a><a href="#0100">[0.10.0]</a><a href="#091">[0.9.1]</a><a href="#090">[0.9.0]</a><a href="#082">[0.8.2]</a><a href="#081">[0.8.1]</a><a href="#080">[0.8.0]</a><a href="#070--072">[0.7.0] – [0.7.2]</a><a href="#060">[0.6.0]</a><a href="#050">[0.5.0]</a><a href="#040">[0.4.0]</a><a href="#030">[0.3.0]</a><a href="#020">[0.2.0]</a><a href="#010">[0.1.0]</a></div>
 <p>All notable changes to <strong>AuditXS</strong> are recorded here. The format follows <a href="https://keepachangelog.com/">Keep a Changelog</a>, and the project uses <a href="https://semver.org/">Semantic Versioning</a>. The repository-root <code>VERSION</code> file is the single source of truth for the current version.</p>
 <hr>
+<h2 id="0270">[0.27.0]</h2>
+<h3 id="web-ui--usability-overhaul-auditxs-web">Web UI — usability overhaul (<code>auditxs web</code>)</h3>
+<ul>
+<li><strong>Learn tab.</strong> The tiered tutorial (simple → intermediate → advanced → pro) is now in the web UI, served from the same <code>auditxs tutorial</code> content via a new token-gated <code>/api/tutorial</code> endpoint.</li>
+<li><strong>Search &amp; filter.</strong> A search box filters the full check list by id, title, category, status or finding text as you type (the input keeps focus), with a live "N of M checks" count and a "failures &amp; warnings only" toggle.</li>
+<li><strong>Light/dark toggle.</strong> A theme button switches light/dark and persists the choice (<code>localStorage</code>), overriding the OS preference; both themes fully styled via CSS variables.</li>
+<li><strong>External scanners in the report.</strong> A "scanners" toggle runs the audit with <code>--with-tools</code>; Lynis/rkhunter/chkrootkit/debsecan findings appear in an advisory <em>External tool findings</em> section (from the JSON <code>external</code> array).</li>
+<li><strong>Accessibility.</strong> Tabs are a proper ARIA <code>tablist</code> with roles, <code>aria-selected</code>, roving <code>tabindex</code> and arrow-key navigation; visible keyboard focus rings; and <code>prefers-reduced-motion</code> is honoured.</li>
+<li><strong>Responsive.</strong> The appbar, tab strip, hero and rows reflow cleanly on small screens (the tab strip scrolls horizontally).</li>
+<li><strong>Privilege indicator.</strong> The header shows when the UI is running unprivileged and points to <code>sudo</code> for the full audit.</li>
+</ul>
+<p>Web tests extended (+12) to cover the new endpoints, page wiring and markers.</p>
 <h2 id="0260">[0.26.0]</h2>
 <h3 id="added">Added</h3>
 <ul>

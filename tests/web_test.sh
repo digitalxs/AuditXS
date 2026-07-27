@@ -60,8 +60,15 @@ ck "webservice rejects bad port"        400 "$(code -X POST -H "X-Auth-Token: $T
 curl -s -H "X-Auth-Token: $TOKEN" "$base/" | grep -q '<title>AuditXS</title>' \
     && ck "page is the SPA" yes yes || ck "page is the SPA" yes no
 curl -s -H "X-Auth-Token: $TOKEN" "$base/api/audit" \
-    | python3 -c 'import sys,json;d=json.load(sys.stdin);assert "summary" in d' 2>/dev/null \
-    && ck "audit returns JSON with summary" yes yes || ck "audit returns JSON with summary" yes no
+    | python3 -c 'import sys,json;d=json.load(sys.stdin);assert "summary" in d and "external" in d' 2>/dev/null \
+    && ck "audit returns JSON with summary+external" yes yes || ck "audit returns JSON with summary+external" yes no
+curl -s -H "X-Auth-Token: $TOKEN" "$base/api/meta" \
+    | python3 -c 'import sys,json;d=json.load(sys.stdin);assert "unprivileged" in d' 2>/dev/null \
+    && ck "meta reports privilege state" yes yes || ck "meta reports privilege state" yes no
+curl -s -H "X-Auth-Token: $TOKEN" "$base/api/tutorial?level=simple" \
+    | python3 -c 'import sys,json;d=json.load(sys.stdin);assert "AuditXS tutorial" in d["text"]' 2>/dev/null \
+    && ck "tutorial endpoint returns content" yes yes || ck "tutorial endpoint returns content" yes no
+ck "tutorial endpoint needs token" 403 "$(code "$base/api/tutorial?level=simple")"
 
 # The interactive wiring must be present in the served page (regression guard
 # for the buttons verified end-to-end in a browser): Fix it / How to fix
@@ -71,7 +78,10 @@ PAGEHTML=$(curl -s -H "X-Auth-Token: $TOKEN" "$base/")
 for pat in 'onclick="onFix(' '/api/harden' \
            'id="fleetRun"' 'id="fleetPass"' 'id="fleetSudoPass"' \
            'data-tab="web"' 'function renderWeb' 'id="webEnable"' '/api/webservice' \
-           'id="conIn"' 'id="conToggle"' '/api/cli'; do
+           'id="conIn"' 'id="conToggle"' '/api/cli' \
+           'data-tab="learn"' 'function renderLearn' 'id="themeBtn"' 'id="toolsChk"' \
+           'class="search"' 'function renderExternal' 'function renderRows' \
+           'role="tablist"' 'data-theme'; do
     printf '%s' "$PAGEHTML" | grep -qF "$pat" \
         && ck "page wiring: $pat" yes yes || ck "page wiring: $pat" yes no
 done

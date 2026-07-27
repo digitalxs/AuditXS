@@ -8,17 +8,17 @@
 one explained, consented, reversible change at a time.*
 
 [![CI](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml/badge.svg)](https://github.com/digitalxs/AuditXS/actions/workflows/ci.yml)
-[![Version](https://img.shields.io/badge/version-0.26.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
+[![Version](https://img.shields.io/badge/version-0.27.0-2ea44f)](https://github.com/digitalxs/AuditXS/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Bash](https://img.shields.io/badge/bash-4%2B-121011?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![Checks](https://img.shields.io/badge/checks-125-8957e5)](docs/CHECKS.md)
 [![Frameworks](https://img.shields.io/badge/NIST%20CSF%202.0%20·%20CIS%20·%20STIG-informational)](docs/COMPLIANCE.md)
 
-**Current version: v0.26.0** — see the [changelog](CHANGELOG.md)
+**Current version: v0.27.0** — see the [changelog](CHANGELOG.md)
 
 **Debian** · **Ubuntu** · **Pop!\_OS** · **Arch** · **Fedora** · **openSUSE** *(and derivatives)*
 
-[Quick start](#-quick-start) · [Usage](#-usage) · [Profiles &amp; interfaces](#-profiles--interfaces) · [Coverage](#-what-is-covered) · [Documentation](#-documentation)
+[Quick start](#quick-start) · [Usage](#usage) · [Profiles &amp; interfaces](#profiles--interfaces) · [Coverage](#what-is-covered) · [Documentation](#documentation)
 
 </div>
 
@@ -46,7 +46,7 @@ terminal UI, a web UI (localhost or LAN) and a native desktop app.
 
 ---
 
-## 🚀 Quick start
+## Quick start
 
 **Fastest — one line *(reads a real terminal for the Server/Workstation prompt)*:**
 
@@ -118,7 +118,7 @@ sudo auditxs harden --dry-run        # preview every fix without applying it
 
 ---
 
-## 🧭 Usage
+## Usage
 
 ```text
 sudo auditxs audit                     read-only audit + HTML/JSON report
@@ -203,7 +203,7 @@ SSH-001 — SSH root login is disabled
 
 ---
 
-## 👤 Profiles &amp; interfaces
+## Profiles &amp; interfaces
 
 The **profile** — chosen at install time, stored in `/etc/auditxs/auditxs.conf`,
 overridable per-run with `--profile` — decides both *which checks apply* and
@@ -252,7 +252,7 @@ the version and live operation progress with percentage.
 
 ---
 
-## 🧩 Assessment domains &amp; frameworks
+## Assessment domains &amp; frameworks
 
 Checks roll up into the five domains professional assessments are organised
 around — audit any one with `--domain`:
@@ -270,7 +270,7 @@ Full detail: [docs/COMPLIANCE.md](docs/COMPLIANCE.md).
 
 ---
 
-## 📋 What is covered
+## What is covered
 
 **125 checks across 26 categories.** The full catalogue — with per-check
 documentation generated from the code itself — lives in
@@ -306,7 +306,7 @@ documentation generated from the code itself — lives in
 
 ---
 
-## 🔒 Safety engineering worth knowing about
+## Safety engineering worth knowing about
 
 - **SSH** — fixes go into `/etc/ssh/sshd_config.d/99-auditxs.conf`, are validated with `sshd -t`, and the previous config is restored automatically on failure. Key-only auth is **refused** unless a regular user already has `authorized_keys`.
 - **Firewall** — before enabling, the SSH port is explicitly allowed whenever the machine is managed over SSH (lockout guard).
@@ -316,7 +316,7 @@ documentation generated from the code itself — lives in
 
 ---
 
-## 🛠️ Security tooling, external scanners &amp; CVE warnings
+## Security tooling, external scanners &amp; CVE warnings
 
 AuditXS hardens configuration itself, and *integrates* the wider ecosystem
 rather than reinventing it — all through the same reversible interface:
@@ -330,7 +330,7 @@ rather than reinventing it — all through the same reversible interface:
 
 ---
 
-## 🌐 Fleet mode — audit many hosts over SSH
+## Fleet mode — audit many hosts over SSH
 
 ```bash
 auditxs fleet web01 db01 --user admin --key ~/.ssh/id_ed25519 --sudo
@@ -361,7 +361,7 @@ harden that host locally.
 - Every failure prints a **stable error number** (e.g. `AX6002`) you can look
   up with `auditxs errors <code>` — see the [error catalogue](docs/ERRORS.md).
 
-## 🔢 Error catalogue
+## Error catalogue
 
 Every recoverable failure reports a unique, stable `AXnnnn` number with a plain
 explanation and a fix, on the console and in `/var/lib/auditxs/errors.log`.
@@ -369,7 +369,7 @@ Browse the database with `auditxs errors`, explain one with `auditxs errors
 AX6002`, or search with `auditxs errors ssh`. Full table:
 [docs/ERRORS.md](docs/ERRORS.md).
 
-## ✋ Accepted-risk waivers
+## Accepted-risk waivers
 
 Real assessments knowingly accept some findings. Record that decision so it
 renders as **WAIVED** (not FAIL) everywhere, with a justification and optional
@@ -384,7 +384,7 @@ sudo auditxs unwaive SSH-005
 The original result is preserved in the detail, expired waivers stop applying,
 and SARIF output represents a waiver as a proper `suppression`.
 
-## 🔌 Integrations &amp; alerting
+## Integrations &amp; alerting
 
 - **SARIF / CSV export** — `auditxs report --format sarif` emits **SARIF 2.1.0**
   (with `security-severity`, CIS/NIST properties and waiver suppressions) for
@@ -395,7 +395,7 @@ and SARIF output represents a waiver as a proper `suppression`.
   notify on baseline drift or newly-vulnerable packages. Test with
   `sudo auditxs alert test`.
 
-## 🖥️ Graphical installer
+## Graphical installer
 
 On a desktop, run `./install-gui.sh` for a branded step-by-step install wizard
 (welcome → profile → options → install → done). Headless servers use the text
@@ -403,7 +403,7 @@ installer, `sudo ./setup.sh`.
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 **Browse it as a website:** the documentation is also built into a static
 HTML site — `index.html` (project page) and `docs/*.html` (manuals) — published
@@ -426,7 +426,7 @@ no external assets).
 
 ---
 
-## 🗂️ Repository layout
+## Repository layout
 
 ```text
 auditxs             CLI entry point
@@ -447,7 +447,7 @@ for the engine, snapshot format and check API.
 
 ---
 
-## 📄 License
+## License
 
 **GPL-3.0** — in the same spirit as the rest of the [DigitalXS](https://digitalxs.ca) tooling.
 

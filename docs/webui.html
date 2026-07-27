@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.26.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.27.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -104,6 +104,7 @@
 <main>
 <h1 id="auditxs-web-ui">AuditXS web UI</h1><div class="onpage"><b>On this page</b><a href="#why-a-web-ui-and-who-it-is-for">Why a web UI (and who it is for)</a><a href="#launching">Launching</a><a href="#using-it-on-a-remote-headless-server">Using it on a remote (headless) server</a><a href="#turning-it-onoff-as-a-service--local-or-remote-v020">Turning it on/off as a service — local or remote (v0.20)</a><a href="#what-you-can-do">What you can do</a><a href="#security-model">Security model</a><a href="#when-to-use-which-interface">When to use which interface</a></div>
 <p>A local, <strong>Material Design 3</strong> web interface for AuditXS. It is a thin front-end over the <code>auditxs</code> command — everything it does is a command you could type — so the transparency and reversibility guarantees are unchanged.</p>
+<p>At a glance, the UI gives you: a <strong>Dashboard</strong> (score ring, findings, per-check <em>Fix it</em> / <em>How to fix</em>) with a live <strong>search box</strong> and a <em>failures &amp; warnings only</em> filter; a <strong>Learn</strong> tab with the tiered tutorial (simple → pro); a <strong>scanners</strong> toggle that folds Lynis/rkhunter/chkrootkit/debsecan findings into the report as an advisory <em>External tool findings</em> section; <strong>Snapshots</strong>, <strong>Tools</strong> and <strong>Fleet</strong> tabs; a built-in <strong>console</strong>; and a <strong>light/dark</strong> toggle that remembers your choice. It is keyboard-navigable (the tabs are an ARIA tablist with arrow-key movement and visible focus), respects <code>prefers-reduced-motion</code>, and reflows for small screens.</p>
 <h2 id="why-a-web-ui-and-who-it-is-for">Why a web UI (and who it is for)</h2>
 <p>The web UI opens in your browser with the full audit/harden/rollback workflow behind a Material Design 3 surface. It runs on <strong>both profiles</strong>: on a workstation it's your graphical interface; on a <strong>headless server</strong> it's a network-reachable control panel (bound to localhost by default, or to the network with <code>--remote</code> — see below).</p>
 <p>The <em>desktop</em> GUIs — the Qt app, the Electron app and the zenity launcher — stay <strong>workstation-only</strong>, because they need a graphical display. On a server without a desktop, use the web UI, the ncurses terminal UI, or the CLI:</p>

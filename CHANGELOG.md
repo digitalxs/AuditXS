@@ -7,6 +7,31 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.27.0]
+
+### Web UI — usability overhaul (`auditxs web`)
+- **Learn tab.** The tiered tutorial (simple → intermediate → advanced → pro)
+  is now in the web UI, served from the same `auditxs tutorial` content via a
+  new token-gated `/api/tutorial` endpoint.
+- **Search & filter.** A search box filters the full check list by id, title,
+  category, status or finding text as you type (the input keeps focus), with a
+  live "N of M checks" count and a "failures & warnings only" toggle.
+- **Light/dark toggle.** A theme button switches light/dark and persists the
+  choice (`localStorage`), overriding the OS preference; both themes fully
+  styled via CSS variables.
+- **External scanners in the report.** A "scanners" toggle runs the audit with
+  `--with-tools`; Lynis/rkhunter/chkrootkit/debsecan findings appear in an
+  advisory *External tool findings* section (from the JSON `external` array).
+- **Accessibility.** Tabs are a proper ARIA `tablist` with roles, `aria-selected`,
+  roving `tabindex` and arrow-key navigation; visible keyboard focus rings; and
+  `prefers-reduced-motion` is honoured.
+- **Responsive.** The appbar, tab strip, hero and rows reflow cleanly on small
+  screens (the tab strip scrolls horizontally).
+- **Privilege indicator.** The header shows when the UI is running unprivileged
+  and points to `sudo` for the full audit.
+
+Web tests extended (+12) to cover the new endpoints, page wiring and markers.
+
 ## [0.26.0]
 
 ### Added

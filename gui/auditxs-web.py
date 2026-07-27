@@ -122,6 +122,17 @@ PAGE = r"""<!DOCTYPE html>
  --outline:#33343d;--primary:#bcc2ff;--primaryc:#1a2277;
  --ok:#7fd99b;--err:#ffb4ab;--warn:#f5bd6e;--skip:#a8abb4;
  --okc:#12331f;--errc:#3d1512;--warnc:#3a2a12;--skipc:#282a32;}}
+/* Manual theme toggle wins over the OS preference when set. */
+:root[data-theme="light"]{
+ --bg:#f5f5fb;--surface:#fff;--surface2:#eef0f7;--on:#1b1b21;--onv:#5a5c66;
+ --outline:#e2e3ec;--primary:#4b56d2;--primaryc:#fff;
+ --ok:#1e7d46;--err:#ba1a1a;--warn:#a25b00;--skip:#6b7280;
+ --okc:#e6f4ea;--errc:#ffe9e7;--warnc:#fff3e0;--skipc:#eceef2;}
+:root[data-theme="dark"]{
+ --bg:#111218;--surface:#1b1c23;--surface2:#23252e;--on:#e5e2e9;--onv:#c6c6d0;
+ --outline:#33343d;--primary:#bcc2ff;--primaryc:#1a2277;
+ --ok:#7fd99b;--err:#ffb4ab;--warn:#f5bd6e;--skip:#a8abb4;
+ --okc:#12331f;--errc:#3d1512;--warnc:#3a2a12;--skipc:#282a32;}
 *{box-sizing:border-box}
 body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
  background:var(--bg);color:var(--on);-webkit-font-smoothing:antialiased}
@@ -229,21 +240,55 @@ body{padding-bottom:3rem}
  border-radius:.6rem;color:var(--on);font-family:ui-monospace,monospace;font-size:.85rem;padding:.6rem}
 .fld{flex:1;min-width:14rem;background:var(--surface2);border:1px solid var(--outline);
  border-radius:.5rem;color:var(--on);padding:.45rem .6rem;font-size:.85rem}
+/* accessibility: visible keyboard focus + honour reduced-motion */
+a:focus-visible,button:focus-visible,input:focus-visible,.tab:focus-visible{
+ outline:3px solid var(--primary);outline-offset:2px;border-radius:.5rem}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+/* search / filter */
+.search{flex:1;min-width:12rem;background:var(--surface2);border:1px solid var(--outline);
+ border-radius:2rem;color:var(--on);padding:.55rem 1rem;font-size:.9rem;outline:none}
+.searchrow{display:flex;gap:.7rem;align-items:center;flex-wrap:wrap;margin:.2rem 0 .5rem}
+.filterinfo{font-size:.75rem;color:var(--onv);margin:.1rem 0 .5rem}
+.chk{display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;color:var(--onv);cursor:pointer;user-select:none}
+/* external tool findings */
+.exttool{display:inline-block;font-family:ui-monospace,monospace;font-size:.68rem;color:var(--onv);
+ background:var(--surface2);border-radius:.4rem;padding:.05rem .45rem;margin-right:.5rem}
+/* theme toggle + tutorial */
+.themebtn{background:var(--surface2);border:1px solid var(--outline);border-radius:2rem;
+ width:2.5rem;height:2.5rem;font-size:1.05rem;cursor:pointer;color:var(--on);line-height:1}
+.tut{white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:.82rem;line-height:1.55;
+ background:var(--surface2);border-radius:.7rem;padding:1rem 1.1rem;color:var(--on);overflow:auto;max-height:70vh}
+.levbtns{display:flex;gap:.5rem;flex-wrap:wrap;margin:.2rem 0 .8rem}
+/* responsive: small screens */
+@media(max-width:640px){
+ .appbar{flex-wrap:wrap;gap:.5rem;padding:.6rem .7rem}
+ .appbar h1{font-size:1rem}
+ .appbar .sub{width:100%;order:9}
+ .wrap{padding:.7rem}
+ .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+ .tabs::-webkit-scrollbar{display:none}
+ .hero{flex-direction:column;text-align:center}
+ .row{flex-wrap:wrap}
+ .row .btn{margin-top:.4rem;margin-left:auto}
+}
 </style></head><body>
 <div class="appbar">
   <div class="logo" aria-hidden="true">A</div>
   <div><h1>AuditXS <span class="by">by DigitalXS</span></h1><div class="sub" id="hostmeta">loading…</div></div>
   <div class="spacer"></div>
+  <label class="chk" title="Also run Lynis, rkhunter, chkrootkit and debsecan and fold their findings into this audit"><input type="checkbox" id="toolsChk"> scanners</label>
+  <button class="themebtn" id="themeBtn" aria-label="Toggle light or dark theme" title="Toggle theme">🌙</button>
   <button class="btn" id="reportBtn">Open report</button>
   <button class="btn primary" id="auditBtn">Run audit</button>
 </div>
 <div class="wrap">
-  <div class="tabs">
-    <div class="tab active" data-tab="dashboard">Dashboard</div>
-    <div class="tab" data-tab="snapshots">Snapshots</div>
-    <div class="tab" data-tab="tools">Tools</div>
-    <div class="tab" data-tab="fleet">Fleet</div>
-    <div class="tab" data-tab="web">Web</div>
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <div class="tab active" data-tab="dashboard" role="tab" tabindex="0" aria-selected="true">Dashboard</div>
+    <div class="tab" data-tab="learn" role="tab" tabindex="-1" aria-selected="false">Learn</div>
+    <div class="tab" data-tab="snapshots" role="tab" tabindex="-1" aria-selected="false">Snapshots</div>
+    <div class="tab" data-tab="tools" role="tab" tabindex="-1" aria-selected="false">Tools</div>
+    <div class="tab" data-tab="fleet" role="tab" tabindex="-1" aria-selected="false">Fleet</div>
+    <div class="tab" data-tab="web" role="tab" tabindex="-1" aria-selected="false">Web</div>
   </div>
   <div class="pwrap" id="pwrap">
     <div class="pbar"><div id="pfill"></div></div>
@@ -284,7 +329,7 @@ For a full interactive shell (vim, htop, …): the desktop app's terminal (Ctrl+
 <script>
 const TOKEN="__TOKEN__";
 const H={"X-Auth-Token":TOKEN};
-let RESULTS=[], SUMMARY={}, META={};
+let RESULTS=[], SUMMARY={}, META={}, EXTERNAL=[], QUERY="", FAILONLY=false;
 const $=s=>document.querySelector(s);
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2600);}
 async function api(path,opts){opts=opts||{};opts.headers=Object.assign({},H,opts.headers||{});
@@ -292,7 +337,8 @@ async function api(path,opts){opts=opts||{};opts.headers=Object.assign({},H,opts
 function ringColor(s){return s>=75?"var(--ok)":s>=50?"var(--warn)":"var(--err)";}
 
 async function loadMeta(){META=await api("/api/meta");
- $("#hostmeta").textContent=`${META.host} · ${META.distro} · profile ${META.profile} · v${META.version}`;}
+ $("#hostmeta").textContent=`${META.host} · ${META.distro} · profile ${META.profile} · v${META.version}`
+  +(META.unprivileged?" · unprivileged (run with sudo for the full audit)":"");}
 
 let PTIMER=null;
 function progressStart(){
@@ -309,9 +355,12 @@ function progressStop(){
  setTimeout(()=>$("#pwrap").classList.remove("on"),600);
 }
 async function runAudit(){
+ const tools=$("#toolsChk")&&$("#toolsChk").checked;
  $("#auditBtn").innerHTML='<span class="spin"></span>';
+ if(tools)toast("Running audit + external scanners — this can take a minute…");
  progressStart();
- try{const d=await api("/api/audit");RESULTS=d.results;SUMMARY=d.summary;await loadCve();render();toast("Audit complete");}
+ try{const d=await api("/api/audit"+(tools?"?tools=1":""));
+  RESULTS=d.results;SUMMARY=d.summary;EXTERNAL=d.external||[];await loadCve();render();toast("Audit complete");}
  catch(e){toast("Audit failed: "+e.message);}
  progressStop();
  $("#auditBtn").textContent="Run audit";
@@ -321,37 +370,99 @@ async function loadCve(){try{const c=await api("/api/cve");const h=$("#cveHolder
  else h.innerHTML="";}catch(e){}}
 
 let TAB="dashboard";
-document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
- document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
- t.classList.add("active");TAB=t.dataset.tab;render();});
+function selectTab(t){
+ document.querySelectorAll(".tab").forEach(x=>{x.classList.remove("active");x.setAttribute("aria-selected","false");x.tabIndex=-1;});
+ t.classList.add("active");t.setAttribute("aria-selected","true");t.tabIndex=0;TAB=t.dataset.tab;render();}
+document.querySelectorAll(".tab").forEach(t=>{
+ t.onclick=()=>selectTab(t);
+ t.onkeydown=ev=>{
+  if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();selectTab(t);}
+  else if(ev.key==="ArrowRight"||ev.key==="ArrowLeft"){ev.preventDefault();
+   const tabs=[...document.querySelectorAll(".tab")];let i=tabs.indexOf(t);
+   i=(i+(ev.key==="ArrowRight"?1:tabs.length-1))%tabs.length;tabs[i].focus();selectTab(tabs[i]);}
+ };
+});
+
+// theme toggle — persisted; falls back to the OS preference on first visit.
+function applyTheme(t){document.documentElement.dataset.theme=t;
+ const b=$("#themeBtn");if(b)b.textContent=t==="dark"?"☀":"🌙";
+ try{localStorage.setItem("axtheme",t);}catch(e){}}
+(function(){let t=null;try{t=localStorage.getItem("axtheme");}catch(e){}
+ if(!t)t=matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light";applyTheme(t);})();
+$("#themeBtn").onclick=()=>applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");
 
 function render(){
  if(TAB==="dashboard")renderDash();
+ else if(TAB==="learn")renderLearn();
  else if(TAB==="snapshots")renderSnaps();
  else if(TAB==="tools")renderTools();
  else if(TAB==="fleet")renderFleet();
  else if(TAB==="web")renderWeb();
 }
+// Tiered tutorial (same content as `auditxs tutorial`), rendered in a panel.
+async function renderLearn(){
+ const levels=[["simple","Simple"],["intermediate","Intermediate"],["advanced","Advanced"],["pro","Professional"]];
+ const btns=levels.map(l=>`<button class="btn" data-lv="${l[0]}" onclick="loadTut('${l[0]}',this)">${l[1]}</button>`).join("");
+ $("#view").innerHTML=`<div class="card"><div class="sect" style="margin-top:0">Tutorial <small>— learn AuditXS at your own depth</small></div>
+  <div class="levbtns">${btns}</div><div class="tut" id="tutout" role="region" aria-label="Tutorial content" tabindex="0">loading…</div></div>`;
+ loadTut("simple");
+}
+async function loadTut(level,btn){
+ document.querySelectorAll(".levbtns .btn").forEach(b=>b.classList.remove("primary"));
+ (btn||document.querySelector('.levbtns .btn[data-lv="'+level+'"]')||{}).classList?.add("primary");
+ $("#tutout").textContent="loading…";
+ try{const d=await api("/api/tutorial?level="+encodeURIComponent(level));$("#tutout").textContent=d.text;}
+ catch(e){$("#tutout").textContent="Failed to load the tutorial.";}
+}
 function groupByCat(list){const g={};list.forEach(r=>{(g[r.category]=g[r.category]||[]).push(r);});return g;}
 
+function matchRow(r){
+ if(FAILONLY && !(r.status==="FAIL"||r.status==="WARN"))return false;
+ if(!QUERY)return true;const q=QUERY.toLowerCase();
+ return (r.id+" "+r.title+" "+r.category+" "+r.status+" "+(r.detail||"")).toLowerCase().includes(q);
+}
 function renderDash(){
  if(!RESULTS.length){$("#view").innerHTML='<div class="empty">Press <b>Run audit</b> to scan this system (read-only).</div>';return;}
  const s=SUMMARY,score=s.score==="-"?0:parseInt(s.score);
- let h=`<div class="card hero"><div class="ring" style="--v:${score};--rc:${ringColor(score)}"><div><div><b>${s.score}</b><br><span>/ 100</span></div></div></div>
- <div style="flex:1 1 14rem"><div style="font-weight:600;margin-bottom:.3rem">Hardening score</div>
- <div class="chips"><span class="chip pass">● ${s.pass} passed</span><span class="chip fail">● ${s.fail} failed</span>
- <span class="chip warn">● ${s.warn} warnings</span><span class="chip skip">● ${s.skip} skipped</span></div></div></div>`;
- const g=groupByCat(RESULTS);
- for(const cat in g){h+=`<div class="sect">${cat} <small>— ${g[cat][0].domain} domain</small></div><div class="card">`;
+ // Shell rendered once so the search box keeps focus across keystrokes.
+ $("#view").innerHTML=`<div class="card hero"><div class="ring" style="--v:${score};--rc:${ringColor(score)}"><div><div><b>${s.score}</b><br><span>/ 100</span></div></div></div>
+  <div style="flex:1 1 14rem"><div style="font-weight:600;margin-bottom:.3rem">Hardening score</div>
+  <div class="chips"><span class="chip pass">● ${s.pass} passed</span><span class="chip fail">● ${s.fail} failed</span>
+  <span class="chip warn">● ${s.warn} warnings</span><span class="chip skip">● ${s.skip} skipped</span></div></div></div>
+  <div class="searchrow"><input class="search" id="q" placeholder="Search checks — id, title, category, status…" aria-label="Search checks" autocomplete="off">
+   <label class="chk"><input type="checkbox" id="failonly"> failures &amp; warnings only</label></div>
+  <div class="filterinfo" id="filterinfo"></div>
+  <div id="results"></div>
+  <div id="external"></div>`;
+ const qi=$("#q");qi.value=QUERY;qi.addEventListener("input",()=>{QUERY=qi.value;renderRows();});
+ const fo=$("#failonly");fo.checked=FAILONLY;fo.addEventListener("change",()=>{FAILONLY=fo.checked;renderRows();});
+ renderRows();renderExternal();
+}
+function renderRows(){
+ const shown=RESULTS.filter(matchRow);
+ $("#filterinfo").textContent=`${shown.length} of ${RESULTS.length} checks`;
+ if(!shown.length){$("#results").innerHTML='<div class="empty">No checks match your search.</div>';return;}
+ let h="";const g=groupByCat(shown);
+ for(const cat in g){h+=`<div class="sect">${esc(cat)} <small>— ${esc(g[cat][0].domain)} domain</small></div><div class="card">`;
   g[cat].forEach(r=>{const fixBtn=(r.status==="FAIL"||r.status==="WARN")
    ?`<button class="btn ${r.status==="FAIL"&&r.fixable?"primary":""}" style="align-self:center;white-space:nowrap"
       onclick="onFix('${r.id}',${r.status==="FAIL"&&r.fixable})">${r.status==="FAIL"&&r.fixable?"Fix it":"How to fix"}</button>`:"";
    h+=`<div class="row"><span class="badge ${r.status}">${r.status}</span><div class="rowmain">
    <div class="rowtitle"><span class="cid">${r.id}</span> ${esc(r.title)}</div>
    ${r.detail?`<div class="rowdetail">${esc(r.detail)}</div>`:""}
-   <div class="meta">${r.severity} · Level ${r.level}${r.cis?" · CIS "+r.cis:""}${r.nist?" · "+r.nist:""}</div></div>${fixBtn}</div>`;});
+   <div class="meta">${r.severity} · Level ${r.level}${r.cis?" · CIS "+r.cis:""}${r.nist?" · "+esc(r.nist):""}</div></div>${fixBtn}</div>`;});
   h+="</div>";}
- $("#view").innerHTML=h;
+ $("#results").innerHTML=h;
+}
+function renderExternal(){
+ const el=$("#external");if(!el)return;
+ if(!EXTERNAL.length){el.innerHTML="";return;}
+ const warn=EXTERNAL.filter(e=>e.status==="WARN").length,info=EXTERNAL.length-warn;
+ let h=`<div class="sect">External tool findings <small>— advisory, not scored · ${warn} warning(s) · ${info} suggestion(s)</small></div><div class="card">`;
+ EXTERNAL.forEach(e=>{const st=e.status==="WARN"?"WARN":"SKIP";
+  h+=`<div class="row"><span class="badge ${st}">${e.status==="WARN"?"Warn":"Info"}</span>
+   <div class="rowmain"><div class="rowtitle"><span class="exttool">${esc(e.tool)}</span>${esc(e.detail)}</div></div></div>`;});
+ el.innerHTML=h+"</div>";
 }
 let PENDING=null;
 // Fix it (reversible, consented) / How to fix (detailed manual guidance).
@@ -570,7 +681,10 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == "/api/meta":
             return self._json(self._meta())
         if u.path == "/api/audit":
-            return self._json(self._audit())
+            with_tools = qs.get("tools", ["0"])[0] == "1"
+            return self._json(self._audit(with_tools=with_tools))
+        if u.path == "/api/tutorial":
+            return self._json(self._tutorial(qs.get("level", ["menu"])[0]))
         if u.path == "/api/progress":
             return self._json(read_progress())
         if u.path == "/api/explain":
@@ -734,20 +848,30 @@ class Handler(BaseHTTPRequestHandler):
     def _meta(self):
         import socket
         return {"version": VERSION, "host": socket.gethostname(),
-                "distro": _osname(), "profile": PROFILE or "(configured)"}
+                "distro": _osname(), "profile": PROFILE or "(configured)",
+                "unprivileged": os.geteuid() != 0}
 
-    def _audit(self):
+    def _audit(self, with_tools=False):
         try:
             open(PROGRESS_PATH, "w").close()
         except OSError:
             pass
-        rc, out, err = run_auditxs(["audit", "--format", "json", "--quiet",
-                                    "--progress-file", PROGRESS_PATH] + profile_args(), timeout=240)
+        args = ["audit", "--format", "json", "--quiet",
+                "--progress-file", PROGRESS_PATH] + profile_args()
+        if with_tools:
+            args.append("--with-tools")
+        rc, out, err = run_auditxs(args, timeout=900 if with_tools else 240)
         try:
             return json.loads(out)
         except ValueError:
             return {"results": [], "summary": {"pass": 0, "fail": 0, "warn": 0, "skip": 0, "score": "-"},
-                    "error": strip_ansi(err)[:400]}
+                    "external": [], "error": strip_ansi(err)[:400]}
+
+    def _tutorial(self, level):
+        if level not in ("menu", "simple", "intermediate", "advanced", "pro", "all"):
+            level = "menu"
+        rc, out, _ = run_auditxs(["tutorial", level])
+        return {"level": level, "text": strip_ansi(out)}
 
     def _snapshots(self):
         rc, out, _ = run_auditxs(["snapshots", "--format", "tsv"])

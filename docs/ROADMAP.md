@@ -23,6 +23,17 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.27
+
+- **Web UI usability pass.** A **Learn** tab brings the tiered tutorial into the
+  browser; a **search box** filters the whole check list live (with a
+  failures-only toggle); a **light/dark toggle** persists the choice; a
+  **scanners** toggle folds the external-tool findings in; the tabs are a proper
+  ARIA tablist with keyboard navigation, focus is visible, motion respects the
+  OS preference, and the layout is mobile-responsive. Next in the GUI/UX epic:
+  the same tutorial + external findings in the Qt/TUI apps, a broader visual
+  refresh, and a more guided first-run workflow.
+
 ## Shipped in v0.26
 
 - **A tutorial that meets you where you are.** `auditxs tutorial` teaches the

@@ -4,6 +4,16 @@ A local, **Material Design 3** web interface for AuditXS. It is a thin
 front-end over the `auditxs` command — everything it does is a command you
 could type — so the transparency and reversibility guarantees are unchanged.
 
+At a glance, the UI gives you: a **Dashboard** (score ring, findings, per-check
+*Fix it* / *How to fix*) with a live **search box** and a *failures & warnings
+only* filter; a **Learn** tab with the tiered tutorial (simple → pro); a
+**scanners** toggle that folds Lynis/rkhunter/chkrootkit/debsecan findings into
+the report as an advisory *External tool findings* section; **Snapshots**,
+**Tools** and **Fleet** tabs; a built-in **console**; and a **light/dark**
+toggle that remembers your choice. It is keyboard-navigable (the tabs are an
+ARIA tablist with arrow-key movement and visible focus), respects
+`prefers-reduced-motion`, and reflows for small screens.
+
 ## Why a web UI (and who it is for)
 
 The web UI opens in your browser with the full audit/harden/rollback workflow
