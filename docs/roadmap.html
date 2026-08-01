@@ -8,14 +8,14 @@
 <style>
   :root {
     --bg:#f6f6fa; --surface:#ffffff; --surface-2:#eef0f6; --on-surface:#1b1b21;
-    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#4b56d2; --primary-c:#fff;
+    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#16a34a; --primary-c:#fff;
     --ok:#1e7d46; --err:#ba1a1a; --warn:#a25b00;
     --ok-c:#e6f4ea; --err-c:#ffe9e7; --warn-c:#fff3e0;
     --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
   }
   @media (prefers-color-scheme: dark) {
     :root { --bg:#121318; --surface:#1c1d24; --surface-2:#23252e; --on-surface:#e4e2e9;
-      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#bcc2ff; --primary-c:#1a2277;
+      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#86efac; --primary-c:#04340f;
       --ok:#7fd99b; --err:#ffb4ab; --warn:#f5bd6e;
       --ok-c:#12331f; --err-c:#3d1512; --warn-c:#3a2a12; }
   }
@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.28.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.29.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -102,7 +102,7 @@
 <a class="pg" href="../index.html">AuditXS home</a>
 <a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
 <main>
-<h1 id="auditxs-roadmap--must-have-features-and-professional-practice">AuditXS roadmap — must-have features and professional practice</h1><div class="onpage"><b>On this page</b><a href="#already-implemented-the-non-negotiables">Already implemented (the non-negotiables)</a><a href="#shipped-in-v028">Shipped in v0.28</a><a href="#shipped-in-v027">Shipped in v0.27</a><a href="#shipped-in-v026">Shipped in v0.26</a><a href="#shipped-in-v025">Shipped in v0.25</a><a href="#shipped-in-v024">Shipped in v0.24</a><a href="#shipped-in-v023">Shipped in v0.23</a><a href="#shipped-in-v022">Shipped in v0.22</a><a href="#shipped-in-v021">Shipped in v0.21</a><a href="#shipped-in-v020">Shipped in v0.20</a><a href="#shipped-in-v019">Shipped in v0.19</a><a href="#shipped-in-v018">Shipped in v0.18</a><a href="#shipped-in-v017">Shipped in v0.17</a><a href="#shipped-in-v016">Shipped in v0.16</a><a href="#shipped-in-v015">Shipped in v0.15</a><a href="#shipped-in-v014">Shipped in v0.14</a><a href="#shipped-in-v013">Shipped in v0.13</a><a href="#shipped-in-v012">Shipped in v0.12</a><a href="#shipped-in-v011">Shipped in v0.11</a><a href="#shipped-in-v010">Shipped in v0.10</a><a href="#shipped-in-v09">Shipped in v0.9</a><a href="#shipped-in-v08">Shipped in v0.8</a><a href="#shipped-in-v07">Shipped in v0.7</a><a href="#shipped-in-v06">Shipped in v0.6</a><a href="#shipped-in-v05">Shipped in v0.5</a><a href="#shipped-in-v04">Shipped in v0.4</a><a href="#next-high-value-in-order">Next (high value, in order)</a><a href="#deliberate-non-goals">Deliberate non-goals</a><a href="#complementary-tooling-defence-in-depth">Complementary tooling (defence in depth)</a></div>
+<h1 id="auditxs-roadmap--must-have-features-and-professional-practice">AuditXS roadmap — must-have features and professional practice</h1><div class="onpage"><b>On this page</b><a href="#already-implemented-the-non-negotiables">Already implemented (the non-negotiables)</a><a href="#shipped-in-v029">Shipped in v0.29</a><a href="#shipped-in-v028">Shipped in v0.28</a><a href="#shipped-in-v027">Shipped in v0.27</a><a href="#shipped-in-v026">Shipped in v0.26</a><a href="#shipped-in-v025">Shipped in v0.25</a><a href="#shipped-in-v024">Shipped in v0.24</a><a href="#shipped-in-v023">Shipped in v0.23</a><a href="#shipped-in-v022">Shipped in v0.22</a><a href="#shipped-in-v021">Shipped in v0.21</a><a href="#shipped-in-v020">Shipped in v0.20</a><a href="#shipped-in-v019">Shipped in v0.19</a><a href="#shipped-in-v018">Shipped in v0.18</a><a href="#shipped-in-v017">Shipped in v0.17</a><a href="#shipped-in-v016">Shipped in v0.16</a><a href="#shipped-in-v015">Shipped in v0.15</a><a href="#shipped-in-v014">Shipped in v0.14</a><a href="#shipped-in-v013">Shipped in v0.13</a><a href="#shipped-in-v012">Shipped in v0.12</a><a href="#shipped-in-v011">Shipped in v0.11</a><a href="#shipped-in-v010">Shipped in v0.10</a><a href="#shipped-in-v09">Shipped in v0.9</a><a href="#shipped-in-v08">Shipped in v0.8</a><a href="#shipped-in-v07">Shipped in v0.7</a><a href="#shipped-in-v06">Shipped in v0.6</a><a href="#shipped-in-v05">Shipped in v0.5</a><a href="#shipped-in-v04">Shipped in v0.4</a><a href="#next-high-value-in-order">Next (high value, in order)</a><a href="#deliberate-non-goals">Deliberate non-goals</a><a href="#complementary-tooling-defence-in-depth">Complementary tooling (defence in depth)</a></div>
 <p>This is the considered feature advice behind AuditXS's direction: what a professional baseline-hardening tool must have (and why), what it should gain next, and what it should deliberately <em>never</em> do. Ordered by value.</p>
 <h2 id="already-implemented-the-non-negotiables">Already implemented (the non-negotiables)</h2>
 <p>These are the table stakes for trustworthy hardening tooling — the reason they shipped first:</p>
@@ -115,6 +115,10 @@
 <li><strong>Drift detection</strong> — approved baseline + <code>diff</code> with CI-friendly exit codes, port allowlist (NET-004), scheduled audits alerting via systemd.</li>
 <li><strong>Framework mapping</strong> (NIST CSF 2.0, CIS/STIG alignment), <strong>unit + end-to-end tests in CI</strong>, <strong>debug mode</strong>, <strong>doctor</strong> self-diagnostics.</li>
 </ol>
+<h2 id="shipped-in-v029">Shipped in v0.29</h2>
+<ul>
+<li><strong>Green rebrand.</strong> A Linux-console green replaces the indigo/blue across the web UI, Qt app, HTML reports and the docs/landing site, and a new original shield-and-eagle icon (<code>assets/auditxs.svg</code>) in the same green. Still ahead: wiring the icon into every launcher/favicon/window, a desktop menu folder with a GUI uninstaller, tool config tuning, a Tools-section UX pass (in-GUI reports, progress everywhere, error popups with a Fix-it button), and the guided flow.</li>
+</ul>
 <h2 id="shipped-in-v028">Shipped in v0.28</h2>
 <ul>
 <li><strong>The tutorial and the external scanners reach every interface.</strong> The Qt app gains a Learn tab and a scanners toggle; the terminal UI gains a Tutorial picker and a combined external-scan report; the web UI gains a <strong>Scan report</strong> button that opens a report styled like AuditXS's (audit + external findings) and deep-linkable tabs. Still ahead in the GUI/UX epic: tuning the external tools' configs for effectiveness, a desktop menu folder with a GUI uninstaller, an original AuditXS icon across every surface, a broader visual refresh, and a more guided first-run flow.</li>

@@ -23,6 +23,15 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.29
+
+- **Green rebrand.** A Linux-console green replaces the indigo/blue across the
+  web UI, Qt app, HTML reports and the docs/landing site, and a new original
+  shield-and-eagle icon (`assets/auditxs.svg`) in the same green. Still ahead:
+  wiring the icon into every launcher/favicon/window, a desktop menu folder with
+  a GUI uninstaller, tool config tuning, a Tools-section UX pass (in-GUI reports,
+  progress everywhere, error popups with a Fix-it button), and the guided flow.
+
 ## Shipped in v0.28
 
 - **The tutorial and the external scanners reach every interface.** The Qt app

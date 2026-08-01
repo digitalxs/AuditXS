@@ -7,6 +7,19 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.29.0]
+
+### Changed
+- **Green rebrand.** AuditXS now uses a Linux-console **green** as its brand
+  colour instead of the previous indigo/blue, across every surface: the web UI,
+  the Qt desktop app (Material accent), the self-contained HTML reports, and the
+  documentation/landing site. Status colours (pass/warn/fail) are unchanged.
+- **New original icon** (`assets/auditxs.svg`) — a shield with a spread-wing
+  eagle in the green gradient. (Wiring it into the `.desktop` entries, favicons
+  and window icons follows next.)
+- **README:** states the project's purpose — *to centralize and make it easier
+  to use cybersecurity tools and practices on your workstations and servers.*
+
 ## [0.28.0]
 
 ### GUI/UX — tutorial + external scanners in the desktop and terminal apps

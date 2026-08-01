@@ -21,8 +21,8 @@ ApplicationWindow {
     flags: Qt.Window | Qt.FramelessWindowHint
 
     Material.theme: Material.System
-    Material.primary: Material.Indigo
-    Material.accent: Material.Indigo
+    Material.primary: "#16a34a"
+    Material.accent: "#16a34a"
 
     property var summary: ({ pass: 0, fail: 0, warn: 0, skip: 0, score: "-" })
     property bool isMax: win.visibility === Window.Maximized || win.visibility === Window.FullScreen

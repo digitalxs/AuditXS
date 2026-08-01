@@ -112,25 +112,25 @@ PAGE = r"""<!DOCTYPE html>
 <style>
 :root{
  --bg:#f5f5fb;--surface:#fff;--surface2:#eef0f7;--on:#1b1b21;--onv:#5a5c66;
- --outline:#e2e3ec;--primary:#4b56d2;--primaryc:#fff;
+ --outline:#e2e3ec;--primary:#16a34a;--primaryc:#fff;
  --ok:#1e7d46;--err:#ba1a1a;--warn:#a25b00;--skip:#6b7280;
  --okc:#e6f4ea;--errc:#ffe9e7;--warnc:#fff3e0;--skipc:#eceef2;
  --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 10px rgba(0,0,0,.06);--r:1.1rem;
 }
 @media(prefers-color-scheme:dark){:root{
  --bg:#111218;--surface:#1b1c23;--surface2:#23252e;--on:#e5e2e9;--onv:#c6c6d0;
- --outline:#33343d;--primary:#bcc2ff;--primaryc:#1a2277;
+ --outline:#33343d;--primary:#86efac;--primaryc:#04340f;
  --ok:#7fd99b;--err:#ffb4ab;--warn:#f5bd6e;--skip:#a8abb4;
  --okc:#12331f;--errc:#3d1512;--warnc:#3a2a12;--skipc:#282a32;}}
 /* Manual theme toggle wins over the OS preference when set. */
 :root[data-theme="light"]{
  --bg:#f5f5fb;--surface:#fff;--surface2:#eef0f7;--on:#1b1b21;--onv:#5a5c66;
- --outline:#e2e3ec;--primary:#4b56d2;--primaryc:#fff;
+ --outline:#e2e3ec;--primary:#16a34a;--primaryc:#fff;
  --ok:#1e7d46;--err:#ba1a1a;--warn:#a25b00;--skip:#6b7280;
  --okc:#e6f4ea;--errc:#ffe9e7;--warnc:#fff3e0;--skipc:#eceef2;}
 :root[data-theme="dark"]{
  --bg:#111218;--surface:#1b1c23;--surface2:#23252e;--on:#e5e2e9;--onv:#c6c6d0;
- --outline:#33343d;--primary:#bcc2ff;--primaryc:#1a2277;
+ --outline:#33343d;--primary:#86efac;--primaryc:#04340f;
  --ok:#7fd99b;--err:#ffb4ab;--warn:#f5bd6e;--skip:#a8abb4;
  --okc:#12331f;--errc:#3d1512;--warnc:#3a2a12;--skipc:#282a32;}
 *{box-sizing:border-box}
@@ -140,10 +140,10 @@ body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
  padding:.7rem 1.1rem;background:var(--surface);border-bottom:1px solid var(--outline);
  box-shadow:var(--shadow)}
 .appbar::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;
- background:linear-gradient(90deg,var(--primary),#7b84ff 55%,#38bdf8)}
+ background:linear-gradient(90deg,var(--primary),#22c55e 55%,#4ade80)}
 .logo{width:2.4rem;height:2.4rem;border-radius:.75rem;color:#fff;font-size:1.3rem;
- background:linear-gradient(135deg,var(--primary),#7b84ff 70%,#38bdf8);
- display:grid;place-items:center;font-weight:700;box-shadow:0 2px 8px rgba(75,86,210,.35)}
+ background:linear-gradient(135deg,var(--primary),#22c55e 70%,#4ade80);
+ display:grid;place-items:center;font-weight:700;box-shadow:0 2px 8px rgba(22,163,74,.35)}
 .appbar h1{font-size:1.12rem;margin:0;font-weight:700;letter-spacing:.01em;display:flex;align-items:baseline;gap:.4rem}
 .appbar h1 .by{font-size:.62rem;font-weight:600;color:var(--onv);letter-spacing:.02em}
 .appbar .sub{font-size:.72rem;color:var(--onv)}

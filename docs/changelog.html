@@ -8,14 +8,14 @@
 <style>
   :root {
     --bg:#f6f6fa; --surface:#ffffff; --surface-2:#eef0f6; --on-surface:#1b1b21;
-    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#4b56d2; --primary-c:#fff;
+    --on-surface-var:#5a5c66; --outline:#e2e3ec; --primary:#16a34a; --primary-c:#fff;
     --ok:#1e7d46; --err:#ba1a1a; --warn:#a25b00;
     --ok-c:#e6f4ea; --err-c:#ffe9e7; --warn-c:#fff3e0;
     --shadow:0 1px 2px rgba(0,0,0,.08),0 2px 8px rgba(0,0,0,.05);
   }
   @media (prefers-color-scheme: dark) {
     :root { --bg:#121318; --surface:#1c1d24; --surface-2:#23252e; --on-surface:#e4e2e9;
-      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#bcc2ff; --primary-c:#1a2277;
+      --on-surface-var:#c6c6d0; --outline:#33343d; --primary:#86efac; --primary-c:#04340f;
       --ok:#7fd99b; --err:#ffb4ab; --warn:#f5bd6e;
       --ok-c:#12331f; --err-c:#3d1512; --warn-c:#3a2a12; }
   }
@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.28.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.29.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -102,9 +102,16 @@
 <a class="pg" href="../index.html">AuditXS home</a>
 <a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
 <main>
-<h1 id="changelog">Changelog</h1><div class="onpage"><b>On this page</b><a href="#0280">[0.28.0]</a><a href="#0270">[0.27.0]</a><a href="#0260">[0.26.0]</a><a href="#0250">[0.25.0]</a><a href="#0240">[0.24.0]</a><a href="#0230">[0.23.0]</a><a href="#0220">[0.22.0]</a><a href="#0210">[0.21.0]</a><a href="#0200">[0.20.0]</a><a href="#0190">[0.19.0]</a><a href="#0180">[0.18.0]</a><a href="#0170">[0.17.0]</a><a href="#0160">[0.16.0]</a><a href="#0150">[0.15.0]</a><a href="#0141">[0.14.1]</a><a href="#0140">[0.14.0]</a><a href="#0130">[0.13.0]</a><a href="#0120">[0.12.0]</a><a href="#0111">[0.11.1]</a><a href="#0110">[0.11.0]</a><a href="#0101">[0.10.1]</a><a href="#0100">[0.10.0]</a><a href="#091">[0.9.1]</a><a href="#090">[0.9.0]</a><a href="#082">[0.8.2]</a><a href="#081">[0.8.1]</a><a href="#080">[0.8.0]</a><a href="#070--072">[0.7.0] – [0.7.2]</a><a href="#060">[0.6.0]</a><a href="#050">[0.5.0]</a><a href="#040">[0.4.0]</a><a href="#030">[0.3.0]</a><a href="#020">[0.2.0]</a><a href="#010">[0.1.0]</a></div>
+<h1 id="changelog">Changelog</h1><div class="onpage"><b>On this page</b><a href="#0290">[0.29.0]</a><a href="#0280">[0.28.0]</a><a href="#0270">[0.27.0]</a><a href="#0260">[0.26.0]</a><a href="#0250">[0.25.0]</a><a href="#0240">[0.24.0]</a><a href="#0230">[0.23.0]</a><a href="#0220">[0.22.0]</a><a href="#0210">[0.21.0]</a><a href="#0200">[0.20.0]</a><a href="#0190">[0.19.0]</a><a href="#0180">[0.18.0]</a><a href="#0170">[0.17.0]</a><a href="#0160">[0.16.0]</a><a href="#0150">[0.15.0]</a><a href="#0141">[0.14.1]</a><a href="#0140">[0.14.0]</a><a href="#0130">[0.13.0]</a><a href="#0120">[0.12.0]</a><a href="#0111">[0.11.1]</a><a href="#0110">[0.11.0]</a><a href="#0101">[0.10.1]</a><a href="#0100">[0.10.0]</a><a href="#091">[0.9.1]</a><a href="#090">[0.9.0]</a><a href="#082">[0.8.2]</a><a href="#081">[0.8.1]</a><a href="#080">[0.8.0]</a><a href="#070--072">[0.7.0] – [0.7.2]</a><a href="#060">[0.6.0]</a><a href="#050">[0.5.0]</a><a href="#040">[0.4.0]</a><a href="#030">[0.3.0]</a><a href="#020">[0.2.0]</a><a href="#010">[0.1.0]</a></div>
 <p>All notable changes to <strong>AuditXS</strong> are recorded here. The format follows <a href="https://keepachangelog.com/">Keep a Changelog</a>, and the project uses <a href="https://semver.org/">Semantic Versioning</a>. The repository-root <code>VERSION</code> file is the single source of truth for the current version.</p>
 <hr>
+<h2 id="0290">[0.29.0]</h2>
+<h3 id="changed">Changed</h3>
+<ul>
+<li><strong>Green rebrand.</strong> AuditXS now uses a Linux-console <strong>green</strong> as its brand colour instead of the previous indigo/blue, across every surface: the web UI, the Qt desktop app (Material accent), the self-contained HTML reports, and the documentation/landing site. Status colours (pass/warn/fail) are unchanged.</li>
+<li><strong>New original icon</strong> (<code>assets/auditxs.svg</code>) — a shield with a spread-wing eagle in the green gradient. (Wiring it into the <code>.desktop</code> entries, favicons and window icons follows next.)</li>
+<li><strong>README:</strong> states the project's purpose — <em>to centralize and make it easier to use cybersecurity tools and practices on your workstations and servers.</em></li>
+</ul>
 <h2 id="0280">[0.28.0]</h2>
 <h3 id="guiux--tutorial--external-scanners-in-the-desktop-and-terminal-apps">GUI/UX — tutorial + external scanners in the desktop and terminal apps</h3>
 <ul>
@@ -155,7 +162,7 @@
 <li><strong>Lynis integration — <code>auditxs lynis</code>.</strong> Runs Lynis (the independent host auditor) and folds its findings — hardening index, warnings, suggestions — into an AuditXS-style summary. <code>auditxs lynis --report</code> re-reads the last run without re-running. Read-only: Lynis never changes anything.</li>
 <li><strong>Unprivileged audit mode.</strong> <code>auditxs audit</code> and <code>auditxs report</code> now run without root — root-only checks report as <em>skipped</em> and a banner points to <code>sudo</code> for the complete picture. State-changing commands (<code>harden</code>, <code>rollback</code>, <code>start</code>) still require root.</li>
 </ul>
-<h3 id="changed">Changed</h3>
+<h3 id="changed-1">Changed</h3>
 <ul>
 <li><strong>Deliberate de-duplication with Lynis.</strong> AuditXS owns the reversible, consented fixes; Lynis owns breadth. AuditXS does not reimplement Lynis's tests — it surfaces them. Port/service/protocol hardening remains covered by the existing <code>NET-001/002/004</code> and <code>SVC-001..004</code> checks (no parallel checks were added).</li>
 </ul>
@@ -168,12 +175,12 @@
 <li><strong>First-run nudge.</strong> On a fresh install with no saved reports, bare <code>auditxs</code> greets you and points at <code>sudo auditxs start</code>.</li>
 <li><strong>One-line installer</strong> (<code>scripts/install.sh</code>): <code>curl -fsSL …/install.sh | sudo bash</code> clones AuditXS and runs <code>setup.sh</code>, feeding it a real terminal for the Server/Workstation prompt even over a pipe. The README/USAGE now also surface the prebuilt <code>.deb</code> from the Releases page.</li>
 </ul>
-<h3 id="changed-1">Changed</h3>
+<h3 id="changed-2">Changed</h3>
 <ul>
 <li><strong>The "Features" (turn-controls-on/off) section is gone from every GUI.</strong> It duplicated hardening behind a confusing on/off metaphor. Hardening is unchanged and still one click away: the <strong>Fix it</strong> buttons on the Dashboard (Qt + web), the <strong>Harden</strong> menu (zenity), and the TUI's menu entry — renamed from <em>Features</em> to <strong>Harden</strong> — all apply the same reviewed, reversible fixes.</li>
 </ul>
 <h2 id="0220">[0.22.0]</h2>
-<h3 id="changed-2">Changed</h3>
+<h3 id="changed-3">Changed</h3>
 <ul>
 <li><strong>The web UI now runs on the server profile too.</strong> It's no longer workstation-only: on a headless server it's a network-reachable control panel. Only the <em>desktop</em> GUIs (Qt, Electron, zenity) stay workstation-only (they need a display).</li>
 </ul>
@@ -284,7 +291,7 @@
 <li><strong>Full CLI parity</strong> — new Ops tab (Qt) and menu entries (zenity) for every remaining operation: CVE scan, doctor, schedule (status/enable/disable/run), baseline, waivers (list/add/remove), alerts (status/test), the error catalogue and the check catalogue; the web console covers the same surface.</li>
 <li><strong>Status bar</strong> — Qt and the web UI show a permanent bottom bar with the AuditXS version, profile and host, the live operation progress (percentage) and the console toggle; the zenity menu header shows version and host.</li>
 </ul>
-<h3 id="changed-3">Changed</h3>
+<h3 id="changed-4">Changed</h3>
 <ul>
 <li>The Qt app's long operations all run in a worker thread with progress in the status bar (the window never freezes). New <code>/api/cli</code>, <code>/api/fleet/*</code> web routes are token-authenticated and argv-whitelisted like every other route. Web tests grown to 14 (console auth + whitelist).</li>
 </ul>
@@ -325,7 +332,7 @@
 <li><strong>Fleet overview dashboard</strong> — every <code>auditxs fleet</code> run now writes an aggregated, self-contained HTML dashboard (<code>index.html</code>) next to the per-host reports: fleet-average score dial, clean/findings/errored host chips, and a per-host table with score bars and relative links to each host's saved JSON/HTML reports. Unreachable and errored hosts are shown, not hidden. Covered by unit tests.</li>
 <li><strong>Fleet walkthrough</strong> in <code>docs/USAGE.md</code> — end-to-end setup (install on targets, dedicated audit user + key, narrow sudoers rule, inventory file, run, review, drift-diff) plus a troubleshooting table mapping fleet states to their <code>AX6xxx</code> error numbers.</li>
 </ul>
-<h3 id="changed-4">Changed</h3>
+<h3 id="changed-5">Changed</h3>
 <ul>
 <li><code>docs/ARCHITECTURE.md</code> gained a fleet-mode section (data flow, invariants, dashboard design); <code>digitalxs-dev-doc.MD</code> §9 documents the <code>ov[]</code> record format and the coding workflow for extending the dashboard.</li>
 </ul>
@@ -349,7 +356,7 @@
 <li><strong>Graphical installer</strong> — <code>install-gui.sh</code>, a branded zenity wizard (welcome → profile → options → install → done).</li>
 <li>New error codes <code>AX2005/2006/7001/8001/8002</code>, wired into the new subsystems.</li>
 </ul>
-<h3 id="changed-5">Changed</h3>
+<h3 id="changed-6">Changed</h3>
 <ul>
 <li>Fixture tests for the container/boot/database checks and waiver unit tests (72 unit / 45 fixture tests). Docs, man page and generated catalogues refreshed.</li>
 </ul>
@@ -370,7 +377,7 @@
 <li>Dedicated <strong>Fail2ban</strong> category: service enabled at boot, ban-policy sanity, recidive jail, <code>ignoreip</code> breadth.</li>
 </ul>
 <h2 id="081">[0.8.1]</h2>
-<h3 id="changed-6">Changed</h3>
+<h3 id="changed-7">Changed</h3>
 <ul>
 <li>Web UI default port is now <strong>9000</strong> (override with <code>--port</code>).</li>
 </ul>
