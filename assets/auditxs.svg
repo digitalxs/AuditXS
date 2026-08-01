@@ -10,15 +10,23 @@
       <path d="M154 96 H358 A34 34 0 0 1 392 130 V266 C392 362 330 428 256 466 C182 428 120 362 120 266 V130 A34 34 0 0 1 154 96 Z"/>
     </clipPath>
   </defs>
-  <!-- shield -->
   <path d="M154 96 H358 A34 34 0 0 1 392 130 V266 C392 362 330 428 256 466 C182 428 120 362 120 266 V130 A34 34 0 0 1 154 96 Z" fill="url(#axg)"/>
-  <!-- soft top highlight + bottom shade for depth -->
-  <g clip-path="url(#axc)">
-    <ellipse cx="196" cy="150" rx="210" ry="150" fill="#ffffff" opacity="0.14"/>
-    <path d="M120 302 C185 254 327 254 392 302 V470 H120 Z" fill="#0b1650" opacity="0.10"/>
-  </g>
-  <!-- inner rim -->
+  <g clip-path="url(#axc)"><ellipse cx="196" cy="150" rx="210" ry="150" fill="#ffffff" opacity="0.12"/></g>
   <path d="M154 96 H358 A34 34 0 0 1 392 130 V266 C392 362 330 428 256 466 C182 428 120 362 120 266 V130 A34 34 0 0 1 154 96 Z" fill="none" stroke="#ffffff" stroke-opacity="0.30" stroke-width="6"/>
-  <!-- audit checkmark -->
-  <path d="M186 258 L236 310 L336 200" fill="none" stroke="#ffffff" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- eagle -->
+  <g fill="#ffffff">
+    <!-- head -->
+    <circle cx="256" cy="162" r="22"/>
+    <!-- hooked beak -->
+    <path d="M236 158 L204 166 L226 172 L237 178 Z"/>
+    <!-- body -->
+    <path d="M256 178 C242 196 240 252 250 302 L262 302 C272 252 270 196 256 178 Z"/>
+    <!-- tail (short fan) -->
+    <path d="M232 296 L246 344 L256 322 L266 344 L280 296 C270 308 242 308 232 296 Z"/>
+    <!-- right wing (bold, rounded feathers) -->
+    <path d="M256 196 C300 160 336 150 362 154 C356 176 346 186 344 202 C330 190 322 200 314 214 C302 202 296 210 288 224 C278 214 270 216 256 214 Z"/>
+    <!-- left wing (mirror) -->
+    <path d="M256 196 C212 160 176 150 150 154 C156 176 166 186 168 202 C182 190 190 200 198 214 C210 202 216 210 224 224 C234 214 242 216 256 214 Z"/>
+  </g>
 </svg>
