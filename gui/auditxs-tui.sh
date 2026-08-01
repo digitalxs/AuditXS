@@ -186,24 +186,52 @@ do_doctor() {
     textbox "Doctor — installation diagnostics" "$WORK/doc.txt"
 }
 
+do_tutorial() {
+    local lvl
+    lvl=$(menu "Tutorial" "Learn AuditXS at your own depth (read-only guidance):" \
+        simple       "First run in one command" \
+        intermediate "Everyday commands, scope, undo" \
+        advanced     "Baselines, external scanners, waivers, profiles" \
+        pro          "Automation, fleet, CI, compliance, extending" \
+        all          "Everything, top to bottom") || return
+    [ -n "$lvl" ] || return
+    "$AUDITXS_BIN" tutorial "$lvl" 2>&1 | sed 's/\x1b\[[0-9;]*m//g' > "$WORK/tut.txt"
+    textbox "Tutorial — $lvl" "$WORK/tut.txt"
+}
+
+# Run the audit folding in the independent scanners (Lynis, rkhunter,
+# chkrootkit, debsecan). Reuses the CLI's text output — which already renders
+# the "External tool findings" section — so there is nothing to parse here.
+do_extscan() {
+    yesno "External scanners" "Run the audit AND Lynis, rkhunter, chkrootkit and debsecan, folding their findings into one report?\n\nThe findings are advisory (they do not change your score). This re-runs the audit and can take a few minutes." || return
+    gauge_progress "Auditing + external scanners (folded report)…" "$WORK/ext.txt" \
+        "$AUDITXS_BIN" audit --with-tools
+    sed -i 's/\x1b\[[0-9;]*m//g' "$WORK/ext.txt"
+    textbox "Audit + external tool findings (advisory)" "$WORK/ext.txt"
+}
+
 # --------------------------------------------------------------- main ---
 while true; do
     action=$(menu "Main menu" "Transparent, reversible security auditing.\nAudit never changes anything; Harden asks before every change." \
         audit     "Run a read-only security audit" \
         harden    "Review and apply fixes for failed checks (reversible)" \
+        external  "Audit + fold in Lynis/rkhunter/chkrootkit/debsecan" \
         snapshots "Roll back a previous hardening run" \
         cve       "Check for known vulnerabilities (CVEs)" \
         tools     "Install and run security tools" \
         report    "Generate an HTML/JSON report" \
+        tutorial  "Learn AuditXS (tiered tutorial)" \
         doctor    "Diagnose the installation" \
         quit      "Exit") || break
     case $action in
         audit)     do_audit ;;
         harden)    do_harden ;;
+        external)  do_extscan ;;
         snapshots) do_snapshots ;;
         cve)       do_cve ;;
         tools)     do_tools ;;
         report)    do_report ;;
+        tutorial)  do_tutorial ;;
         doctor)    do_doctor ;;
         quit|"")   break ;;
     esac

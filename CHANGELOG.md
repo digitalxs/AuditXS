@@ -7,6 +7,24 @@ is the single source of truth for the current version.
 
 ---
 
+## [0.28.0]
+
+### GUI/UX — tutorial + external scanners in the desktop and terminal apps
+- **Qt app:** a new **Learn** tab carries the tiered tutorial (simple → pro,
+  via a `tutorial` backend slot); a **scanners** toggle runs the audit with
+  `--with-tools` and folds the external-tool warnings into the dashboard, with
+  the suggestion count summarised in the header.
+- **Terminal UI (`auditxs tui`):** a **Tutorial** menu entry (level picker) and
+  an **external** entry that runs the audit folding in Lynis/rkhunter/chkrootkit/
+  debsecan and shows the combined report.
+- **Web UI:** a **Scan report** button runs the scanners and opens a report
+  *styled exactly like AuditXS's* (the audit HTML with the External tool
+  findings section, via `/api/report?tools=1`). Tabs are now **deep-linkable**
+  (e.g. open the tutorial directly at `#learn`).
+
+Web tests +14 across this and the previous release; Qt selftest and QML load
+test green.
+
 ## [0.27.0]
 
 ### Web UI — usability overhaul (`auditxs web`)

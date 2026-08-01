@@ -32,6 +32,7 @@ ApplicationWindow {
     property bool auditRunning: false
     property int auditPct: 0
     property string auditCheck: ""
+    property string tutLevel: "simple"
 
     // Generic async CLI operation + console + app identity (status bar).
     property bool opRunning: false
@@ -140,20 +141,40 @@ ApplicationWindow {
     function refreshAudit() {
         if (busy) return;
         auditRunning = true; auditPct = 0; auditCheck = "";
-        chips.text = "Auditing (read-only — nothing is changed)…";
-        backend.auditStart();
+        chips.text = scannersCheck.checked
+            ? "Auditing + external scanners (this can take a minute)…"
+            : "Auditing (read-only — nothing is changed)…";
+        backend.auditStart(scannersCheck.checked);
         auditTimer.start();
     }
 
     function applyAudit(d) {
         summary = d.summary ? d.summary : summary;
         scoreLabel.text = "Score " + summary.score + "/100";
+        var ext = d.external ? d.external : [];
+        var extWarn = 0, extInfo = 0;
+        for (var k = 0; k < ext.length; k++)
+            if (ext[k].status === "WARN") extWarn++; else extInfo++;
         chips.text = summary.pass + " passed · " + summary.fail + " failed · "
-                   + summary.warn + " warnings · " + summary.skip + " skipped";
+                   + summary.warn + " warnings · " + summary.skip + " skipped"
+                   + (ext.length ? "   ·   scanners: " + extWarn + " warning(s), "
+                                   + extInfo + " suggestion(s)" : "");
         dashModel.clear();
         var rs = d.results ? d.results : [];
         for (var i = 0; i < rs.length; i++) {
+            rs[i].external = false;
             dashModel.append(rs[i]);
+        }
+        // Fold in the external-tool findings (advisory). Warnings become rows;
+        // the (often many) suggestions are summarised in the chips above.
+        for (var j = 0; j < ext.length; j++) {
+            if (ext[j].status !== "WARN") continue;
+            dashModel.append({
+                external: true, fixable: false, status: "WARN",
+                id: "[" + ext[j].tool + "]", title: ext[j].detail, detail: "",
+                severity: "advisory", level: "—", cis: "", nist: "",
+                category: "External tools", domain: "External"
+            });
         }
     }
 
@@ -171,6 +192,11 @@ ApplicationWindow {
                 if (r.length) applyAudit(JSON.parse(r));
             }
         }
+    }
+
+    function loadTut(level) {
+        win.tutLevel = level;
+        tutArea.text = backend.tutorial(level);
     }
 
     function refreshSnaps() {
@@ -271,6 +297,13 @@ ApplicationWindow {
                 Label { text: "AuditXS"; font.pixelSize: 20; font.bold: true; Layout.leftMargin: 10 }
                 Label { id: scoreLabel; text: "Score –/100"; opacity: 0.9; Layout.leftMargin: 10 }
                 Item { Layout.fillWidth: true }   // draggable gap
+                CheckBox {
+                    id: scannersCheck
+                    text: "scanners"
+                    focusPolicy: Qt.NoFocus
+                    ToolTip.visible: hovered
+                    ToolTip.text: "Also run Lynis, rkhunter, chkrootkit and debsecan and fold their findings in (advisory)."
+                }
                 Button {
                     text: win.auditRunning ? win.auditPct + "%" : "Run audit"
                     enabled: !win.busy
@@ -313,6 +346,7 @@ ApplicationWindow {
             id: tabs
             Layout.fillWidth: true
             TabButton { text: "Dashboard" }
+            TabButton { text: "Learn"; onClicked: if (!tutArea.text.length) loadTut("simple") }
             TabButton { text: "Snapshots"; onClicked: refreshSnaps() }
             TabButton { text: "Tools" }
             TabButton { text: "Fleet" }
@@ -346,7 +380,7 @@ ApplicationWindow {
                             Label { text: severity + " · Level " + level + (cis ? " · CIS " + cis : ""); opacity: 0.55; font.pixelSize: 11 }
                         }
                         Button {
-                            visible: status === "FAIL" || status === "WARN"
+                            visible: (status === "FAIL" || status === "WARN") && !external
                             enabled: !win.busy
                             text: (status === "FAIL" && fixable) ? "Fix it" : "How to fix"
                             highlighted: status === "FAIL" && fixable
@@ -368,6 +402,38 @@ ApplicationWindow {
                                 reviewDialog.open();
                             }
                         }
+                    }
+                }
+            }
+
+            // --- Learn (tiered tutorial) ---
+            ColumnLayout {
+                spacing: 8
+                RowLayout {
+                    Layout.margins: 12; spacing: 8
+                    Label { text: "Tutorial"; font.pixelSize: 18; font.bold: true }
+                    Label { text: "— learn AuditXS at your own depth"; opacity: 0.6 }
+                    Item { Layout.fillWidth: true }
+                }
+                RowLayout {
+                    Layout.leftMargin: 12; Layout.rightMargin: 12; spacing: 6
+                    Button { text: "Simple";       focusPolicy: Qt.NoFocus; highlighted: win.tutLevel === "simple";       onClicked: loadTut("simple") }
+                    Button { text: "Intermediate"; focusPolicy: Qt.NoFocus; highlighted: win.tutLevel === "intermediate"; onClicked: loadTut("intermediate") }
+                    Button { text: "Advanced";     focusPolicy: Qt.NoFocus; highlighted: win.tutLevel === "advanced";     onClicked: loadTut("advanced") }
+                    Button { text: "Professional"; focusPolicy: Qt.NoFocus; highlighted: win.tutLevel === "pro";          onClicked: loadTut("pro") }
+                    Item { Layout.fillWidth: true }
+                }
+                ScrollView {
+                    Layout.fillWidth: true; Layout.fillHeight: true
+                    Layout.leftMargin: 12; Layout.rightMargin: 12; Layout.bottomMargin: 12
+                    TextArea {
+                        id: tutArea
+                        readOnly: true
+                        wrapMode: TextArea.NoWrap
+                        font.family: "monospace"
+                        font.pixelSize: 13
+                        text: ""
+                        placeholderText: "Choose a level above to begin."
                     }
                 }
             }

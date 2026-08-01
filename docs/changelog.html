@@ -85,7 +85,7 @@
 </head>
 <body>
 <div class="layout">
-<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.27.0</span></div></div>
+<nav class="side"><div class="brandrow"><div class="logo">A</div><div><b>AuditXS docs</b><span class="v">v0.28.0</span></div></div>
 <a class="pg" href="index.html">Documentation home</a>
 <div class="grp">Guides</div>
 <a class="pg" href="usage.html">User manual</a>
@@ -102,9 +102,17 @@
 <a class="pg" href="../index.html">AuditXS home</a>
 <a class="pg" href="https://github.com/digitalxs/AuditXS">GitHub repository</a></nav>
 <main>
-<h1 id="changelog">Changelog</h1><div class="onpage"><b>On this page</b><a href="#0270">[0.27.0]</a><a href="#0260">[0.26.0]</a><a href="#0250">[0.25.0]</a><a href="#0240">[0.24.0]</a><a href="#0230">[0.23.0]</a><a href="#0220">[0.22.0]</a><a href="#0210">[0.21.0]</a><a href="#0200">[0.20.0]</a><a href="#0190">[0.19.0]</a><a href="#0180">[0.18.0]</a><a href="#0170">[0.17.0]</a><a href="#0160">[0.16.0]</a><a href="#0150">[0.15.0]</a><a href="#0141">[0.14.1]</a><a href="#0140">[0.14.0]</a><a href="#0130">[0.13.0]</a><a href="#0120">[0.12.0]</a><a href="#0111">[0.11.1]</a><a href="#0110">[0.11.0]</a><a href="#0101">[0.10.1]</a><a href="#0100">[0.10.0]</a><a href="#091">[0.9.1]</a><a href="#090">[0.9.0]</a><a href="#082">[0.8.2]</a><a href="#081">[0.8.1]</a><a href="#080">[0.8.0]</a><a href="#070--072">[0.7.0] – [0.7.2]</a><a href="#060">[0.6.0]</a><a href="#050">[0.5.0]</a><a href="#040">[0.4.0]</a><a href="#030">[0.3.0]</a><a href="#020">[0.2.0]</a><a href="#010">[0.1.0]</a></div>
+<h1 id="changelog">Changelog</h1><div class="onpage"><b>On this page</b><a href="#0280">[0.28.0]</a><a href="#0270">[0.27.0]</a><a href="#0260">[0.26.0]</a><a href="#0250">[0.25.0]</a><a href="#0240">[0.24.0]</a><a href="#0230">[0.23.0]</a><a href="#0220">[0.22.0]</a><a href="#0210">[0.21.0]</a><a href="#0200">[0.20.0]</a><a href="#0190">[0.19.0]</a><a href="#0180">[0.18.0]</a><a href="#0170">[0.17.0]</a><a href="#0160">[0.16.0]</a><a href="#0150">[0.15.0]</a><a href="#0141">[0.14.1]</a><a href="#0140">[0.14.0]</a><a href="#0130">[0.13.0]</a><a href="#0120">[0.12.0]</a><a href="#0111">[0.11.1]</a><a href="#0110">[0.11.0]</a><a href="#0101">[0.10.1]</a><a href="#0100">[0.10.0]</a><a href="#091">[0.9.1]</a><a href="#090">[0.9.0]</a><a href="#082">[0.8.2]</a><a href="#081">[0.8.1]</a><a href="#080">[0.8.0]</a><a href="#070--072">[0.7.0] – [0.7.2]</a><a href="#060">[0.6.0]</a><a href="#050">[0.5.0]</a><a href="#040">[0.4.0]</a><a href="#030">[0.3.0]</a><a href="#020">[0.2.0]</a><a href="#010">[0.1.0]</a></div>
 <p>All notable changes to <strong>AuditXS</strong> are recorded here. The format follows <a href="https://keepachangelog.com/">Keep a Changelog</a>, and the project uses <a href="https://semver.org/">Semantic Versioning</a>. The repository-root <code>VERSION</code> file is the single source of truth for the current version.</p>
 <hr>
+<h2 id="0280">[0.28.0]</h2>
+<h3 id="guiux--tutorial--external-scanners-in-the-desktop-and-terminal-apps">GUI/UX — tutorial + external scanners in the desktop and terminal apps</h3>
+<ul>
+<li><strong>Qt app:</strong> a new <strong>Learn</strong> tab carries the tiered tutorial (simple → pro, via a <code>tutorial</code> backend slot); a <strong>scanners</strong> toggle runs the audit with <code>--with-tools</code> and folds the external-tool warnings into the dashboard, with the suggestion count summarised in the header.</li>
+<li><strong>Terminal UI (<code>auditxs tui</code>):</strong> a <strong>Tutorial</strong> menu entry (level picker) and an <strong>external</strong> entry that runs the audit folding in Lynis/rkhunter/chkrootkit/ debsecan and shows the combined report.</li>
+<li><strong>Web UI:</strong> a <strong>Scan report</strong> button runs the scanners and opens a report <em>styled exactly like AuditXS's</em> (the audit HTML with the External tool findings section, via <code>/api/report?tools=1</code>). Tabs are now <strong>deep-linkable</strong> (e.g. open the tutorial directly at <code>#learn</code>).</li>
+</ul>
+<p>Web tests +14 across this and the previous release; Qt selftest and QML load test green.</p>
 <h2 id="0270">[0.27.0]</h2>
 <h3 id="web-ui--usability-overhaul-auditxs-web">Web UI — usability overhaul (<code>auditxs web</code>)</h3>
 <ul>

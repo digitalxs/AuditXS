@@ -81,7 +81,7 @@ for pat in 'onclick="onFix(' '/api/harden' \
            'id="conIn"' 'id="conToggle"' '/api/cli' \
            'data-tab="learn"' 'function renderLearn' 'id="themeBtn"' 'id="toolsChk"' \
            'class="search"' 'function renderExternal' 'function renderRows' \
-           'role="tablist"' 'data-theme'; do
+           'role="tablist"' 'data-theme' 'id="scanReportBtn"' 'tools=1'; do
     printf '%s' "$PAGEHTML" | grep -qF "$pat" \
         && ck "page wiring: $pat" yes yes || ck "page wiring: $pat" yes no
 done

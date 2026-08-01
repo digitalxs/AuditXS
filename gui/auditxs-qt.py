@@ -182,18 +182,28 @@ def data_meta():
             "profile": os.environ.get("AUDITXS_PROFILE", "") or "(configured)"}
 
 
-def data_audit():
+def data_audit(with_tools=False):
     try:
         open(PROGRESS_FILE, "w").close()
     except OSError:
         pass
-    rc, out, err = run_auditxs(["audit", "--format", "json", "--quiet",
-                                "--progress-file", PROGRESS_FILE] + _profile_args())
+    args = ["audit", "--format", "json", "--quiet",
+            "--progress-file", PROGRESS_FILE] + _profile_args()
+    if with_tools:
+        args.append("--with-tools")
+    rc, out, err = run_auditxs(args, timeout=900 if with_tools else 240)
     try:
         return json.loads(out)
     except ValueError:
         return {"results": [], "summary": {"pass": 0, "fail": 0, "warn": 0, "skip": 0, "score": "-"},
-                "error": strip_ansi(err)[:300]}
+                "external": [], "error": strip_ansi(err)[:300]}
+
+
+def data_tutorial(level):
+    if level not in ("menu", "simple", "intermediate", "advanced", "pro", "all"):
+        level = "menu"
+    rc, out, _ = run_auditxs(["tutorial", level])
+    return strip_ansi(out)
 
 
 def data_explain(cid):
@@ -310,17 +320,22 @@ def run_gui():
         # Async audit: auditStart() launches the audit in a worker thread so
         # the window stays live; the QML polls auditProgress() for the
         # percentage bar and collects auditResult() when running goes false.
-        @Slot()
-        def auditStart(self):
+        @Slot(bool)
+        def auditStart(self, with_tools=False):
             if self._audit_thread and self._audit_thread.is_alive():
                 return
             self._audit_result = None
 
             def _worker():
-                self._audit_result = json.dumps(data_audit())
+                self._audit_result = json.dumps(data_audit(with_tools))
 
             self._audit_thread = threading.Thread(target=_worker, daemon=True)
             self._audit_thread.start()
+
+        # Tiered tutorial (same content as `auditxs tutorial`) for the Learn tab.
+        @Slot(str, result=str)
+        def tutorial(self, level):
+            return data_tutorial(level)
 
         @Slot(result=str)
         def auditProgress(self):

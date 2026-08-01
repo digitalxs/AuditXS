@@ -279,6 +279,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,.tab:focus-visible{
   <label class="chk" title="Also run Lynis, rkhunter, chkrootkit and debsecan and fold their findings into this audit"><input type="checkbox" id="toolsChk"> scanners</label>
   <button class="themebtn" id="themeBtn" aria-label="Toggle light or dark theme" title="Toggle theme">🌙</button>
   <button class="btn" id="reportBtn">Open report</button>
+  <button class="btn" id="scanReportBtn" title="Run Lynis, rkhunter, chkrootkit and debsecan and open a report styled like AuditXS's">Scan report</button>
   <button class="btn primary" id="auditBtn">Run audit</button>
 </div>
 <div class="wrap">
@@ -613,6 +614,8 @@ async function renderFleet(){
 function esc(s){const d=document.createElement("div");d.textContent=s||"";return d.innerHTML;}
 $("#auditBtn").onclick=runAudit;
 $("#reportBtn").onclick=()=>window.open("/api/report?t="+encodeURIComponent(TOKEN),"_blank");
+$("#scanReportBtn").onclick=()=>{toast("Running the scanners — the report opens when they finish (this can take a minute)…");
+ window.open("/api/report?tools=1&t="+encodeURIComponent(TOKEN),"_blank");};
 // ---- console (auditxs subcommands only; argv, never a shell) ----
 $("#conToggle").onclick=()=>{const c=$("#console");c.classList.toggle("open");
  $("#conToggle").textContent=c.classList.contains("open")?"Console ▾":"Console ▴";
@@ -628,7 +631,12 @@ $("#conIn").addEventListener("keydown",async ev=>{
   out.textContent=out.textContent.slice(0,-1)+(d.output||d.error||"(no output)")+(d.rc?`\n[exit ${d.rc}]`:"");}
  catch(e){out.textContent=out.textContent.slice(0,-1)+"error: "+e.message;}
  progressStop();out.scrollTop=out.scrollHeight;});
-loadMeta().then(()=>{ $("#sbVer").textContent="v"+(META.version||"?")+" · "+(META.profile||"");return runAudit();});
+// Deep-linkable tabs: honour a #hash (e.g. #learn) on load and keep it in sync.
+function tabFromHash(){const n=(location.hash||"").slice(1);
+ const t=n&&document.querySelector('.tab[data-tab="'+n+'"]');if(t)selectTab(t);}
+window.addEventListener("hashchange",tabFromHash);
+loadMeta().then(()=>{ $("#sbVer").textContent="v"+(META.version||"?")+" · "+(META.profile||"");
+ tabFromHash(); return TAB==="dashboard"?runAudit():render();});
 </script></body></html>"""
 
 
@@ -702,7 +710,11 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == "/api/webservice":
             return self._json(self._webservice())
         if u.path == "/api/report":
-            rc, out, _ = run_auditxs(["report", "--format", "html"] + profile_args() + ["--quiet"])
+            args = ["report", "--format", "html"] + profile_args() + ["--quiet"]
+            tmo = 240
+            if qs.get("tools", ["0"])[0] == "1":       # fold in Lynis/rkhunter/…
+                args.append("--with-tools"); tmo = 900
+            rc, out, _ = run_auditxs(args, timeout=tmo)
             return self._send(200, out, "text/html; charset=utf-8")
         if u.path == "/api/fleet/hosts":
             try:

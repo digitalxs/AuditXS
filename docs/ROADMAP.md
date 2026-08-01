@@ -23,6 +23,17 @@ they shipped first:
 7. **Framework mapping** (NIST CSF 2.0, CIS/STIG alignment), **unit +
    end-to-end tests in CI**, **debug mode**, **doctor** self-diagnostics.
 
+## Shipped in v0.28
+
+- **The tutorial and the external scanners reach every interface.** The Qt app
+  gains a Learn tab and a scanners toggle; the terminal UI gains a Tutorial
+  picker and a combined external-scan report; the web UI gains a **Scan report**
+  button that opens a report styled like AuditXS's (audit + external findings)
+  and deep-linkable tabs. Still ahead in the GUI/UX epic: tuning the external
+  tools' configs for effectiveness, a desktop menu folder with a GUI uninstaller,
+  an original AuditXS icon across every surface, a broader visual refresh, and a
+  more guided first-run flow.
+
 ## Shipped in v0.27
 
 - **Web UI usability pass.** A **Learn** tab brings the tiered tutorial into the
